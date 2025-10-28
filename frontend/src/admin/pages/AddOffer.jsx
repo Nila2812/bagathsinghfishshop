@@ -20,7 +20,7 @@ const AddOffer = () => {
     description_en: "",
     description_ta: "",
     discountPercent: "",
-    productIds: [],
+    productIds: "",
     costPrice: "",
     sellingPrice: "",
     startDate: "",
@@ -57,23 +57,25 @@ const AddOffer = () => {
 
   // Fields configuration for FormSection
   const fields = [
-    { name: "title_en", label: "Offer Title (English)" },
-    { name: "title_ta", label: "Offer Title (Tamil)" },
-    { name: "description_en", label: "Description (English)", fullWidth: true },
-    { name: "description_ta", label: "Description (Tamil)", fullWidth: true },
+    { name: "title_en", label: "Offer Title (English)", required: true },
+    { name: "title_ta", label: "Offer Title (Tamil)" , required: true },
+    { name: "description_en", label: "Description (English)", fullWidth: true, required: true },
+    { name: "description_ta", label: "Description (Tamil)", fullWidth: true , required: true },
     {
       name: "discountPercent",
       label: "Discount Percentage (%)",
-      type: "number",
+      type: "number", required: true
     },
-    { name: "costPrice", label: "Cost Price (₹)", type: "number" },
-    { name: " sellingPrice", label: "Selling Price (₹)", type: "number" },
+    { name: "costPrice", label: "Cost Price (₹)", type: "number" , required: true },
+    { name: " sellingPrice", label: "Selling Price (₹)", type: "number" , required: true },
     {
       name: "productIds",
-      label: "Select Products (Apply Offer To)",
-      type: "multiselect",
+      label: "Select Products for offer",
+      type: "select",
       options: productOptions,
       fullWidth: true,
+      multiple: true,
+      required: true,
     },
     { name: "startDate", label: "Start Date", type: "date" },
     { name: "endDate", label: "End Date", type: "date" },

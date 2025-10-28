@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   TextField,
@@ -10,18 +10,25 @@ import {
   Checkbox,
 } from "@mui/material";
 
-/**
- * Reusable FormSection component
- *
- * Props:
- * - title: string → section title (e.g. "Add Product")
- * - fields: array → list of field configs { name, label, type, options }
- * - values: object → form data state
- * - onChange: function → handles input change
- * - onSubmit: function → submit handler
- * - onCancel: function → cancel handler
- */
 const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) => {
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+    const newErrors = {};
+    fields.forEach((field) => {
+      if (field.required && !values[field.name]) {
+        newErrors[field.name] = "Please fill this field";
+      }
+    });
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = () => {
+    if (!validate()) return; // stop if invalid
+    onSubmit();
+  };
+
   return (
     <Box
       sx={{
@@ -34,7 +41,7 @@ const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) =>
     >
       <Typography
         variant="h5"
-        sx={{ mb: 3, fontWeight: 600, color: "#333" , textAlign: "center"}}
+        sx={{ mb: 3, fontWeight: 600, color: "#333", textAlign: "center" }}
       >
         {title}
       </Typography>
@@ -44,33 +51,24 @@ const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) =>
           <Grid item xs={12} sm={field.fullWidth ? 12 : 6} key={field.name}>
             {/* --- SELECT FIELD --- */}
             {field.type === "select" ? (
-                <TextField
+              <TextField
                 select
                 fullWidth
-                label={field.label}
+                label={
+                  <>
+                    {field.label}
+                    {field.required && <span style={{ color: "red" }}> *</span>}
+                  </>
+                }
                 name={field.name}
                 value={values[field.name] || ""}
                 onChange={onChange}
+                error={!!errors[field.name]}
+                helperText={errors[field.name]}
                 InputLabelProps={{
-                  shrink: Boolean(values[field.name]), // stays up if a value exists
+                  shrink: Boolean(values[field.name]),
                 }}
-                sx={{
-                  minWidth: 160 ,
-                  "& .MuiInputLabel-root": {
-                    transform: "translate(14px, 12px) scale(1)", // label inside initially
-                    transition: "all 0.2s ease",
-                  },
-                  "& .Mui-focused .MuiInputLabel-root": {
-                    transform: "translate(14px, -9px) scale(0.75)", // float up on focus
-                  },
-                  "& .MuiInputLabel-shrink": {
-                    transform: "translate(14px, -9px) scale(0.75)", // float up if value exists
-                  },
-                  // "& .MuiSelect-select": {
-                  //   paddingTop: "20px",
-                  //   paddingBottom: "10px",
-                  // },
-                }}
+                sx={{ minWidth: 170 }}
               >
                 {field.options.map((option) => (
                   <MenuItem key={option.value} value={option.value}>
@@ -78,22 +76,23 @@ const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) =>
                   </MenuItem>
                 ))}
               </TextField>
-
-            /* --- DATE FIELD --- */
             ) : field.type === "date" ? (
               <TextField
                 fullWidth
                 type="date"
-                label={field.label}
+                label={
+                  <>
+                    {field.label}
+                    {field.required && <span style={{ color: "red" }}> *</span>}
+                  </>
+                }
                 name={field.name}
                 value={values[field.name] || ""}
                 onChange={onChange}
-                InputLabelProps={{
-                  shrink: true, // 👈 label always visible above
-                }}
+                error={!!errors[field.name]}
+                helperText={errors[field.name]}
+                InputLabelProps={{ shrink: true }}
               />
-
-            /* --- CHECKBOX FIELD --- */
             ) : field.type === "checkbox" ? (
               <FormControlLabel
                 control={
@@ -104,35 +103,46 @@ const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) =>
                     color="primary"
                   />
                 }
-                label={field.label} // 👈 label text visible beside checkbox
+                label={field.label}
               />
-
-            /* --- FILE FIELD --- */
             ) : field.type === "file" ? (
-              <Button
-                variant="outlined"
-                component="label"
-                fullWidth
-                sx={{ textAlign: "left" }}
-              >
-                {field.label}
-                <input
-                  type="file"
-                  name={field.name}
-                  hidden
-                  onChange={(e) => onChange(e, "file")}
-                />
-              </Button>
-
-            /* --- DEFAULT TEXT / NUMBER FIELDS --- */
+              <>
+                <Button
+                  variant="outlined"
+                  component="label"
+                  fullWidth
+                  sx={{ textAlign: "left" }}
+                >
+                  {field.label}
+                  {field.required && <span style={{ color: "red" }}> *</span>}
+                  <input
+                    type="file"
+                    name={field.name}
+                    hidden
+                    onChange={(e) => onChange(e, "file")}
+                  />
+                </Button>
+                {errors[field.name] && (
+                  <Typography color="error" variant="caption">
+                    {errors[field.name]}
+                  </Typography>
+                )}
+              </>
             ) : (
               <TextField
                 fullWidth
-                label={field.label}
+                label={
+                  <>
+                    {field.label}
+                    {field.required && <span style={{ color: "red" }}> *</span>}
+                  </>
+                }
                 name={field.name}
                 type={field.type || "text"}
                 value={values[field.name] || ""}
                 onChange={onChange}
+                error={!!errors[field.name]}
+                helperText={errors[field.name]}
               />
             )}
           </Grid>
@@ -141,7 +151,7 @@ const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) =>
 
       {/* --- ACTION BUTTONS --- */}
       <Box sx={{ mt: 4, display: "flex", gap: 2 }}>
-        <Button variant="contained" color="primary" onClick={onSubmit}>
+        <Button variant="contained" color="primary" onClick={handleSubmit}>
           Save
         </Button>
         <Button variant="outlined" color="secondary" onClick={onCancel}>

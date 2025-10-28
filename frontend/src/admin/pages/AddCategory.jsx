@@ -50,8 +50,8 @@ const AddCategory = () => {
 
   // Fields config for FormSection
   const fields = [
-    { name: "name_en", label: "Category Name (English)" },
-    { name: "name_ta", label: "Category Name (Tamil)" },
+    { name: "name_en", label: "Category Name (English)", required: true },
+    { name: "name_ta", label: "Category Name (Tamil)", required: true },
     {
       name: "parentCategory",
       label: "SubCategory OF",
@@ -60,7 +60,7 @@ const AddCategory = () => {
     },
     { name: "description_en", label: "Description (English)", fullWidth: true },
     { name: "description_ta", label: "Description (Tamil)", fullWidth: true },
-    { name: "image", label: "Upload Image", type: "file", fullWidth: true },
+    { name: "image", label: "Upload Image", type: "file", fullWidth: true ,required: true},
   ];
 
   return (

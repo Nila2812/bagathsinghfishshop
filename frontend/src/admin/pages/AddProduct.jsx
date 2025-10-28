@@ -54,11 +54,12 @@ const AddProduct = () => {
       type: "select",
       options: categoryOptions,
       fullWidth: true,
+      required: true
     },
-    { name: "name_en", label: "Product Name (English)" },
-    { name: "name_ta", label: "Product Name (Tamil)" },
-    { name: "price", label: "Price (₹)", type: "number" },
-    { name: "weightValue", label: "Weight Value", type: "number" },
+    { name: "name_en", label: "Product Name (English)" ,required: true},
+    { name: "name_ta", label: "Product Name (Tamil)",required: true },
+    { name: "price", label: "Price (₹)", type: "number" ,required: true},
+    { name: "weightValue", label: "Weight Value", type: "number",required: true },
     {
       name: "weightUnit",
       label: "Weight Unit",
@@ -67,14 +68,15 @@ const AddProduct = () => {
         { value: "g", label: "g" },
         { value: "kg", label: "kg" },
         { value: "piece", label: "Piece" },
-      ],
-    },
-    { name: "stockQty", label: "Stock Quantity", type: "number" },
+      ], 
+   required: true },
+    { name: "stockQty", label: "Stock Quantity", type: "number"  ,required: true },
     {
       name: "image",
       label: "Product Image",
       type: "file",
       fullWidth: true,
+      required: true
     },
   ];
 
