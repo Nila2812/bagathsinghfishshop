@@ -21,6 +21,8 @@ const AddOffer = () => {
     description_ta: "",
     discountPercent: "",
     productIds: [],
+    costPrice: "",
+    sellingPrice: "",
     startDate: "",
     endDate: "",
     isActive: true,
@@ -64,6 +66,8 @@ const AddOffer = () => {
       label: "Discount Percentage (%)",
       type: "number",
     },
+    { name: "costPrice", label: "Cost Price (₹)", type: "number" },
+    { name: " sellingPrice", label: "Selling Price (₹)", type: "number" },
     {
       name: "productIds",
       label: "Select Products (Apply Offer To)",
@@ -73,11 +77,6 @@ const AddOffer = () => {
     },
     { name: "startDate", label: "Start Date", type: "date" },
     { name: "endDate", label: "End Date", type: "date" },
-    {
-      name: "isActive",
-      label: "Active",
-      type: "checkbox",
-    },
   ];
 
   return (

@@ -19,7 +19,7 @@ const AddProduct = () => {
     name_ta: "",
     price: "",
     weightValue: "",
-    weightUnit: "kg",
+    weightUnit: "",
     stockQty: "",
     isAvailable: true,
     image: null,
@@ -70,11 +70,6 @@ const AddProduct = () => {
       ],
     },
     { name: "stockQty", label: "Stock Quantity", type: "number" },
-    {
-      name: "isAvailable",
-      label: "Available",
-      type: "checkbox",
-    },
     {
       name: "image",
       label: "Product Image",

@@ -54,7 +54,7 @@ const AddCategory = () => {
     { name: "name_ta", label: "Category Name (Tamil)" },
     {
       name: "parentCategory",
-      label: "Main Category (optional)",
+      label: "SubCategory OF",
       type: "select",
       options: parentCategories,
     },
