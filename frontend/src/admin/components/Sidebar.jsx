@@ -1,7 +1,28 @@
 import React from "react";
 import { Box, Button, Divider, Typography } from "@mui/material";
+import { NavLink } from "react-router-dom";
 
-const Sidebar = ({ onSelect }) => {
+const Sidebar = () => {
+  const linkStyle = {
+    textDecoration: "none",
+    width: "100%",
+  };
+
+  const addButtons = [
+    { label: "Add Product", path: "/admin/add-product" },
+    { label: "Add Category", path: "/admin/add-category" },
+    { label: "Add Offer", path: "/admin/add-offer" },
+  ];
+
+  const viewButtons = [
+    { label: "View Products", path: "/admin/view-products" },
+    { label: "View Categories", path: "/admin/view-categories" },
+    { label: "View Offers", path: "/admin/view-offers" },
+    { label: "View Customers", path: "/admin/view-customers" },
+    { label: "View Orders", path: "/admin/view-orders" },
+    { label: "View Admin Details", path: "/admin/view-admins" },
+  ];
+
   return (
     <Box
       sx={{
@@ -20,7 +41,6 @@ const Sidebar = ({ onSelect }) => {
         overflowY: "auto",
       }}
     >
-      {/* Admin Panel Header */}
       <Typography
         variant="h6"
         sx={{
@@ -33,118 +53,61 @@ const Sidebar = ({ onSelect }) => {
         Admin Panel
       </Typography>
 
-      {/* Add Section */}
-      <Button
-        variant="contained"
-        onClick={() => onSelect("addProduct")}
-        sx={{
-          bgcolor: "#1976d2",
-          "&:hover": { bgcolor: "#1565c0" },
-          color: "white",
-        }}
-      >
-        Add Product
-      </Button>
+      {/* ADD SECTION */}
+      {addButtons.map((btn) => (
+        <NavLink
+          key={btn.path}
+          to={btn.path}
+          style={({ isActive }) => ({
+            ...linkStyle,
+            borderRadius: "4px",
+          })}
+        >
+          {({ isActive }) => (
+            <Button
+              fullWidth
+              variant={isActive ? "contained" : "outlined"}
+              sx={{
+                bgcolor: isActive ? "#1565c0" : "transparent",
+                color: "white",
+                borderColor: "gray",
+                "&:hover": { borderColor: "#1976d2", color: "#1976d2" },
+              }}
+            >
+              {btn.label}
+            </Button>
+          )}
+        </NavLink>
+      ))}
 
-      <Button
-        variant="contained"
-        onClick={() => onSelect("addCategory")}
-        sx={{
-          bgcolor: "#1976d2",
-          "&:hover": { bgcolor: "#1565c0" },
-          color: "white",
-        }}
-      >
-        Add Category
-      </Button>
-
-      <Button
-        variant="contained"
-        onClick={() => onSelect("addOffer")}
-        sx={{
-          bgcolor: "#1976d2",
-          "&:hover": { bgcolor: "#1565c0" },
-          color: "white",
-        }}
-      >
-        Add Offer
-      </Button>
-
-      {/* Divider between Add and View sections */}
       <Divider sx={{ bgcolor: "gray", my: 2 }} />
 
-      {/* View Section */}
-      <Button
-        variant="outlined"
-        onClick={() => onSelect("viewProducts")}
-        sx={{
-          color: "white",
-          borderColor: "gray",
-          "&:hover": { borderColor: "#1976d2", color: "#1976d2" },
-        }}
-      >
-        View Products
-      </Button>
-
-      <Button
-        variant="outlined"
-        onClick={() => onSelect("viewCategories")}
-        sx={{
-          color: "white",
-          borderColor: "gray",
-          "&:hover": { borderColor: "#1976d2", color: "#1976d2" },
-        }}
-      >
-        View Categories
-      </Button>
-
-      <Button
-        variant="outlined"
-        onClick={() => onSelect("viewOffers")}
-        sx={{
-          color: "white",
-          borderColor: "gray",
-          "&:hover": { borderColor: "#1976d2", color: "#1976d2" },
-        }}
-      >
-        View Offers
-      </Button>
-
-      <Button
-        variant="outlined"
-        onClick={() => onSelect("viewCustomers")}
-        sx={{
-          color: "white",
-          borderColor: "gray",
-          "&:hover": { borderColor: "#1976d2", color: "#1976d2" },
-        }}
-      >
-        View Customers
-      </Button>
-
-      <Button
-        variant="outlined"
-        onClick={() => onSelect("viewOrders")}
-        sx={{
-          color: "white",
-          borderColor: "gray",
-          "&:hover": { borderColor: "#1976d2", color: "#1976d2" },
-        }}
-      >
-        View Orders
-      </Button>
-
-      <Button
-        variant="outlined"
-        onClick={() => onSelect("viewAdmins")}
-        sx={{
-          color: "white",
-          borderColor: "gray",
-          "&:hover": { borderColor: "#1976d2", color: "#1976d2" },
-        }}
-      >
-        View Admin Details
-      </Button>
+      {/* VIEW SECTION */}
+      {viewButtons.map((btn) => (
+        <NavLink
+          key={btn.path}
+          to={btn.path}
+          style={({ isActive }) => ({
+            ...linkStyle,
+            borderRadius: "4px",
+          })}
+        >
+          {({ isActive }) => (
+            <Button
+              fullWidth
+              variant={isActive ? "contained" : "outlined"}
+              sx={{
+                bgcolor: isActive ? "#1565c0" : "transparent",
+                color: "white",
+                borderColor: "gray",
+                "&:hover": { borderColor: "#1976d2", color: "#1976d2" },
+              }}
+            >
+              {btn.label}
+            </Button>
+          )}
+        </NavLink>
+      ))}
     </Box>
   );
 };

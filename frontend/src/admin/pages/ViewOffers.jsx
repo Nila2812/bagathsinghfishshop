@@ -107,7 +107,7 @@ const ViewOffers = () => {
   };
 
   return (
-    <Box sx={{ ml: "20%", p: 3 }}>
+    <Box sx={{p: 3 }}>
       <DataTable
         title="Offers"
         columns={columns}

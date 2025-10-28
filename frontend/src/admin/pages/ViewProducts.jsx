@@ -4,21 +4,17 @@ import { Box } from "@mui/material";
 // import axios from "axios"; // Uncomment when backend is ready
 
 const ViewProducts = () => {
+
   const [products, setProducts] = useState([]);
 
   // Columns for products view (as per requirements)
   const columns = [
-    { field: "id", headerName: "ID", width: 80 },
+    { field: "id", headerName: "ID", width: 50 },
     { field: "name_en", headerName: "Product Name (EN)", width: 200 },
     { field: "name_ta", headerName: "Product Name (TA)", width: 200 },
     { field: "price", headerName: "Price (₹)", width: 120 },
-    {
-      field: "weight",
-      headerName: "Weight",
-      width: 120,
-      valueGetter: (params) =>
-        `${params.row.weightValue}${params.row.weightUnit}`,
-    },
+     { field: "weightValue", headerName: "Weight Value", width: 120 },
+    { field: "weightUnit", headerName: "Weight Unit", width: 120 },
     { field: "stockQty", headerName: "Stock Qty", width: 120 },
     {
       field: "isAvailable",
@@ -98,7 +94,7 @@ const ViewProducts = () => {
   };
 
   return (
-    <Box sx={{ ml: "20%", p: 3 }}>
+    <Box sx={{  p: 3 }}>
       <DataTable
         title="Products"
         columns={columns}

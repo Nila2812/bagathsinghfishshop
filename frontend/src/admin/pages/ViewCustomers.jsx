@@ -77,7 +77,7 @@ const ViewCustomers = () => {
   };
 
   return (
-    <Box sx={{ ml: "20%", p: 3 }}>
+    <Box sx={{p: 3 }}>
       <DataTable
         title="Customers"
         columns={columns}

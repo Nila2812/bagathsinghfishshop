@@ -123,7 +123,7 @@ const ViewOrders = () => {
   };
 
   return (
-    <Box sx={{ ml: "20%", p: 3 }}>
+    <Box sx={{p: 3 }}>
       <DataTable
         title="Orders"
         columns={columns}
