@@ -15,10 +15,20 @@ const offerSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-  productIds: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Product'
-  }],
+  costPrice: {
+    type: Number,
+    required: true
+  },
+
+  sellingPrice: {
+    type: Number,
+    required: true
+  },
+  productIds: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'Product',
+  required: true
+},
   startDate: Date,
   endDate: Date,
   isActive: {

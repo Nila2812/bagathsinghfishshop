@@ -28,7 +28,7 @@ const productSchema = new mongoose.Schema({
   },
   weightUnit: {
     type: String,
-    enum: ['g', 'kg'],
+    enum: ['g', 'kg' , 'piece'],
     required: true
   },
   stockQty: {

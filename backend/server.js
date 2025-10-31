@@ -2,6 +2,11 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./config/db.js";
+import productRoutes from './routes/productRoutes.js';
+import categoryRoutes from './routes/categoryRoutes.js';
+import offerRoutes from './routes/offerRoutes.js';
+
+
 
 // Load environment variables
 dotenv.config();
@@ -19,6 +24,12 @@ app.use('/uploads', express.static('uploads'));
 
 // MongoDB connection
 connectDB();
+
+app.use('/api/products', productRoutes);
+app.use('/api/category', categoryRoutes);
+app.use('/api/offers', offerRoutes);
+app.use("/api/products", productRoutes);
+
 
 // Basic test route
 app.get('/', (req, res) => {

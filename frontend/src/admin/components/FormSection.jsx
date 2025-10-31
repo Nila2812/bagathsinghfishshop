@@ -25,7 +25,7 @@ const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) =>
   };
 
   const handleSubmit = () => {
-    if (!validate()) return; // stop if invalid
+    if (!validate()) return;
     onSubmit();
   };
 
@@ -65,10 +65,13 @@ const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) =>
                 onChange={onChange}
                 error={!!errors[field.name]}
                 helperText={errors[field.name]}
-                InputLabelProps={{
-                  shrink: Boolean(values[field.name]),
+                slotProps={{
+                  inputLabel: {
+                    shrink: true,
+                  },
                 }}
-                sx={{ minWidth: 170 }}
+                disabled={field.readOnly || false}
+                sx={{minWidth: 170}}
               >
                 {field.options.map((option) => (
                   <MenuItem key={option.value} value={option.value}>
@@ -91,7 +94,14 @@ const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) =>
                 onChange={onChange}
                 error={!!errors[field.name]}
                 helperText={errors[field.name]}
-                InputLabelProps={{ shrink: true }}
+                slotProps={{
+                  inputLabel: {
+                    shrink: true,
+                  },
+                  input: {
+                    readOnly: field.readOnly || false,
+                  },
+                }}
               />
             ) : field.type === "checkbox" ? (
               <FormControlLabel
@@ -143,6 +153,14 @@ const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) =>
                 onChange={onChange}
                 error={!!errors[field.name]}
                 helperText={errors[field.name]}
+                slotProps={{
+                  inputLabel: {
+                    shrink: true,
+                  },
+                  input: {
+                    readOnly: field.readOnly || false,
+                  },
+                }}
               />
             )}
           </Grid>

@@ -14,7 +14,14 @@ const categorySchema = new mongoose.Schema({
     contentType: String
   },
   description_en: String,
-  description_ta: String
+  description_ta: String,
+  parentCategory: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'Category',
+  default: null
+}
+
 }, { timestamps: true });
 
 export default mongoose.model('Category', categorySchema);
+

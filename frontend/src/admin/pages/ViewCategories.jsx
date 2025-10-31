@@ -1,95 +1,119 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { Box, Typography } from "@mui/material";
 import DataTable from "../components/DataTable";
-import { Box } from "@mui/material";
-// import axios from "axios"; // Uncomment later for backend connection
+import EditCategoryModal from "../components/EditCategoryModal.jsx";
 
 const ViewCategories = () => {
   const [categories, setCategories] = useState([]);
-
-  // Table columns for category view
+const [editingCategory, setEditingCategory] = useState(null);
   const columns = [
-    { field: "id", headerName: "ID", width: 100 },
-    { field: "name_ta", headerName: "Category Name (Tamil)", width: 220 },
-    { field: "name_en", headerName: "Category Name (English)", width: 220 },
+    { field: "id", headerName: "ID", width: 80 },
+    { field: "name_ta", headerName: "Category Name (Tamil)", width: 180 },
+    { field: "name_en", headerName: "Category Name (English)", width: 180 },
+    { field: "description_ta", headerName: "Description (Tamil)", width: 200 },
+    { field: "description_en", headerName: "Description (English)", width: 200 },
     {
       field: "parentCategory",
       headerName: "Main Category",
-      width: 220,
+      width: 160,
       renderCell: (params) =>
-        params.value ? (
-          <span>{params.value}</span>
+        params.value?.name_en ? (
+          <span>{params.value.name_en}</span>
         ) : (
-          <em style={{ color: "#888" }}>None (Main Category)</em>
+          <em style={{ color: "#888" }}>None</em>
         ),
     },
     {
-      field: "createdAt",
-      headerName: "Created At",
-      width: 160,
-      valueFormatter: (params) =>
-        new Date(params?.value).toLocaleDateString("en-GB"),
-    },
-  ];
+      field: "image",
+      headerName: "Image",
+      width: 100,
+      renderCell: (params) => {
+        const imageUrl = params.row.image?.data
+          ? `data:${params.row.image.contentType};base64,${params.row.image.data}`
+          : null;
 
-  // Sample categories data
-  const sampleCategories = [
-    {
-      id: "1",
-      name_ta: "கடல் மீன்",
-      name_en: "Sea Fish",
-      parentCategory: null,
-      createdAt: "2025-09-10T12:00:00Z",
+        return imageUrl ? (
+          <img
+            src={imageUrl}
+            alt="Category"
+            style={{ width: 50, height: 50, objectFit: "cover", borderRadius: 4 }}
+          />
+        ) : (
+          <span style={{ color: "#888" }}>No Image</span>
+        );
+      },
     },
-    {
-      id: "2",
-      name_ta: "நீர் மீன்",
-      name_en: "Freshwater Fish",
-      parentCategory: null,
-      createdAt: "2025-09-15T10:00:00Z",
-    },
-    {
-      id: "3",
-      name_ta: "பாரா மீன்",
-      name_en: "Barramundi",
-      parentCategory: "Sea Fish",
-      createdAt: "2025-09-18T09:30:00Z",
-    },
-    {
-      id: "4",
-      name_ta: "ரொஹு மீன்",
-      name_en: "Rohu",
-      parentCategory: "Freshwater Fish",
-      createdAt: "2025-10-01T08:45:00Z",
-    },
+    
   ];
 
   useEffect(() => {
-    // Future backend call example:
-    // axios.get("/api/categories").then((res) => setCategories(res.data));
-    setCategories(sampleCategories);
+    axios.get("http://localhost:5000/api/category")
+      .then((res) => {
+        const enriched = res.data.map((cat, index) => ({
+          ...cat,
+          id: index + 1,
+        }));
+        setCategories(enriched);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch categories:", err);
+      });
   }, []);
 
+  
   const handleEdit = (id) => {
-    console.log("Edit category ID:", id);
-    // Future inline edit or modal logic
-  };
+  const category = categories.find(c => c._id === id);
+  setEditingCategory(category); // ✅ This opens the modal
+};
 
-  const handleDelete = (id) => {
-    console.log("Delete category ID:", id);
-    // Future backend delete API call
+const handleSave = async (updated) => {
+  try {
+    const res = await axios.get("http://localhost:5000/api/category");
+    const enriched = res.data.map((cat, index) => ({
+      ...cat,
+      id: index + 1,
+    }));
+    setCategories(enriched);
+  } catch (err) {
+    console.error("Failed to refresh categories:", err);
+  }
+  setEditingCategory(null);
+};
+
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`http://localhost:5000/api/category/${id}`);
+      setCategories(prev => prev.filter(c => c._id !== id));
+    } catch (err) {
+      console.error("Delete failed:", err);
+    }
   };
 
   return (
-    <Box sx={{p: 3 }}>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h6" sx={{ mb: 2, textAlign: "center", fontWeight: 700 }}>
+        All Categories
+      </Typography>
       <DataTable
-        title="Category List"
+        title=""
         columns={columns}
         rows={categories}
         onEdit={handleEdit}
         onDelete={handleDelete}
       />
+{editingCategory && (
+  <EditCategoryModal
+    category={editingCategory}
+    onClose={() => setEditingCategory(null)}
+    onSave={handleSave}
+  />
+)}
+      
     </Box>
+    
   );
+  
 };
 
 export default ViewCategories;

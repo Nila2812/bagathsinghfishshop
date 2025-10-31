@@ -32,19 +32,24 @@ const DataTable = ({ columns = [], rows = [], onEdit, onDelete, title }) => {
           <IconButton
             size="small"
             color="primary"
-            onClick={() => onEdit && onEdit(params.row.id)}
+            onClick={() => onEdit && onEdit(params.row._id)}
           >
             <EditIcon />
           </IconButton>
         </Tooltip>
         <Tooltip title="Delete">
           <IconButton
-            size="small"
-            color="error"
-            onClick={() => onDelete && onDelete(params.row.id)}
-          >
-            <DeleteIcon />
-          </IconButton>
+  size="small"
+  color="error"
+  onClick={() => {
+    if (window.confirm("Are you sure you want to delete this product?")) {
+      onDelete && onDelete(params.row._id);
+    }
+  }}
+>
+  <DeleteIcon />
+</IconButton>
+
         </Tooltip>
       </Box>
     ),
