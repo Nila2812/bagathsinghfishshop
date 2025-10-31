@@ -49,7 +49,9 @@ router.get("/", async (req, res) => {
   try {
     const categories = await Category.find().populate("parentCategory");
 
-    const enriched = categories.map((cat) => {
+    const enriched = await Promise.all(categories.map(async (cat) => {
+      const childCount = await Category.countDocuments({ parentCategory: cat._id });
+
       let imageData = null;
       if (cat.image?.data) {
         imageData = {
@@ -61,8 +63,10 @@ router.get("/", async (req, res) => {
       return {
         ...cat.toObject(),
         image: imageData,
+        hasChildren: childCount > 0,         // ✅ true if this category has sub-categories
+        isSubCategory: !!cat.parentCategory, // ✅ true if this category is a sub-category
       };
-    });
+    }));
 
     res.json(enriched);
   } catch (err) {
@@ -106,5 +110,9 @@ router.put("/:id", upload.single("image"), async (req, res) => {
     res.status(500).json({ error: "Update failed" });
   }
 });
+
+
+
+
 
 export default router;

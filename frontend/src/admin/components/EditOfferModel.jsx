@@ -93,8 +93,7 @@ const EditOfferModel = ({ offer, onClose, onSave }) => {
       <DialogTitle>Edit Offer</DialogTitle>
       <DialogContent>
         <Grid container spacing={2} sx={{ mt: 1 }}>
-          <Grid item xs={6}>
-            <TextField
+          <Grid size={6}>            <TextField
               label="Offer Title (EN)"
               name="title_en"
               value={form.title_en}
@@ -102,8 +101,7 @@ const EditOfferModel = ({ offer, onClose, onSave }) => {
               fullWidth
             />
           </Grid>
-          <Grid item xs={6}>
-            <TextField
+          <Grid size={6}>            <TextField
               label="Offer Title (TA)"
               name="title_ta"
               value={form.title_ta}
@@ -111,8 +109,7 @@ const EditOfferModel = ({ offer, onClose, onSave }) => {
               fullWidth
             />
           </Grid>
-          <Grid item xs={6}>
-            <TextField
+          <Grid size={6}>            <TextField
               label="Description (EN)"
               name="description_en"
               value={form.description_en}
@@ -120,8 +117,7 @@ const EditOfferModel = ({ offer, onClose, onSave }) => {
               fullWidth
             />
           </Grid>
-          <Grid item xs={6}>
-            <TextField
+          <Grid size={6}>            <TextField
               label="Description (TA)"
               name="description_ta"
               value={form.description_ta}
@@ -129,7 +125,7 @@ const EditOfferModel = ({ offer, onClose, onSave }) => {
               fullWidth 
             />
           </Grid>
-          <Grid item xs={12}>
+          <Grid size={12}>
             <FormControl fullWidth>
               <InputLabel id="product-label">Product</InputLabel>
               <Select
@@ -147,8 +143,7 @@ const EditOfferModel = ({ offer, onClose, onSave }) => {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={6}>
-            <TextField
+          <Grid size={6}>            <TextField
               label="Cost Price (₹)"
               name="costPrice"
               value={form.costPrice}
@@ -157,8 +152,7 @@ const EditOfferModel = ({ offer, onClose, onSave }) => {
               disabled
             />
           </Grid>
-          <Grid item xs={6}>
-            <TextField
+          <Grid size={6}>            <TextField
               label="Discount (%)"
               name="discountPercent"
               value={form.discountPercent}
@@ -167,8 +161,7 @@ const EditOfferModel = ({ offer, onClose, onSave }) => {
               type="number"
             />
           </Grid>
-          <Grid item xs={6}>
-            <TextField
+          <Grid size={6}>            <TextField
               label="Selling Price (₹)"
               name="sellingPrice"
               value={form.sellingPrice}
@@ -177,8 +170,7 @@ const EditOfferModel = ({ offer, onClose, onSave }) => {
               disabled
             />
           </Grid>
-          <Grid item xs={6}>
-            <FormControlLabel
+          <Grid size={6}>            <FormControlLabel
               control={
                 <Switch
                   checked={form.isActive}
@@ -189,8 +181,7 @@ const EditOfferModel = ({ offer, onClose, onSave }) => {
               label="Active"
             />
           </Grid>
-          <Grid item xs={6}>
-            <TextField
+          <Grid size={6}>            <TextField
               label="Start Date"
               name="startDate"
               type="date"
@@ -200,8 +191,7 @@ const EditOfferModel = ({ offer, onClose, onSave }) => {
               InputLabelProps={{ shrink: true }}
             />
           </Grid>
-          <Grid item xs={6}>
-            <TextField
+          <Grid size={6}>            <TextField
               label="End Date"
               name="endDate"
               type="date"

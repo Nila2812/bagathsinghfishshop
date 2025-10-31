@@ -25,15 +25,32 @@ const EditCategoryModal = ({ category, onClose, onSave }) => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  useEffect(() => {
-    axios.get("http://localhost:5000/api/category")
-      .then((res) => {
-        setAllCategories(res.data.filter(c => c._id !== category._id)); // exclude self
-      })
-      .catch((err) => {
-        console.error("Failed to fetch categories:", err);
+useEffect(() => {
+  axios.get("http://localhost:5000/api/category")
+    .then((res) => {
+      const enriched = res.data;
+
+      const currentId = category._id;
+      const currentIsSub = !!category.parentCategory;
+      const currentHasChildren = enriched.some(c => c.parentCategory?._id === currentId);
+
+      const validParents = enriched.filter(c => {
+        if (c._id === currentId) return false; // ❌ can't assign self as parent
+        if (c.isSubCategory) return false;     // ❌ sub-categories can't be parents
+        if (!currentIsSub && currentHasChildren) {
+          // ❌ if current is a parent with children, block demotion
+          return false;
+        }
+        return true;
       });
-  }, [category._id]);
+
+      setAllCategories(validParents);
+    })
+    .catch((err) => {
+      console.error("Failed to fetch categories:", err);
+    });
+}, [category._id]);
+
 
   const handleSubmit = async () => {
   const data = new FormData();

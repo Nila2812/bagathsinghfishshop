@@ -1,8 +1,17 @@
-// src/admin/AdminPanel.jsx
 import React from "react";
 import { Routes, Route } from "react-router-dom";
+import {
+  Box,
+  CssBaseline,
+  Toolbar,
+  AppBar,
+  Typography,
+  Drawer,
+} from "@mui/material";
+
 import Sidebar from "./components/Sidebar";
-import Navbar from "./components/Navbar"; // ✅ Import Navbar
+import Navbar from "./components/Navbar";
+
 import AddProduct from "./pages/AddProduct";
 import AddCategory from "./pages/AddCategory";
 import AddOffer from "./pages/AddOffer";
@@ -13,53 +22,91 @@ import ViewCustomers from "./pages/ViewCustomers";
 import ViewOrders from "./pages/ViewOrders";
 import ViewAdmins from "./pages/ViewAdmins";
 
-// Optional Dashboard page
+const drawerWidth = 240;
+
 const Dashboard = () => (
-  <div className="text-center text-2xl font-semibold mt-10">
+  <Box
+    sx={{
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      height: "80vh",
+      fontSize: "1.5rem",
+      fontWeight: 600,
+    }}
+  >
     Welcome to Admin Panel
-  </div>
+  </Box>
 );
 
 const AdminPanel = () => {
-  // optional logout handler
   const handleLogout = () => {
-    // Example action: clear token and redirect to login
     console.log("Admin logged out");
-    // window.location.href = "/login"; // Uncomment when you have a login page
+    // window.location.href = "/admin/login";
   };
 
   return (
-    <div className="flex h-screen">
-      {/* Left Sidebar */}
-      <div className="w-1/5 bg-black text-white">
+    <Box sx={{ display: "flex" }}>
+      <CssBaseline />
+
+      {/* ✅ Navbar */}
+      <AppBar
+        position="fixed"
+        sx={{
+          width: `calc(100% - ${drawerWidth}px)`,
+          ml: `${drawerWidth}px`,
+          backgroundColor: "#1e1e1e",
+        }}
+      >
+        <Toolbar>
+          <Navbar onLogout={handleLogout} />
+        </Toolbar>
+      </AppBar>
+
+      {/* ✅ Sidebar Drawer */}
+      <Drawer
+        variant="permanent"
+        sx={{
+          width: drawerWidth,
+          flexShrink: 0,
+          "& .MuiDrawer-paper": {
+            width: drawerWidth,
+            boxSizing: "border-box",
+            backgroundColor: "#000",
+            color: "#fff",
+          },
+        }}
+      >
+        <Toolbar />
         <Sidebar />
-      </div>
+      </Drawer>
 
-      {/* Right Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-gray-100">
-        {/* ✅ Navbar on top */}
-        <Navbar onLogout={handleLogout} />
-
-        {/* ✅ Scrollable content below navbar */}
-        <div className="flex-1 overflow-auto p-4">
-          <Routes>
-            {/* Default route */}
-            <Route index element={<Dashboard />} />
-
-            {/* Other pages */}
-            <Route path="add-product" element={<AddProduct />} />
-            <Route path="add-category" element={<AddCategory />} />
-            <Route path="add-offer" element={<AddOffer />} />
-            <Route path="view-products" element={<ViewProducts />} />
-            <Route path="view-categories" element={<ViewCategories />} />
-            <Route path="view-offers" element={<ViewOffers />} />
-            <Route path="view-customers" element={<ViewCustomers />} />
-            <Route path="view-orders" element={<ViewOrders />} />
-            <Route path="view-admins" element={<ViewAdmins />} />
-          </Routes>
-        </div>
-      </div>
-    </div>
+      {/* ✅ Main Content Area */}
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: 3,
+          bgcolor: "#f4f5f7",
+          height: "100vh",
+          overflow: "auto",
+        }}
+      >
+        <Toolbar />
+        <Routes>
+          <Route index element={<Dashboard />} />
+          <Route path="add-product" element={<AddProduct />} />
+          <Route path="add-category" element={<AddCategory />} />
+          <Route path="add-offer" element={<AddOffer />} />
+          <Route path="view-products" element={<ViewProducts />} />
+          <Route path="view-categories" element={<ViewCategories />} />
+          <Route path="view-offers" element={<ViewOffers />} />
+          <Route path="view-customers" element={<ViewCustomers />} />
+          <Route path="view-orders" element={<ViewOrders />} />
+          <Route path="view-admins" element={<ViewAdmins />} />
+        </Routes>
+      </Box>
+    </Box>
   );
 };
 

@@ -30,7 +30,7 @@ const MapAndAddress = () => {
         justifyContent="center"
       >
         {/* 🗺️ MAP SECTION */}
-        <Grid item xs={12} md={7}> {/* increased width for map */}
+       <Grid size={{ xs: 12, md: 7 }}>{/* increased width for map */}
           <Typography
                       variant="h5"
                       sx={{
@@ -61,7 +61,7 @@ const MapAndAddress = () => {
         </Grid>
 
         {/* 📍 ADDRESS SECTION */}
-        <Grid item xs={12} md={5}>
+       <Grid size={{ xs: 12, md: 5 }}>
           <Stack
             spacing={1.2}
             alignItems={{ xs: "center", md: "flex-start" }}

@@ -48,7 +48,7 @@ const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) =>
 
       <Grid container spacing={3} sx={{ minWidth: 750 }}>
         {fields.map((field) => (
-          <Grid item xs={12} sm={field.fullWidth ? 12 : 6} key={field.name}>
+         <Grid key={field.name} size={{ xs: 12, sm: field.fullWidth ? 12 : 6 }}>
             {/* --- SELECT FIELD --- */}
             {field.type === "select" ? (
               <TextField

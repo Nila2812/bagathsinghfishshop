@@ -95,8 +95,7 @@ useEffect(() => {
       <DialogTitle>Edit Product</DialogTitle>
       <DialogContent>
         <Grid container spacing={2} sx={{ mt: 1 }}>
-          <Grid item xs={6}>
-            <TextField
+          <Grid size={6}>            <TextField
               label="Name (EN)"
               name="name_en"
               value={form.name_en}
@@ -104,8 +103,7 @@ useEffect(() => {
               fullWidth
             />
           </Grid>
-          <Grid item xs={6}>
-            <TextField
+          <Grid size={6}>            <TextField
               label="Name (TA)"
               name="name_ta"
               value={form.name_ta}
@@ -113,8 +111,7 @@ useEffect(() => {
               fullWidth
             />
           </Grid>
-          <Grid item xs={6}>
-            <TextField
+          <Grid size={6}>            <TextField
               label="Price"
               name="price"
               type="number"
@@ -123,8 +120,7 @@ useEffect(() => {
               fullWidth
             />
           </Grid>
-          <Grid item xs={6}>
-            <TextField
+          <Grid size={6}>            <TextField
               label="Stock Qty"
               name="stockQty"
               type="number"
@@ -133,8 +129,7 @@ useEffect(() => {
               fullWidth
             />
           </Grid>
-          <Grid item xs={6}>
-            <TextField
+          <Grid size={6}>            <TextField
               label="Weight Value"
               name="weightValue"
               type="number"
@@ -143,8 +138,7 @@ useEffect(() => {
               fullWidth
             />
           </Grid>
-          <Grid item xs={6}>
-           <FormControl fullWidth>
+          <Grid size={6}>           <FormControl fullWidth>
   <InputLabel id="weight-unit-label">Weight Unit</InputLabel>
   <Select
     labelId="weight-unit-label"
@@ -162,8 +156,7 @@ useEffect(() => {
 
           </Grid>
           
-          <Grid item xs={6}>
-  <FormControl fullWidth>
+          <Grid size={6}>  <FormControl fullWidth>
   <InputLabel id="category-label">Category</InputLabel>
   <Select
     labelId="category-label"
@@ -185,7 +178,7 @@ useEffect(() => {
 </Grid>
 
 {form.image?.data && (
-  <Grid item xs={12}>
+  <Grid size={12}>
     <InputLabel>Current Image</InputLabel>
     <img
       src={`data:${form.image.contentType};base64,${form.image.data}`}
@@ -195,7 +188,7 @@ useEffect(() => {
   </Grid>
 )}
 
-          <Grid item xs={12}>
+          <Grid size={12}>
             <InputLabel>Upload New Image</InputLabel>
             <input type="file" accept="image/*" onChange={handleImageChange} />
           </Grid>
