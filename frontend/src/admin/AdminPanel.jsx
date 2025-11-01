@@ -1,11 +1,13 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { Grid, Card, CardContent, Typography, CircularProgress } from "@mui/material";
+import axios from "axios";
+
 import { Routes, Route } from "react-router-dom";
 import {
   Box,
   CssBaseline,
   Toolbar,
   AppBar,
-  Typography,
   Drawer,
 } from "@mui/material";
 
@@ -21,23 +23,83 @@ import ViewOffers from "./pages/ViewOffers";
 import ViewCustomers from "./pages/ViewCustomers";
 import ViewOrders from "./pages/ViewOrders";
 import ViewAdmins from "./pages/ViewAdmins";
+import LowStockTable from "./components/LowStockTable";
+import OrderStatusSummary from "./components/OrderStatusSummary";
+import SystemHealthCard from "./components/SystemHealthCard";
 
 const drawerWidth = 240;
 
-const Dashboard = () => (
-  <Box
-    sx={{
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      height: "80vh",
-      fontSize: "1.5rem",
-      fontWeight: 600,
-    }}
-  >
-    Welcome to Admin Panel
-  </Box>
-);
+const Dashboard = () => {
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    axios.get("http://localhost:5000/api/dashboard/stats")
+      .then((res) => setStats(res.data))
+      .catch((err) => console.error("Stats fetch error:", err));
+  }, []);
+
+  return (
+    <>
+      <Typography
+        variant="h5"
+        sx={{
+          textAlign: "center",
+          fontWeight: "bold",
+          mb: 4,
+        }}
+      >
+        Welcome to Admin Panel
+      </Typography>
+
+      {!stats ? (
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <Grid container spacing={2}>
+          {[
+            { key: "products", label: "Total Products", icon: "🐟" },
+            { key: "offers", label: "Total Offers", icon: "🎁" },
+            { key: "categories", label: "Total Categories", icon: "📂" },
+            { key: "customers", label: "Total Customers", icon: "👥" },
+            { key: "orders", label: "Total Orders", icon: "📦" },
+          ].map(({ key, label, icon }) => (
+            <Grid item xs={12} sm={6} md={3} key={key}>
+              <Card sx={{ bgcolor: "#fff", boxShadow: 2 }}>
+                <CardContent>
+                  <Typography variant="h6">{icon} {label}</Typography>
+                  <Typography variant="h4" sx={{ mt: 1 }}>{stats[key]}</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      )}
+      <Grid container spacing={2} sx={{ mt: 2 }}>
+  <Grid item xs={12}>
+    <LowStockTable />
+  </Grid>
+
+  <Grid container spacing={2} sx={{ mt: 2 }}>
+  <Grid item xs={12}>
+    <OrderStatusSummary />
+  </Grid>
+</Grid>
+
+
+<Grid container spacing={2} sx={{ mt: 2 }}>
+  <Grid item xs={12} sm={6} md={4}>
+    <SystemHealthCard />
+  </Grid>
+</Grid>
+
+
+</Grid>
+    </>
+  );
+};
+
+
 
 const AdminPanel = () => {
   const handleLogout = () => {
