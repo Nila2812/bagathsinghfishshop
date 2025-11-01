@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
 import DataTable from "../components/DataTable";
-import { Box } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 // import axios from "axios"; // Uncomment when backend is ready
 
 const ViewCustomers = () => {
   const [customers, setCustomers] = useState([]);
 
-  // Define table columns based on your schema
   const columns = [
     { field: "id", headerName: "ID", width: 100 },
     { field: "name", headerName: "Name", width: 180 },
@@ -40,7 +39,7 @@ const ViewCustomers = () => {
     },
   ];
 
-  // Dummy data (replace with backend API data later)
+  // Temporary dummy data (replace later with backend data)
   const sampleData = [
     {
       id: "1",
@@ -61,30 +60,49 @@ const ViewCustomers = () => {
   ];
 
   useEffect(() => {
-    // Future backend connection:
+    // Future backend integration:
     // axios.get("/api/users").then(res => setCustomers(res.data));
     setCustomers(sampleData);
   }, []);
 
   const handleEdit = (id) => {
     console.log("Edit clicked for Customer ID:", id);
-    // Future: enable edit mode (name/address editable inline)
   };
 
   const handleDelete = (id) => {
     console.log("Delete clicked for Customer ID:", id);
-    // Future: axios.delete(`/api/users/${id}`).then(() => refresh list)
   };
 
   return (
-    <Box sx={{p: 3 }}>
-      <DataTable
-        title="Customers"
-        columns={columns}
-        rows={customers}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
+    <Box sx={{ p: 3 }}>
+      <Box
+        sx={{
+          bgcolor: "white",
+          borderRadius: 2,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          p: 3,
+        }}
+      >
+        <Typography
+          variant="h5"
+          sx={{
+            mb: 2,
+            textAlign: "center",
+            fontWeight: 700,
+            textTransform: "capitalize",
+          }}
+        >
+          All Customers
+        </Typography>
+
+        <DataTable
+          title=""
+          columns={columns}
+          rows={customers}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+      </Box>
     </Box>
   );
 };

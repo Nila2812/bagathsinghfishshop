@@ -1,31 +1,15 @@
 import React from "react";
-import {
-  Box,
-  IconButton,
-  Typography,
-  Tooltip,
-} from "@mui/material";
+import { Box, IconButton, Typography, Tooltip } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 
-/**
- * DataTable Component
- * -------------------
- * Props:
- *  - columns: array of column definitions (for MUI DataGrid)
- *  - rows: array of data objects
- *  - onEdit: function(id) => handle edit action
- *  - onDelete: function(id) => handle delete action
- */
-
 const DataTable = ({ columns = [], rows = [], onEdit, onDelete, title }) => {
-  // Add Edit/Delete Action column dynamically
   const actionColumn = {
     field: "actions",
     headerName: "Actions",
     width: 150,
-    sortable: true,
+    sortable: false,
     renderCell: (params) => (
       <Box>
         <Tooltip title="Edit">
@@ -39,17 +23,16 @@ const DataTable = ({ columns = [], rows = [], onEdit, onDelete, title }) => {
         </Tooltip>
         <Tooltip title="Delete">
           <IconButton
-  size="small"
-  color="error"
-  onClick={() => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      onDelete && onDelete(params.row._id);
-    }
-  }}
->
-  <DeleteIcon />
-</IconButton>
-
+            size="small"
+            color="error"
+            onClick={() => {
+              if (window.confirm("Are you sure you want to delete this item?")) {
+                onDelete && onDelete(params.row._id);
+              }
+            }}
+          >
+            <DeleteIcon />
+          </IconButton>
         </Tooltip>
       </Box>
     ),
@@ -60,72 +43,57 @@ const DataTable = ({ columns = [], rows = [], onEdit, onDelete, title }) => {
   return (
     <Box
       sx={{
-        height: "85vh",
-        width: "auto",
-        ml: "5%",
-        mr: "3%",
+        width: "100%",
+        height: "100%",
         bgcolor: "white",
         borderRadius: 2,
         boxShadow: 3,
-        overflow: "hidden",
         display: "flex",
         flexDirection: "column",
+        overflow: "hidden",
       }}
     >
       {title && (
         <Typography
-          variant="h6"
+          variant="h5"
           sx={{
-            mb: 2,
-            mt: 2,
+            
             textAlign: "center",
-            fontWeight: 700,
-            color: "black",
+            fontWeight: 600,
+            color: "#333",
+            textTransform: "camelcase" ,
+            py: 2,
+            borderBottom: "1px solid #ddd",
           }}
         >
           {title}
         </Typography>
       )}
 
-      <Box sx={{ flex: 1, overflowX: "auto", overflowY: "auto",  m:3 }}>
+      {/* Scroll only table rows */}
+      <Box sx={{ flex: 1, overflowY: "auto", px: 2, py: 1 }}>
         <DataGrid
           rows={rows}
           columns={mergedColumns}
           pageSize={10}
           rowsPerPageOptions={[5, 10, 20]}
           disableSelectionOnClick
-          autoHeight={false}
-          
           sx={{
-            border: "1px solid #ccc",
+            border: "none",
             "& .MuiDataGrid-columnHeaders": {
-              backgroundColor: "white",
-              color: "black",
-              fontWeight: "bold",
+              backgroundColor: "#fafafa",
               borderBottom: "2px solid #ccc",
+              fontWeight: "bold",
             },
-            
             "& .MuiDataGrid-cell": {
-              borderRight: "1px solid #ccc",
-              color: "black",
-              backgroundColor: "white",
-            },
-            "& .MuiDataGrid-row": {
-              borderBottom: "1px solid #ccc",
+              borderBottom: "1px solid #eee",
             },
             "& .MuiDataGrid-footerContainer": {
               borderTop: "2px solid #ccc",
-              backgroundColor: "#f5f5f5",
+              backgroundColor: "#fafafa",
               position: "sticky",
               bottom: 0,
               zIndex: 2,
-            },
-            
-            "& .MuiDataGrid-virtualScroller": {
-              overflowY: "auto",
-            },
-            "& .MuiDataGrid-row:hover": {
-              backgroundColor: "#f0f0f0",
             },
           }}
         />

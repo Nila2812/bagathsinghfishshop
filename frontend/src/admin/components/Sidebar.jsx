@@ -26,7 +26,7 @@ const Sidebar = () => {
   return (
     <Box
       sx={{
-        width: "20%",
+        width: "240px",
         height: "100vh",
         bgcolor: "black",
         color: "white",
@@ -52,6 +52,32 @@ const Sidebar = () => {
       >
         Admin Panel
       </Typography>
+
+      {/* ✅ Dashboard Button */}
+      <NavLink
+        to="/admin"
+        style={({ isActive }) => ({
+          ...linkStyle,
+          borderRadius: "4px",
+        })}
+      >
+        {({ isActive }) => (
+          <Button
+            fullWidth
+            variant={isActive ? "contained" : "outlined"}
+            sx={{
+              bgcolor: isActive ? "#d21414ff" : "transparent",
+              color: "white",
+              borderColor: "gray",
+              "&:hover": { borderColor: "#1976d2", color: "#1976d2" },
+            }}
+          >
+            Dashboard
+          </Button>
+        )}
+      </NavLink>
+
+      <Divider sx={{ bgcolor: "gray", my: 2 }} />
 
       {/* ADD SECTION */}
       {addButtons.map((btn) => (

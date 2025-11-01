@@ -5,8 +5,8 @@ import connectDB from "./config/db.js";
 import productRoutes from './routes/productRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import offerRoutes from './routes/offerRoutes.js';
-
-
+import dashboardRoutes from "./routes/dashboardroutes.js";
+import systemRoutes from "./routes/systemroutes.js";
 
 // Load environment variables
 dotenv.config();
@@ -29,7 +29,8 @@ app.use('/api/products', productRoutes);
 app.use('/api/category', categoryRoutes);
 app.use('/api/offers', offerRoutes);
 app.use("/api/products", productRoutes);
-
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/system", systemRoutes);
 
 // Basic test route
 app.get('/', (req, res) => {
