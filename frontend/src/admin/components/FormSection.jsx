@@ -8,7 +8,6 @@ import {
   Grid,
   FormControlLabel,
   Checkbox,
-  InputAdornment,
 } from "@mui/material";
 
 const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) => {
@@ -65,7 +64,6 @@ const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) =>
             {/* --- SELECT FIELD (FIXED LABEL-ID) --- */}
             {field.type === "select" ? (
               <TextField
-                id={field.name}
                 select
                 fullWidth
                 id={`${field.name}-select`} // unique id
@@ -103,6 +101,7 @@ const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) =>
               <TextField
                 id={field.name}
                 fullWidth
+                type="date"
                 label={
                   <>
                     {field.label}
@@ -110,19 +109,16 @@ const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) =>
                   </>
                 }
                 name={field.name}
-                type={field.type || "text"}
                 value={values[field.name] || ""}
                 onChange={onChange}
                 error={!!errors[field.name]}
                 helperText={errors[field.name]}
                 slotProps={{
-                  inputLabel: { shrink: true },
+                  inputLabel: {
+                    shrink: true,
+                  },
                   input: {
-                    endAdornment: field.endAdornment ? (
-                      <InputAdornment position="end">
-                        {field.endAdornment}
-                      </InputAdornment>
-                    ) : null,
+                    readOnly: field.readOnly || false,
                   },
                 }}
               />
@@ -181,14 +177,11 @@ const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) =>
                 error={!!errors[field.name]}
                 helperText={errors[field.name]}
                 slotProps={{
-                  inputLabel: { shrink: true },
+                  inputLabel: {
+                    shrink: true,
+                  },
                   input: {
                     readOnly: field.readOnly || false,
-                    endAdornment: field.endAdornment ? (
-                      <InputAdornment position="end">
-                        {field.endAdornment}
-                      </InputAdornment>
-                    ) : null,
                   },
                 }}
               />
