@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import DataTable from "../components/DataTable";
 import axios from "axios";
 import { Box, Typography } from "@mui/material"; // ✅ Added Typography import
-import axios from "axios"; 
 
 const ViewAdmins = () => {
   const [admins, setAdmins] = useState([]);
