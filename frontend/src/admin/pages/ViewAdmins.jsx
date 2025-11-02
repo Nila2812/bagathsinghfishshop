@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from "react";
 import DataTable from "../components/DataTable";
+import axios from "axios";
 import { Box, Typography } from "@mui/material"; // ✅ Added Typography import
-// import axios from "axios"; // Uncomment later for backend connection
+import axios from "axios"; 
 
 const ViewAdmins = () => {
   const [admins, setAdmins] = useState([]);
 
-  // Table columns (only visible fields for admin view)
   const columns = [
     { field: "id", headerName: "ID", width: 100 },
     { field: "username", headerName: "Username", width: 180 },
     { field: "password", headerName: "Password", width: 180 },
     { field: "shopName", headerName: "Shop Name", width: 200 },
     { field: "address", headerName: "Address", width: 250 },
+    { field: "phone", headerName: "Phone", width: 150 },
+    { field: "whatsappNumber", headerName: "WhatsApp", width: 150 },
     {
       field: "mapLink",
       headerName: "Map Link",
@@ -28,8 +30,6 @@ const ViewAdmins = () => {
         </a>
       ),
     },
-    { field: "phone", headerName: "Phone Number", width: 150 },
-    { field: "whatsappNumber", headerName: "WhatsApp Number", width: 160 },
     {
       field: "createdAt",
       headerName: "Created At",
@@ -39,58 +39,42 @@ const ViewAdmins = () => {
     },
   ];
 
-  // Sample admin data
-  const sampleAdmins = [
-    {
-      id: "1",
-      username: "admin_main",
-      password: "********",
-      shopName: "Bagath Singh Fish Shop",
-      address: "12, Marina Street, Chennai",
-      mapLink: "https://maps.google.com/?q=13.0827,80.2707",
-      phone: "9876543210",
-      whatsappNumber: "9876543210",
-      createdAt: "2025-08-10T12:00:00Z",
-    },
-    {
-      id: "2",
-      username: "admin2",
-      password: "********",
-      shopName: "Fresh Catch Store",
-      address: "22, Lake View Road, Madurai",
-      mapLink: "https://maps.google.com/?q=9.9252,78.1198",
-      phone: "9123456789",
-      whatsappNumber: "9123456789",
-      createdAt: "2025-09-02T09:30:00Z",
-    },
-    {
-      id: "3",
-      username: "admin_backup",
-      password: "********",
-      shopName: "Coastal Fish Point",
-      address: "MG Road, Coimbatore",
-      mapLink: "https://maps.google.com/?q=11.0168,76.9558",
-      phone: "9000011122",
-      whatsappNumber: "9000011122",
-      createdAt: "2025-10-01T11:45:00Z",
-    },
-  ];
-
   useEffect(() => {
-    // Future backend call:
-    // axios.get("/api/admins").then(res => setAdmins(res.data));
-    setAdmins(sampleAdmins);
+    axios
+      .get("http://localhost:5000/api/admins")
+      .then((res) => {
+        const formatted = res.data.map((admin, index) => ({
+          id: index + 1, // Sequential ID for display
+          _id: admin._id, // Real ID for actions
+          username: admin.username,
+          password: "********", // Masked for safety
+          shopName: admin.shopName,
+          address: admin.address,
+          phone: admin.phone,
+          whatsappNumber: admin.whatsappNumber,
+          mapLink: `https://maps.google.com/?q=${admin.coordinates?.lat},${admin.coordinates?.lng}`,
+          createdAt: admin.createdAt,
+        }));
+        setAdmins(formatted);
+      })
+      .catch((err) => console.error("Admin fetch error:", err));
   }, []);
 
-  const handleEdit = (id) => {
-    console.log("Edit admin ID:", id);
+  const handleEdit = (_id) => {
+    console.log("Edit admin ID:", _id);
     // Future: Open inline edit or modal for save/cancel
   };
 
-  const handleDelete = (id) => {
-    console.log("Delete admin ID:", id);
-    // Future: axios.delete(`/api/admins/${id}`)
-  };
+  const handleDelete = async (_id) => {
+  try {
+    await axios.delete(`http://localhost:5000/api/admins/${_id}`);
+    setAdmins((prev) => prev.filter((admin) => admin._id !== _id));
+  } catch (err) {
+    console.error("Delete error:", err);
+    alert("Failed to delete admin");
+  }
+};
+
 
   return (
     <Box sx={{ p: 3 }}>

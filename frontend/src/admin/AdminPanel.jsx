@@ -30,6 +30,7 @@ import ViewOffers from "./pages/ViewOffers";
 import ViewCustomers from "./pages/ViewCustomers";
 import ViewOrders from "./pages/ViewOrders";
 import ViewAdmins from "./pages/ViewAdmins";
+import AddAdmin from "./pages/AddAdmin";
 import LowStockTable from "./components/LowStockTable";
 import OrderStatusSummary from "./components/OrderStatusSummary";
 import SystemHealthCard from "./components/SystemHealthCard";
@@ -225,6 +226,7 @@ const AdminPanel = () => {
           <Route path="add-product" element={<AddProduct />} />
           <Route path="add-category" element={<AddCategory />} />
           <Route path="add-offer" element={<AddOffer />} />
+          <Route path="add-admin" element={<AddAdmin />} />
           <Route path="view-products" element={<ViewProducts />} />
           <Route path="view-categories" element={<ViewCategories />} />
           <Route path="view-offers" element={<ViewOffers />} />
