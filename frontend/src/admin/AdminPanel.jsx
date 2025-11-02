@@ -13,6 +13,7 @@ import {
   CardContent,
   IconButton,
   Divider,
+  Typography,
   useTheme,
   useMediaQuery,
 } from "@mui/material";
