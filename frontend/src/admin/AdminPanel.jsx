@@ -6,7 +6,6 @@ import {
   CssBaseline,
   Toolbar,
   AppBar,
-  Typography,
   Drawer,
   CircularProgress,
   Grid,
@@ -31,6 +30,9 @@ import ViewOffers from "./pages/ViewOffers";
 import ViewCustomers from "./pages/ViewCustomers";
 import ViewOrders from "./pages/ViewOrders";
 import ViewAdmins from "./pages/ViewAdmins";
+import LowStockTable from "./components/LowStockTable";
+import OrderStatusSummary from "./components/OrderStatusSummary";
+import SystemHealthCard from "./components/SystemHealthCard";
 
 import LowStockTable from "./components/LowStockTable";
 import OrderStatusSummary from "./components/OrderStatusSummary";
