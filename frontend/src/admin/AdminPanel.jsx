@@ -8,8 +8,8 @@ import {
   AppBar,
   Drawer,
   CircularProgress,
-  Grid,
   Card,
+  Grid,
   CardContent,
   IconButton,
   Divider,
@@ -79,7 +79,7 @@ const Dashboard = () => {
             { key: "customers", label: "Total Customers", icon: "👥" },
             { key: "orders", label: "Total Orders", icon: "📦" },
           ].map(({ key, label, icon }) => (
-            <Grid item xs={12} sm={6} md={3} key={key}>
+             <Grid size ={{xs: 12, sm:6, md:3}} key ={key}>
               <Card sx={{ bgcolor: "#fff", boxShadow: 2, p: 2 }}>
                 <CardContent>
                   <Typography variant="h6">
@@ -97,15 +97,15 @@ const Dashboard = () => {
 
       {/* Optional Sections */}
       <Grid container spacing={2} sx={{ mt: 2 }}>
-        <Grid item xs={12}>
+      <Grid size ={{xs:12}}>
           <LowStockTable />
         </Grid>
 
-        <Grid item xs={12}>
+      <Grid size ={{xs:12}}>
           <OrderStatusSummary />
         </Grid>
 
-        <Grid item xs={12} sm={6} md={4}>
+          <Grid size ={{xs:12 , sm:6, md:4}}>
           <SystemHealthCard />
         </Grid>
       </Grid>
@@ -124,9 +124,10 @@ const AdminPanel = () => {
   };
 
   const handleLogout = () => {
-    console.log("Admin logged out");
-    // window.location.href = "/admin/login";
-  };
+  localStorage.removeItem("isAdminLoggedIn");
+  window.location.href = "/admin"; // goes back to login
+};
+
 
   const drawerContent = (
     <>
