@@ -17,11 +17,9 @@ const adminSchema = new mongoose.Schema({
   coordinates: {
     lat: Number,
     lng: Number
-  },
-  razorpayKey: String,
-  razorpaySecret: String,
-  whatsappAccessToken: String,
-  googleApiKey: String
-}, { timestamps: true });
+  }
+}, {
+  timestamps: true // ✅ keeps createdAt and updatedAt
+});
 
 export default mongoose.model('Admin', adminSchema);
