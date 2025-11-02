@@ -8,6 +8,7 @@ import {
   Grid,
   FormControlLabel,
   Checkbox,
+  InputAdornment,
 } from "@mui/material";
 
 const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) => {
@@ -48,10 +49,11 @@ const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) =>
 
       <Grid container spacing={3} sx={{ minWidth: 750 }}>
         {fields.map((field) => (
-         <Grid key={field.name} size={{ xs: 12, sm: field.fullWidth ? 12 : 6 }}>
+          <Grid key={field.name} item xs={12} sm={field.fullWidth ? 12 : 6}>
             {/* --- SELECT FIELD --- */}
             {field.type === "select" ? (
               <TextField
+                id={field.name}
                 select
                 fullWidth
                 label={
@@ -66,12 +68,10 @@ const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) =>
                 error={!!errors[field.name]}
                 helperText={errors[field.name]}
                 slotProps={{
-                  inputLabel: {
-                    shrink: true,
-                  },
+                  inputLabel: { shrink: true },
                 }}
                 disabled={field.readOnly || false}
-                sx={{minWidth: 170}}
+                sx={{ minWidth: 170 }}
               >
                 {field.options.map((option) => (
                   <MenuItem key={option.value} value={option.value}>
@@ -81,8 +81,8 @@ const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) =>
               </TextField>
             ) : field.type === "date" ? (
               <TextField
+                id={field.name}
                 fullWidth
-                type="date"
                 label={
                   <>
                     {field.label}
@@ -90,16 +90,19 @@ const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) =>
                   </>
                 }
                 name={field.name}
+                type={field.type || "text"}
                 value={values[field.name] || ""}
                 onChange={onChange}
                 error={!!errors[field.name]}
                 helperText={errors[field.name]}
                 slotProps={{
-                  inputLabel: {
-                    shrink: true,
-                  },
+                  inputLabel: { shrink: true },
                   input: {
-                    readOnly: field.readOnly || false,
+                    endAdornment: field.endAdornment ? (
+                      <InputAdornment position="end">
+                        {field.endAdornment}
+                      </InputAdornment>
+                    ) : null,
                   },
                 }}
               />
@@ -140,6 +143,7 @@ const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) =>
               </>
             ) : (
               <TextField
+                id={field.name}
                 fullWidth
                 label={
                   <>
@@ -154,11 +158,14 @@ const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) =>
                 error={!!errors[field.name]}
                 helperText={errors[field.name]}
                 slotProps={{
-                  inputLabel: {
-                    shrink: true,
-                  },
+                  inputLabel: { shrink: true },
                   input: {
                     readOnly: field.readOnly || false,
+                    endAdornment: field.endAdornment ? (
+                      <InputAdornment position="end">
+                        {field.endAdornment}
+                      </InputAdornment>
+                    ) : null,
                   },
                 }}
               />

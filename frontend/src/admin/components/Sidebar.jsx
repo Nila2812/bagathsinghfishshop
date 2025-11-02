@@ -12,6 +12,7 @@ const Sidebar = () => {
     { label: "Add Product", path: "/admin/add-product" },
     { label: "Add Category", path: "/admin/add-category" },
     { label: "Add Offer", path: "/admin/add-offer" },
+    { label: "Add Admin", path: "/admin/add-admin" },
   ];
 
   const viewButtons = [
