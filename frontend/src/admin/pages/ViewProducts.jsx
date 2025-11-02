@@ -122,24 +122,39 @@ const ViewProducts = () => {
     ...row,
     id: index + 1,
   }));
+return (
+  <Box
+    key={category}
+    sx={{
+      mb: 5,
+      p: 3,
+      bgcolor: "white",
+      borderRadius: 2,
+      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+    }}
+  >
+    <Typography
+      variant="h5"
+      sx={{
+        mb: 2,
+        textAlign: "center",
+        fontWeight: 700,
+        textTransform: "capitalize",
+      }}
+    >
+      Category: {category}
+    </Typography>
 
-  return (
-    <Box key={category} sx={{ mb: 5 }}>
-      <Typography
-        variant="h6"
-        sx={{ mb: 2, mt: 2, textAlign: "center", fontWeight: 700 }}
-      >
-        Category: {category}
-      </Typography>
-      <DataTable
-        title=""
-        columns={columns}
-        rows={numberedRows}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
-    </Box>
-  );
+    <DataTable
+      title=""
+      columns={columns}
+      rows={numberedRows}
+      onEdit={handleEdit}
+      onDelete={handleDelete}
+    />
+  </Box>
+);
+
 })}
 {editingProduct && (
   <EditProductModal

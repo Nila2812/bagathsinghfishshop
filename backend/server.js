@@ -8,10 +8,6 @@ import offerRoutes from './routes/offerRoutes.js';
 import dashboardRoutes from "./routes/dashboardroutes.js";
 import systemRoutes from "./routes/systemroutes.js";
 
-
-
-
-
 // Load environment variables
 dotenv.config();
 

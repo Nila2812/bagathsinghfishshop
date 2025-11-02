@@ -1,7 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Grid, Card, CardContent, Typography, CircularProgress } from "@mui/material";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
-
 import { Routes, Route } from "react-router-dom";
 import {
   Box,
@@ -9,7 +7,16 @@ import {
   Toolbar,
   AppBar,
   Drawer,
+  CircularProgress,
+  Grid,
+  Card,
+  CardContent,
+  IconButton,
+  Divider,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
+import MenuIcon from "@mui/icons-material/Menu";
 
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
@@ -27,15 +34,26 @@ import LowStockTable from "./components/LowStockTable";
 import OrderStatusSummary from "./components/OrderStatusSummary";
 import SystemHealthCard from "./components/SystemHealthCard";
 
+import LowStockTable from "./components/LowStockTable";
+import OrderStatusSummary from "./components/OrderStatusSummary";
+import SystemHealthCard from "./components/SystemHealthCard";
+
 const drawerWidth = 240;
 
+// ✅ Dashboard Component
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
-    axios.get("http://localhost:5000/api/dashboard/stats")
-      .then((res) => setStats(res.data))
-      .catch((err) => console.error("Stats fetch error:", err));
+    const fetchStats = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/api/dashboard/stats");
+        setStats(res.data);
+      } catch (err) {
+        console.error("Stats fetch error:", err);
+      }
+    };
+    fetchStats();
   }, []);
 
   return (
@@ -65,70 +83,97 @@ const Dashboard = () => {
             { key: "orders", label: "Total Orders", icon: "📦" },
           ].map(({ key, label, icon }) => (
             <Grid item xs={12} sm={6} md={3} key={key}>
-              <Card sx={{ bgcolor: "#fff", boxShadow: 2 }}>
+              <Card sx={{ bgcolor: "#fff", boxShadow: 2, p: 2 }}>
                 <CardContent>
-                  <Typography variant="h6">{icon} {label}</Typography>
-                  <Typography variant="h4" sx={{ mt: 1 }}>{stats[key]}</Typography>
+                  <Typography variant="h6">
+                    {icon} {label}
+                  </Typography>
+                  <Typography variant="h4" sx={{ mt: 1 }}>
+                    {stats[key]}
+                  </Typography>
                 </CardContent>
               </Card>
             </Grid>
           ))}
         </Grid>
       )}
+
+      {/* Optional Sections */}
       <Grid container spacing={2} sx={{ mt: 2 }}>
-  <Grid item xs={12}>
-    <LowStockTable />
-  </Grid>
+        <Grid item xs={12}>
+          <LowStockTable />
+        </Grid>
 
-  <Grid container spacing={2} sx={{ mt: 2 }}>
-  <Grid item xs={12}>
-    <OrderStatusSummary />
-  </Grid>
-</Grid>
+        <Grid item xs={12}>
+          <OrderStatusSummary />
+        </Grid>
 
-
-<Grid container spacing={2} sx={{ mt: 2 }}>
-  <Grid item xs={12} sm={6} md={4}>
-    <SystemHealthCard />
-  </Grid>
-</Grid>
-
-
-</Grid>
+        <Grid item xs={12} sm={6} md={4}>
+          <SystemHealthCard />
+        </Grid>
+      </Grid>
     </>
   );
 };
 
-
-
+// ✅ Main AdminPanel Component
 const AdminPanel = () => {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
+
   const handleLogout = () => {
     console.log("Admin logged out");
     // window.location.href = "/admin/login";
   };
 
+  const drawerContent = (
+    <>
+      <Toolbar />
+      <Sidebar />
+    </>
+  );
+
   return (
     <Box sx={{ display: "flex" }}>
       <CssBaseline />
 
-      {/* ✅ Navbar */}
+      {/* Navbar */}
       <AppBar
         position="fixed"
         sx={{
-          width: `calc(100% - ${drawerWidth}px)`,
-          ml: `${drawerWidth}px`,
+          width: { md: `calc(100% - ${drawerWidth}px)` },
+          ml: { md: `${drawerWidth}px` },
           backgroundColor: "#1e1e1e",
         }}
       >
         <Toolbar>
-          <Navbar onLogout={handleLogout} />
+          {/* Hamburger menu (visible only on mobile) */}
+          {isMobile && (
+            <IconButton
+              color="inherit"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{ mr: 2 }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
+
+         <Navbar onLogout={handleLogout} onMenuClick={handleDrawerToggle} />
+
         </Toolbar>
       </AppBar>
 
-      {/* ✅ Sidebar Drawer */}
+      {/* Drawer for Desktop */}
       <Drawer
         variant="permanent"
         sx={{
+          display: { xs: "none", md: "block" },
           width: drawerWidth,
           flexShrink: 0,
           "& .MuiDrawer-paper": {
@@ -138,12 +183,32 @@ const AdminPanel = () => {
             color: "#fff",
           },
         }}
+        open
       >
-        <Toolbar />
-        <Sidebar />
+        {drawerContent}
       </Drawer>
 
-      {/* ✅ Main Content Area */}
+      {/* Drawer for Mobile */}
+      <Drawer
+        variant="temporary"
+        open={mobileOpen}
+        onClose={handleDrawerToggle}
+        ModalProps={{
+          keepMounted: true,
+        }}
+        sx={{
+          display: { xs: "block", md: "none" },
+          "& .MuiDrawer-paper": {
+            width: drawerWidth,
+            backgroundColor: "#000",
+            color: "#fff",
+          },
+        }}
+      >
+        {drawerContent}
+      </Drawer>
+
+      {/* Main Content */}
       <Box
         component="main"
         sx={{

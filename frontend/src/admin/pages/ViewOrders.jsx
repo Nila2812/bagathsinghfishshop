@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
 import DataTable from "../components/DataTable";
-import { Box } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 // import axios from "axios"; // Uncomment when backend connects
 
 const ViewOrders = () => {
   const [orders, setOrders] = useState([]);
 
-  // Table columns based on your admin requirements
   const columns = [
     { field: "id", headerName: "Order ID", width: 100 },
     { field: "customerName", headerName: "Customer Name", width: 180 },
@@ -44,8 +43,41 @@ const ViewOrders = () => {
     { field: "deliveryCharge", headerName: "Delivery (₹)", width: 140 },
     { field: "grandTotal", headerName: "Grand Total (₹)", width: 150 },
     { field: "paymentMode", headerName: "Payment Mode", width: 150 },
-    { field: "paymentStatus", headerName: "Payment Status", width: 150 },
-    { field: "orderStatus", headerName: "Order Status", width: 150 },
+    {
+      field: "paymentStatus",
+      headerName: "Payment Status",
+      width: 150,
+      renderCell: (params) => (
+        <span
+          style={{
+            color: params.value === "Paid" ? "green" : "red",
+            fontWeight: 600,
+          }}
+        >
+          {params.value}
+        </span>
+      ),
+    },
+    {
+      field: "orderStatus",
+      headerName: "Order Status",
+      width: 150,
+      renderCell: (params) => (
+        <span
+          style={{
+            color:
+              params.value === "Delivered"
+                ? "green"
+                : params.value === "Pending"
+                ? "#d97706"
+                : "#1d4ed8",
+            fontWeight: 600,
+          }}
+        >
+          {params.value}
+        </span>
+      ),
+    },
     {
       field: "createdAt",
       headerName: "Order Date",
@@ -55,7 +87,7 @@ const ViewOrders = () => {
     },
   ];
 
-  // Sample order data (mock for now)
+  // 🧾 Sample Data (replace with backend data later)
   const sampleOrders = [
     {
       id: "1",
@@ -108,29 +140,49 @@ const ViewOrders = () => {
   ];
 
   useEffect(() => {
-    // Future: axios.get("/api/orders").then(res => setOrders(res.data))
+    // Future API connection:
+    // axios.get("/api/orders").then((res) => setOrders(res.data));
     setOrders(sampleOrders);
   }, []);
 
   const handleEdit = (id) => {
     console.log("Edit order ID:", id);
-    // Future enhancement: open edit modal for order status update
   };
 
   const handleDelete = (id) => {
     console.log("Delete order ID:", id);
-    // Future enhancement: axios.delete(`/api/orders/${id}`)
   };
 
   return (
-    <Box sx={{p: 3 }}>
-      <DataTable
-        title="Orders"
-        columns={columns}
-        rows={orders}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
+    <Box sx={{ p: 3 }}>
+      <Box
+        sx={{
+          bgcolor: "white",
+          borderRadius: 2,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          p: 3,
+        }}
+      >
+        <Typography
+          variant="h5"
+          sx={{
+            mb: 2,
+            textAlign: "center",
+            fontWeight: 700,
+            textTransform: "capitalize",
+          }}
+        >
+          All Orders
+        </Typography>
+
+        <DataTable
+          title=""
+          columns={columns}
+          rows={orders}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+      </Box>
     </Box>
   );
 };

@@ -9,10 +9,6 @@ import AdminPanel from "./admin/AdminPanel";
 import ProtectedRoute from "./admin/ProtectedRoute";
 import AdminLogin from "./admin/AdminLogin";
 
-
-// Import more pages here as you add them
-// import ContactPage from "./pages/ContactPage";
-
 const App = () => {
   return (
     <Routes>

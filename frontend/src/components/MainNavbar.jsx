@@ -13,6 +13,7 @@ import {
   List,
   ListItem,
   ListItemText,
+  ListItemButton,
   Divider,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
@@ -292,19 +293,20 @@ const MainNavbar = () => {
           }}
           role="presentation"
         >
-          <List>
-            <ListItem button onClick={() => navigate("/about")}>
-              <ListItemText primary="About Us" />
-            </ListItem>
-            <Divider />
-            <ListItem button onClick={() => navigate("/contact")}>
-              <ListItemText primary="Contact Us" />
-            </ListItem>
-            <Divider />
-            <ListItem button>
-              <ListItemText primary="Login / Register" />
-            </ListItem>
-          </List>
+         <List>
+  <ListItemButton onClick={() => navigate("/about")}>
+    <ListItemText primary="About Us" />
+  </ListItemButton>
+  <Divider />
+  <ListItemButton onClick={() => navigate("/contact")}>
+    <ListItemText primary="Contact Us" />
+  </ListItemButton>
+  <Divider />
+  <ListItemButton onClick={() => navigate("/login")}>
+    <ListItemText primary="Login / Register" />
+  </ListItemButton>
+</List>
+
         </Box>
       </Drawer>
 
