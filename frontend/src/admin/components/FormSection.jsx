@@ -33,42 +33,62 @@ const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) =>
   return (
     <Box
       sx={{
-        ml: "10%",
-        mr: "10%",
-        p: 3,
+        p: { xs: 2, md: 3 },
         backgroundColor: "#f9fafb",
-        minHeight: "100vh",
+        borderRadius: 2,
+        m: { xs: 2, md: 3 },
       }}
     >
       <Typography
         variant="h5"
-        sx={{ mb: 3, fontWeight: 600, color: "#333", textAlign: "center" }}
+        sx={{
+          mb: 3,
+          fontWeight: 600,
+          color: "#333",
+          textAlign: "center",
+          textTransform: "camelcase",
+        }}
       >
         {title}
       </Typography>
 
-      <Grid container spacing={3} sx={{ minWidth: 750 }}>
+      <Grid
+        container
+        spacing={3}
+        sx={{
+          minWidth: { md: 750, xs: "100%" },
+          width: "100%",
+        }}
+      >
         {fields.map((field) => (
-          <Grid key={field.name} item xs={12} sm={field.fullWidth ? 12 : 6}>
-            {/* --- SELECT FIELD --- */}
+          <Grid key={field.name} size={{ xs: 12, sm: field.fullWidth ? 12 : 6 }}>
+            {/* --- SELECT FIELD (FIXED LABEL-ID) --- */}
             {field.type === "select" ? (
               <TextField
                 id={field.name}
                 select
                 fullWidth
+                id={`${field.name}-select`} // unique id
+                name={field.name}
                 label={
                   <>
                     {field.label}
                     {field.required && <span style={{ color: "red" }}> *</span>}
                   </>
                 }
-                name={field.name}
                 value={values[field.name] || ""}
                 onChange={onChange}
                 error={!!errors[field.name]}
                 helperText={errors[field.name]}
+                SelectProps={{
+                  native: false,
+                  inputProps: { id: `${field.name}-input` }, // ensure select input gets unique id
+                }}
                 slotProps={{
-                  inputLabel: { shrink: true },
+                  inputLabel: {
+                    htmlFor: `${field.name}-input`, // link label to input id
+                    shrink: true,
+                  },
                 }}
                 disabled={field.readOnly || false}
                 sx={{ minWidth: 170 }}
@@ -110,6 +130,7 @@ const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) =>
               <FormControlLabel
                 control={
                   <Checkbox
+                    id={field.name}
                     name={field.name}
                     checked={Boolean(values[field.name])}
                     onChange={(e) => onChange(e, "checkbox")}
@@ -125,10 +146,12 @@ const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) =>
                   component="label"
                   fullWidth
                   sx={{ textAlign: "left" }}
+                  htmlFor={field.name}
                 >
                   {field.label}
                   {field.required && <span style={{ color: "red" }}> *</span>}
                   <input
+                    id={field.name}
                     type="file"
                     name={field.name}
                     hidden

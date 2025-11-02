@@ -22,7 +22,7 @@ const OrderStatusSummary = () => {
   return (
     <Grid container spacing={2}>
       {statusLabels.map(({ key, label, color }) => (
-        <Grid item xs={12} sm={4} key={key}>
+        <Grid size={{ xs: 12, sm: 4 }} key={key}>
           <Card sx={{ bgcolor: "#fff", boxShadow: 2 }}>
             <CardContent>
               <Typography variant="h6" sx={{ color }}>{label}</Typography>

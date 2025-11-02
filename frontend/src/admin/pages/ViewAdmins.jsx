@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import DataTable from "../components/DataTable";
-import { Box } from "@mui/material";
 import axios from "axios";
+import { Box, Typography } from "@mui/material"; // ✅ Added Typography import
+import axios from "axios"; 
 
 const ViewAdmins = () => {
   const [admins, setAdmins] = useState([]);
@@ -77,13 +78,34 @@ const ViewAdmins = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      <DataTable
-        title="Admin Details"
-        columns={columns}
-        rows={admins}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
+      <Box
+        sx={{
+          bgcolor: "white",
+          borderRadius: 2,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          p: 3,
+        }}
+      >
+        <Typography
+          variant="h5"
+          sx={{
+            mb: 2,
+            textAlign: "center",
+            fontWeight: 700,
+            textTransform: "capitalize",
+          }}
+        >
+          Admin Details
+        </Typography>
+
+        <DataTable
+          title=""
+          columns={columns}
+          rows={admins}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+      </Box>
     </Box>
   );
 };
