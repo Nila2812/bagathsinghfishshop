@@ -35,11 +35,6 @@ import AddAdmin from "./pages/AddAdmin";
 import LowStockTable from "./components/LowStockTable";
 import OrderStatusSummary from "./components/OrderStatusSummary";
 import SystemHealthCard from "./components/SystemHealthCard";
-
-import LowStockTable from "./components/LowStockTable";
-import OrderStatusSummary from "./components/OrderStatusSummary";
-import SystemHealthCard from "./components/SystemHealthCard";
-
 const drawerWidth = 240;
 
 // ✅ Dashboard Component
