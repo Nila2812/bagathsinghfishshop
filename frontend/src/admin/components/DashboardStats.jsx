@@ -24,7 +24,7 @@ const DashboardStats = () => {
   return (
     <Grid container spacing={2}>
       {statLabels.map(({ key, label, icon }) => (
-        <Grid item xs={12} sm={6} md={3} key={key}>
+          <Grid size ={{xs:12, sm:6, md:3}} key ={key}>
           <Card sx={{ bgcolor: "#fff", boxShadow: 2 }}>
             <CardContent>
               <Typography variant="h6">{icon} {label}</Typography>

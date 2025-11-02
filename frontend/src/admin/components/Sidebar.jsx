@@ -9,18 +9,18 @@ const Sidebar = () => {
   };
 
   const addButtons = [
-    { label: "Add Product", path: "/admin/add-product" },
-    { label: "Add Category", path: "/admin/add-category" },
-    { label: "Add Offer", path: "/admin/add-offer" },
+    { label: "Add Product", path: "/admin/dashboard/add-product" },
+    { label: "Add Category", path: "/admin/dashboard/add-category" },
+    { label: "Add Offer", path: "/admin/dashboard/add-offer" },
   ];
 
   const viewButtons = [
-    { label: "View Products", path: "/admin/view-products" },
-    { label: "View Categories", path: "/admin/view-categories" },
-    { label: "View Offers", path: "/admin/view-offers" },
-    { label: "View Customers", path: "/admin/view-customers" },
-    { label: "View Orders", path: "/admin/view-orders" },
-    { label: "View Admin Details", path: "/admin/view-admins" },
+    { label: "View Products", path: "/admin/dashboard/view-products" },
+    { label: "View Categories", path: "/admin/dashboard/view-categories" },
+    { label: "View Offers", path: "/admin/dashboard/view-offers" },
+    { label: "View Customers", path: "/admin/dashboard/view-customers" },
+    { label: "View Orders", path: "/admin/dashboard/view-orders" },
+    { label: "View Admin Details", path: "/admin/dashboard/view-admins" },
   ];
 
   return (

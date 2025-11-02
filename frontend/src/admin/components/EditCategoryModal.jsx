@@ -87,7 +87,7 @@ useEffect(() => {
       <DialogTitle>Edit Category</DialogTitle>
       <DialogContent>
         <Grid container spacing={2} sx={{ mt: 1 }}>
-          <Grid item xs={6}>
+         <Grid size ={{xs:6}}>
             <TextField
               label="Name (EN)"
               name="name_en"
@@ -96,7 +96,7 @@ useEffect(() => {
               fullWidth
             />
           </Grid>
-          <Grid item xs={6}>
+         <Grid size ={{xs:6}}>
             <TextField
               label="Name (TA)"
               name="name_ta"
@@ -105,7 +105,7 @@ useEffect(() => {
               fullWidth
             />
           </Grid>
-          <Grid item xs={6}>
+         <Grid size ={{xs:6}}>
             <TextField
               label="Description (EN)"
               name="description_en"
@@ -114,7 +114,7 @@ useEffect(() => {
               fullWidth
             />
           </Grid>
-          <Grid item xs={6}>
+         <Grid size ={{xs:6}}>
             <TextField
               label="Description (TA)"
               name="description_ta"
@@ -123,7 +123,7 @@ useEffect(() => {
               fullWidth
             />
           </Grid>
-          <Grid item xs={12}>
+        <Grid size ={{xs:12}}>
             <FormControl fullWidth>
               <InputLabel id="parent-label">Main Category</InputLabel>
               
@@ -147,7 +147,7 @@ useEffect(() => {
 
           {/* ✅ Show current image */}
           {form.image?.data && (
-            <Grid item xs={12}>
+          <Grid size ={{xs:12}}>
               <Typography variant="subtitle2" sx={{ mb: 1 }}>Current Image:</Typography>
               <img
                 src={`data:${form.image.contentType};base64,${form.image.data}`}
@@ -158,7 +158,7 @@ useEffect(() => {
           )}
 
           {/* ✅ Upload new image */}
-          <Grid item xs={12}>
+        <Grid size ={{xs:12}}>
             <InputLabel>Upload New Image</InputLabel>
             <input
               type="file"

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; // ✅ import this
 import {
   Box,
@@ -22,6 +22,7 @@ const AdminLogin = () => {
     { username: "admin", password: "admin123" },
     { username: "nila", password: "fishshop@2025" },
   ];
+ 
 
   const handleChange = (e) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
@@ -40,11 +41,12 @@ const AdminLogin = () => {
       localStorage.setItem("isAdminLoggedIn", "true");
       setTimeout(() => {
         navigate("/admin/dashboard"); // ✅ go to AdminPanel
-      }, 800);
+      }, 500);
     } else {
       setLoginStatus("error");
     }
   };
+
 
   return (
     <Box
