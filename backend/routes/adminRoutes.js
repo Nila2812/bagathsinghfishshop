@@ -1,6 +1,7 @@
 import express from "express";
 import Admin from "../models/Admin.js";
 import bcrypt from "bcrypt";
+import { loginAdmin } from "../controllers/adminController.js";
 
 const router = express.Router();
 
@@ -39,6 +40,6 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-
+router.post("/login", loginAdmin);
 
 export default router;
