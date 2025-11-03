@@ -8,6 +8,7 @@ import {
   Grid,
   FormControlLabel,
   Checkbox,
+  InputAdornment,
 } from "@mui/material";
 
 const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) => {
@@ -61,12 +62,12 @@ const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) =>
       >
         {fields.map((field) => (
           <Grid key={field.name} size={{ xs: 12, sm: field.fullWidth ? 12 : 6 }}>
-            {/* --- SELECT FIELD (FIXED LABEL-ID) --- */}
+            {/* --- SELECT FIELD --- */}
             {field.type === "select" ? (
               <TextField
                 select
                 fullWidth
-                id={`${field.name}-select`} // unique id
+                id={`${field.name}-select`}
                 name={field.name}
                 label={
                   <>
@@ -80,11 +81,11 @@ const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) =>
                 helperText={errors[field.name]}
                 SelectProps={{
                   native: false,
-                  inputProps: { id: `${field.name}-input` }, // ensure select input gets unique id
+                  inputProps: { id: `${field.name}-input` },
                 }}
                 slotProps={{
                   inputLabel: {
-                    htmlFor: `${field.name}-input`, // link label to input id
+                    htmlFor: `${field.name}-input`,
                     shrink: true,
                   },
                 }}
@@ -161,6 +162,7 @@ const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) =>
                 )}
               </>
             ) : (
+              // ✅ FIXED TEXTFIELD (eye icon restored)
               <TextField
                 id={field.name}
                 fullWidth
@@ -182,6 +184,11 @@ const FormSection = ({ title, fields, values, onChange, onSubmit, onCancel }) =>
                   },
                   input: {
                     readOnly: field.readOnly || false,
+                    endAdornment: field.endAdornment ? (
+                      <InputAdornment position="end">
+                        {field.endAdornment}
+                      </InputAdornment>
+                    ) : null,
                   },
                 }}
               />
