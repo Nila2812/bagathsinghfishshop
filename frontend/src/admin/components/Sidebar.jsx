@@ -56,7 +56,7 @@ const Sidebar = () => {
 
       {/* ✅ Dashboard Button */}
       <NavLink
-        to="/admin"
+        to="/admin/dashboard"
         style={({ isActive }) => ({
           ...linkStyle,
           borderRadius: "4px",
