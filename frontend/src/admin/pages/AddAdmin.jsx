@@ -203,5 +203,4 @@ if (errorFields.length > 0) {
 );
 
 };
-
 export default AddAdmin;
