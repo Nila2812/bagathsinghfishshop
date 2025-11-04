@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
   CssBaseline,
@@ -12,7 +12,6 @@ import {
   Grid,
   CardContent,
   IconButton,
-  Divider,
   Typography,
   useTheme,
   useMediaQuery,
@@ -35,6 +34,7 @@ import AddAdmin from "./pages/AddAdmin";
 import LowStockTable from "./components/LowStockTable";
 import OrderStatusSummary from "./components/OrderStatusSummary";
 import SystemHealthCard from "./components/SystemHealthCard";
+
 const drawerWidth = 240;
 
 // ✅ Dashboard Component
@@ -55,14 +55,7 @@ const Dashboard = () => {
 
   return (
     <>
-      <Typography
-        variant="h5"
-        sx={{
-          textAlign: "center",
-          fontWeight: "bold",
-          mb: 4,
-        }}
-      >
+      <Typography variant="h5" sx={{ textAlign: "center", fontWeight: "bold", mb: 4 }}>
         Welcome to Admin Panel
       </Typography>
 
@@ -79,7 +72,7 @@ const Dashboard = () => {
             { key: "customers", label: "Total Customers", icon: "👥" },
             { key: "orders", label: "Total Orders", icon: "📦" },
           ].map(({ key, label, icon }) => (
-             <Grid size ={{xs: 12, sm:6, md:3}} key ={key}>
+            <Grid item xs={12} sm={6} md={3} key={key}>
               <Card sx={{ bgcolor: "#fff", boxShadow: 2, p: 2 }}>
                 <CardContent>
                   <Typography variant="h6">
@@ -95,17 +88,14 @@ const Dashboard = () => {
         </Grid>
       )}
 
-      {/* Optional Sections */}
       <Grid container spacing={2} sx={{ mt: 2 }}>
-      <Grid size ={{xs:12}}>
+        <Grid item xs={12}>
           <LowStockTable />
         </Grid>
-
-      <Grid size ={{xs:12}}>
+        <Grid item xs={12}>
           <OrderStatusSummary />
         </Grid>
-
-          <Grid size ={{xs:12 , sm:6, md:4}}>
+        <Grid item xs={12} sm={6} md={4}>
           <SystemHealthCard />
         </Grid>
       </Grid>
@@ -118,16 +108,37 @@ const AdminPanel = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
 
   const handleLogout = () => {
-  localStorage.removeItem("isAdminLoggedIn");
-  window.location.href = "/admin"; // goes back to login
+  sessionStorage.removeItem("isAdminLoggedIn");
+  navigate("/admin", { replace: true }); // ✅ React redirect
+  window.location.reload(); // ✅ force re-render
 };
 
+
+  // ✅ Auto logout on tab close or route change
+  useEffect(() => {
+    const handleUnload = () => {
+      sessionStorage.removeItem("isAdminLoggedIn");
+    };
+
+    window.addEventListener("beforeunload", handleUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleUnload);
+
+      // ✅ Clear session if navigating away from /admin/dashboard
+      if (!location.pathname.startsWith("/admin/dashboard")) {
+        sessionStorage.removeItem("isAdminLoggedIn");
+      }
+    };
+  }, [location]);
 
   const drawerContent = (
     <>
@@ -150,20 +161,12 @@ const AdminPanel = () => {
         }}
       >
         <Toolbar>
-          {/* Hamburger menu (visible only on mobile) */}
           {isMobile && (
-            <IconButton
-              color="inherit"
-              edge="start"
-              onClick={handleDrawerToggle}
-              sx={{ mr: 2 }}
-            >
+            <IconButton color="inherit" edge="start" onClick={handleDrawerToggle} sx={{ mr: 2 }}>
               <MenuIcon />
             </IconButton>
           )}
-
-         <Navbar onLogout={handleLogout} onMenuClick={handleDrawerToggle} />
-
+          <Navbar onLogout={handleLogout} onMenuClick={handleDrawerToggle} />
         </Toolbar>
       </AppBar>
 
@@ -191,9 +194,7 @@ const AdminPanel = () => {
         variant="temporary"
         open={mobileOpen}
         onClose={handleDrawerToggle}
-        ModalProps={{
-          keepMounted: true,
-        }}
+        ModalProps={{ keepMounted: true }}
         sx={{
           display: { xs: "block", md: "none" },
           "& .MuiDrawer-paper": {

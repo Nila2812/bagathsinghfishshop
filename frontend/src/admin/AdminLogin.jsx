@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // ✅ import this
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   TextField,
@@ -11,41 +11,34 @@ import {
   Alert,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
+import axios from "axios";
 
 const AdminLogin = () => {
-  const navigate = useNavigate(); // ✅ for navigation
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [credentials, setCredentials] = useState({ username: "", password: "" });
   const [loginStatus, setLoginStatus] = useState(null);
-
-  const sampleAdmins = [
-    { username: "admin", password: "admin123" },
-    { username: "nila", password: "fishshop@2025" },
-  ];
- 
 
   const handleChange = (e) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const foundUser = sampleAdmins.find(
-      (user) =>
-        user.username === credentials.username &&
-        user.password === credentials.password
-    );
+  const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    if (foundUser) {
+  try {
+    const res = await axios.post("http://localhost:5000/api/admins/login", credentials);
+    if (res.status === 200) {
+      sessionStorage.setItem("isAdminLoggedIn", "true"); // ✅ set session here
       setLoginStatus("success");
-      localStorage.setItem("isAdminLoggedIn", "true");
       setTimeout(() => {
-        navigate("/admin/dashboard"); // ✅ go to AdminPanel
+        navigate("/admin/dashboard");
       }, 500);
-    } else {
-      setLoginStatus("error");
     }
-  };
+  } catch (err) {
+    setLoginStatus("error");
+  }
+};
 
 
   return (
@@ -89,10 +82,7 @@ const AdminLogin = () => {
             variant="outlined"
             value={credentials.username}
             onChange={handleChange}
-            sx={{
-              mb: 2,
-              "& .MuiOutlinedInput-root": { borderRadius: "10px" },
-            }}
+            sx={{ mb: 2, "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
             required
           />
 
@@ -105,17 +95,11 @@ const AdminLogin = () => {
             value={credentials.password}
             onChange={handleChange}
             required
-            sx={{
-              mb: 3,
-              "& .MuiOutlinedInput-root": { borderRadius: "10px" },
-            }}
+            sx={{ mb: 3, "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowPassword(!showPassword)}
-                    edge="end"
-                  >
+                  <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
                     {showPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
                 </InputAdornment>
