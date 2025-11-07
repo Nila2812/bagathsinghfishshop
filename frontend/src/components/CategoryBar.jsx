@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   AppBar,
   Toolbar,
@@ -12,44 +12,64 @@ import {
   useTheme,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const CategoryBar = ({ fixed = true }) => {
-   const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-    const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
-  const [categories] = useState([
-    { name: "Sea Fish" },
-    { name: "Pond Fish" },
-    {
-      name: "Chicken",
-      subcategories: [
-        { name: "Poultry Chicken" },
-        { name: "Country Chicken" },
-      ],
-    },
-    { name: "Quail" },
-  ]);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
+  const navigate = useNavigate();
 
+  const [categories, setCategories] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
-  const [activeCategory, setActiveCategory] = useState(null);
+  const [activeCategoryId, setActiveCategoryId] = useState(null);
 
-  // --- Open dropdown on hover
-  const handleMouseEnter = (event, category) => {
-    if (category.subcategories) {
-      setAnchorEl(event.currentTarget);
-      setActiveCategory(category.name);
-    }
+  useEffect(() => {
+    axios.get("http://localhost:5000/api/category")
+      .then(res => {
+        const all = res.data;
+
+        const mainCategories = all.filter(cat => !cat.parentCategory);
+        const subCategories = all.filter(cat => !!cat.parentCategory);
+
+        const structured = mainCategories.map(main => {
+          const children = subCategories.filter(sub => {
+            const subParentId = typeof sub.parentCategory === "object"
+              ? sub.parentCategory._id
+              : sub.parentCategory;
+            return subParentId === main._id;
+          });
+
+          return {
+            _id: main._id,
+            name: main.name_en,
+            subcategories: children.map(sub => ({
+              _id: sub._id,
+              name: sub.name_en
+            }))
+          };
+        });
+
+        setCategories(structured);
+      })
+      .catch(err => {
+        console.error("Failed to fetch categories:", err);
+      });
+  }, []);
+
+  const handleMouseEnter = (event, categoryId) => {
+    setAnchorEl(event.currentTarget);
+    setActiveCategoryId(categoryId);
   };
 
-  // --- Close dropdown smoothly
   const handleMouseLeave = () => {
     setTimeout(() => {
       setAnchorEl(null);
-      setActiveCategory(null);
-    }, 200); // slight delay for smooth fade
+      setActiveCategoryId(null);
+    }, 200);
   };
 
-  // --- Capitalize each word (e.g., "sea fish" → "Sea Fish")
   const formatCategoryName = (name) =>
     name
       .toLowerCase()
@@ -59,28 +79,24 @@ const CategoryBar = ({ fixed = true }) => {
 
   return (
     <>
-      {/* === Global Font Import === */}
       <GlobalStyles
-  styles={{
-    body: {
-      fontFamily: `'Lato', 'Helvetica Neue', Helvetica, Arial, sans-serif`,
-    },
-  }}
-/>
+        styles={{
+          body: {
+            fontFamily: `'Lato', 'Helvetica Neue', Helvetica, Arial, sans-serif`,
+          },
+        }}
+      />
 
-
-      {/* === CATEGORY BAR === */}
       <AppBar
         position={fixed ? "fixed" : "static"}
         sx={{
           top: { xs: 160, md: 101 },
-          backgroundColor: "#ffff", // light cream
-          color: "#47332bff", // deep brown
+          backgroundColor: "#ffff",
+          color: "#47332bff",
           maxHeight: 50,
           borderBottom: "1px solid #ddd",
-          boxShadow: "0 3px 6px rgba(0, 0, 0, 0.2)", // bottom shadow
+          boxShadow: "0 3px 6px rgba(0, 0, 0, 0.2)",
           zIndex: 1,
-          fontFamily: `'Lato', 'Helvetica Neue', Helvetica, Arial, sans-serif`,
         }}
       >
         <Toolbar
@@ -96,14 +112,19 @@ const CategoryBar = ({ fixed = true }) => {
             "&::-webkit-scrollbar": { display: "none" },
           }}
         >
-          {categories.map((cat, index) => (
+          {categories.map((cat) => (
             <Box
-              key={index}
-              onMouseEnter={(e) => handleMouseEnter(e, cat)}
+              key={cat._id}
+              onMouseEnter={(e) => handleMouseEnter(e, cat._id)}
               onMouseLeave={handleMouseLeave}
+              onClick={() => {
+                if (!cat.subcategories?.length) {
+                  navigate(`/category/${cat._id}`);
+                }
+              }}
               sx={{
                 position: "relative",
-                cursor: "pointer",
+                cursor: cat.subcategories?.length ? "default" : "pointer",
                 display: "flex",
                 alignItems: "center",
                 fontSize: "0.95rem",
@@ -111,42 +132,39 @@ const CategoryBar = ({ fixed = true }) => {
                 color: "#4b2c20",
                 transition: "color 0.3s ease",
                 "&:hover": {
-                  color: "#b8860b", // golden hover
+                  color: "#b8860b",
                 },
                 px: 1.2,
                 py: 0.5,
                 borderRadius: "6px",
               }}
             >
-              <Typography sx={{ 
-                fontSize: isMobile ? "0.80rem" : isTablet ? "0.85rem" : "0.9rem",
-              fontWeight: 500,
-              }}>
-              {formatCategoryName(cat.name)}
+              <Typography
+                sx={{
+                  fontSize: isMobile ? "0.80rem" : isTablet ? "0.85rem" : "0.9rem",
+                  fontWeight: 500,
+                }}
+              >
+                {formatCategoryName(cat.name)}
               </Typography>
 
-              {/* Down Arrow Icon */}
-              {cat.subcategories && (
+              {cat.subcategories?.length > 0 && (
                 <ExpandMoreIcon
                   sx={{
                     fontSize: "1rem",
                     ml: 0.4,
-                    color:
-                      activeCategory === cat.name ? "#b8860b" : "#4b2c20",
+                    color: activeCategoryId === cat._id ? "#b8860b" : "#4b2c20",
                     transition: "transform 0.3s ease, color 0.3s ease",
                     transform:
-                      activeCategory === cat.name
-                        ? "rotate(180deg)"
-                        : "rotate(0deg)",
+                      activeCategoryId === cat._id ? "rotate(180deg)" : "rotate(0deg)",
                   }}
                 />
               )}
 
-              {/* === Subcategory Dropdown === */}
-              {cat.subcategories && (
+              {cat.subcategories?.length > 0 && (
                 <Menu
                   anchorEl={anchorEl}
-                  open={activeCategory === cat.name}
+                  open={activeCategoryId === cat._id}
                   onClose={handleMouseLeave}
                   TransitionComponent={Fade}
                   TransitionProps={{ timeout: 200 }}
@@ -170,10 +188,10 @@ const CategoryBar = ({ fixed = true }) => {
                     horizontal: "left",
                   }}
                 >
-                  {cat.subcategories.map((sub, subIndex) => (
+                  {cat.subcategories.map((sub) => (
                     <MenuItem
-                      key={subIndex}
-                      onClick={() => console.log(`Navigate to ${sub.name}`)}
+                      key={sub._id}
+                      onClick={() => navigate(`/category/${sub._id}`)}
                       sx={{
                         fontSize: "0.9rem",
                         color: "#4b2c20",

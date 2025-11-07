@@ -9,6 +9,7 @@ import HomePage from "./pages/HomePage";
 import AdminPanel from "./admin/AdminPanel";
 import ProtectedRoute from "./admin/ProtectedRoute";
 import AdminLogin from "./admin/AdminLogin";
+import CategoryProducts from "./pages/CategoryProducts";
 
 const App = () => {
   return (
@@ -17,6 +18,7 @@ const App = () => {
       <Route path="/" element={<HomePage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/contact" element={<ContactPage />} />
+  <Route path="/category/:id" element={<CategoryProducts />} />
 
       {/* ✅ Admin Login Page */}
       <Route path="/admin" element={<AdminLogin />} />

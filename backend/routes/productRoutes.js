@@ -2,7 +2,7 @@ import express from "express";
 import multer from "multer";
 import Product from "../models/Product.js";
 import Category from "../models/Category.js";
-
+import { getProductsByCategory } from "../controllers/productController.js";
 const router = express.Router();
 
 // Multer setup for image upload
@@ -10,6 +10,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 // Add product route
+router.get("/by-category/:id", getProductsByCategory);
 router.post("/add", upload.single("image"), async (req, res) => {
   try {
     const {
