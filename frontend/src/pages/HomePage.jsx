@@ -1,26 +1,24 @@
 import React from "react";
+import { Box } from "@mui/material";
 import Topbar from "../components/Topbar";
 import MainNavbar from "../components/MainNavbar";
-import CategoryBar from "../components/Categorybar";
+import CategoryBar from "../components/CategoryBar";
 import HomeBanner from "../components/HomeBanner";
-import { Box } from "@mui/material";
+import HomeCategorySection from "../components/HomeCategorySection";
 
 const HomePage = () => {
   return (
     <>
-      {/* Fixed sections */}
       <Topbar />
-      <MainNavbar />
-      <CategoryBar fixed={true} />
+      <MainNavbar fixed/>
+      <CategoryBar fixed />
 
-      {/* Scrollable main content */}
       <Box
         sx={{
-          mt: { xs: "220px", md: "150px" }, // enough space below fixed bars
+          mt: { xs: "210px", md: "150px" },
           px: 0,
           pb: 4,
-          minHeight: "200vh", // ensures scroll
-          position: "relative", // keeps content flow correct
+          position: "relative",
         }}
       >
         <HomeBanner
@@ -31,8 +29,7 @@ const HomePage = () => {
             discountedPrice: 600,
           }}
         />
-
-      
+          <HomeCategorySection />
       </Box>
     </>
   );
