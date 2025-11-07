@@ -10,8 +10,6 @@ import systemRoutes from "./routes/systemroutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 
 
-
-
 // Load environment variables
 dotenv.config();
 
@@ -32,7 +30,6 @@ connectDB();
 app.use('/api/products', productRoutes);
 app.use('/api/category', categoryRoutes);
 app.use('/api/offers', offerRoutes);
-app.use("/api/products", productRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/admins", adminRoutes);
 app.use("/api/system", systemRoutes);

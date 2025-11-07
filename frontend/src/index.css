@@ -1,5 +1,4 @@
 /* Global Styles */
-@import "leaflet/dist/leaflet.css";
 html, body, #root {
    overflow-x: hidden;
   overflow-y: auto;

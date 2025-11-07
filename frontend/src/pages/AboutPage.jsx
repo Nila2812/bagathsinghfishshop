@@ -1,7 +1,7 @@
 import React from "react";
 import Topbar from "../components/Topbar";
 import MainNavbar from "../components/MainNavbar";
-import CategoryBar from "../components/Categorybar";
+import CategoryBar from "../components/CategoryBar";
 import PhotoAndAddress from "../components/PhotoAndAddress";
 import WhyChooseUs from "../components/WhyChooseUs";
 import Footer from "../components/Footer";
@@ -30,7 +30,7 @@ const AboutPage = () => {
         }}
       >
         <Topbar />
-        <MainNavbar />
+        <MainNavbar fixed />
       </Box>
 
       {/* 📜 Scrollable Content */}

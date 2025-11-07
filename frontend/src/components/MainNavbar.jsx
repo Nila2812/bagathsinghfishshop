@@ -11,9 +11,8 @@ import {
   MenuItem,
   Drawer,
   List,
-  ListItem,
-  ListItemText,
   ListItemButton,
+  ListItemText,
   Divider,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
@@ -22,19 +21,20 @@ import RoomIcon from "@mui/icons-material/Room";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { useNavigate } from "react-router-dom"; // ✅ import navigation hook
+import { useNavigate } from "react-router-dom";
+import logo from "../img/logocon.jpg"; // ✅ proper import
 
-const MainNavbar = () => {
+const MainNavbar = ({ fixed = true }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [cartCount] = useState(2);
-  const [deliveryMessage, setDeliveryMessage] = useState("Deliverable");
+  const [deliveryMessage] = useState("Deliverable");
+
+  const navigate = useNavigate();
 
   const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
   const toggleDrawer = (open) => () => setDrawerOpen(open);
-
-  const navigate = useNavigate(); // ✅ initialize
 
   const mainTextColor = "#000000";
   const secondaryText = "#7d221d";
@@ -43,17 +43,17 @@ const MainNavbar = () => {
     <>
       {/* ======= DESKTOP NAVBAR ======= */}
       <AppBar
-        position="fixed"
+        position={fixed ? "fixed" : "relative"} // ✅ dynamic position
         elevation={0}
         sx={{
-          top: 40,
+          top: fixed ? 40 : "auto",
           backgroundColor: "#ffffff",
           borderBottom: "1px solid #E0E0E0",
-          borderTop: "1px solid #E0E0E0",
+          borderTop: fixed ? "1px solid #E0E0E0" : "none",
           px: { xs: 1, sm: 1 },
           py: 0.5,
           display: { xs: "none", md: "flex" },
-          boxShadow: "none",
+          boxShadow: fixed ? "none" : "0px 2px 4px rgba(0,0,0,0.05)",
           fontFamily: `'Lato', 'Helvetica Neue', Helvetica, Arial, sans-serif`,
         }}
       >
@@ -67,14 +67,14 @@ const MainNavbar = () => {
           {/* --- Logo --- */}
           <Box
             component="img"
-            src="src/img/logocon.jpg"
+            src={logo}
             alt="Logo"
             sx={{
               width: 65,
               height: 65,
               cursor: "pointer",
             }}
-            onClick={() => navigate("/")} // ✅ click logo → home
+            onClick={() => navigate("/")}
           />
 
           {/* --- Address --- */}
@@ -163,7 +163,7 @@ const MainNavbar = () => {
             <MenuItem
               onClick={() => {
                 handleMenuClose();
-                navigate("/about"); // ✅ Navigate to About Us
+                navigate("/about");
               }}
             >
               About Us
@@ -171,7 +171,7 @@ const MainNavbar = () => {
             <MenuItem
               onClick={() => {
                 handleMenuClose();
-                navigate("/contact"); // ✅ Navigate to Contact Us
+                navigate("/contact");
               }}
             >
               Contact Us
@@ -182,20 +182,19 @@ const MainNavbar = () => {
 
       {/* ======= MOBILE NAVBAR ======= */}
       <AppBar
-        position="fixed"
+        position={fixed ? "fixed" : "relative"} // ✅ also dynamic
         elevation={0}
         sx={{
-          top: 40,
+          top: fixed ? 36 : "auto",
           backgroundColor: "#ffffff",
           color: mainTextColor,
           px: 2,
           py: 1,
           display: { xs: "flex", md: "none" },
           flexDirection: "column",
-          boxShadow: "none",
+          boxShadow: fixed ? "none" : "0px 2px 4px rgba(0,0,0,0.05)",
         }}
       >
-        {/* --- First Row: Menu + Logo + Address + Cart --- */}
         <Toolbar
           sx={{
             justifyContent: "space-between",
@@ -208,20 +207,20 @@ const MainNavbar = () => {
             <MenuIcon />
           </IconButton>
 
-          {/* Logo */}
+          {/* --- Logo --- */}
           <Box
             component="img"
-            src="src/img/logocon.jpg"
+            src={logo}
             alt="Logo"
             sx={{
               width: 45,
               height: 45,
               cursor: "pointer",
             }}
-            onClick={() => navigate("/")} // ✅ logo click → home
+            onClick={() => navigate("/")}
           />
 
-          {/* Address */}
+          {/* --- Address --- */}
           <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
               <RoomIcon sx={{ fontSize: 20, color: mainTextColor }} />
@@ -293,28 +292,21 @@ const MainNavbar = () => {
           }}
           role="presentation"
         >
-         <List>
-  <ListItemButton onClick={() => navigate("/about")}>
-    <ListItemText primary="About Us" />
-  </ListItemButton>
-  <Divider />
-  <ListItemButton onClick={() => navigate("/contact")}>
-    <ListItemText primary="Contact Us" />
-  </ListItemButton>
-  <Divider />
-  <ListItemButton onClick={() => navigate("/login")}>
-    <ListItemText primary="Login / Register" />
-  </ListItemButton>
-</List>
-
+          <List>
+            <ListItemButton onClick={() => navigate("/about")}>
+              <ListItemText primary="About Us" />
+            </ListItemButton>
+            <Divider />
+            <ListItemButton onClick={() => navigate("/contact")}>
+              <ListItemText primary="Contact Us" />
+            </ListItemButton>
+            <Divider />
+            <ListItemButton onClick={() => navigate("/login")}>
+              <ListItemText primary="Login / Register" />
+            </ListItemButton>
+          </List>
         </Box>
       </Drawer>
-
-      <style>
-        {`
-          @import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;500;600;700&display=swap');
-        `}
-      </style>
     </>
   );
 };

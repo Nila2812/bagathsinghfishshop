@@ -1,7 +1,7 @@
 import React from "react";
 import Topbar from "../components/Topbar";
 import MainNavbar from "../components/MainNavbar";
-import CategoryBar from "../components/Categorybar";
+import CategoryBar from "../components/CategoryBar";
 import ContactsBox from "../components/ContactsBox";
 import MapAndAddress from "../components/MapAndAddress";
 import Footer from "../components/Footer";
@@ -30,7 +30,8 @@ const ContactPage = () => {
         }}
       >
         <Topbar />
-        <MainNavbar />
+      <MainNavbar fixed />
+
       </Box>
 
       {/* 📜 Scrollable Content */}
