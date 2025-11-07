@@ -1,7 +1,6 @@
 import React from "react";
 import Topbar from "../components/Topbar";
 import MainNavbar from "../components/MainNavbar";
-import CategoryBar from "../components/Categorybar";
 import HomeBanner from "../components/HomeBanner";
 import { Box } from "@mui/material";
 
