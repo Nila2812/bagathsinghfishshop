@@ -54,7 +54,7 @@ const MainNavbar = ({ fixed = true }) => {
           py: 0.5,
           display: { xs: "none", md: "flex" },
           boxShadow: fixed ? "none" : "0px 2px 4px rgba(0,0,0,0.05)",
-          fontFamily: `'Lato', 'Helvetica Neue', Helvetica, Arial, sans-serif`,
+           fontFamily: ` 'Montserrat', sans-serif`,
         }}
       >
         <Toolbar
@@ -115,7 +115,7 @@ const MainNavbar = ({ fixed = true }) => {
               sx={{
                 width: "100%",
                 color: secondaryText,
-                fontFamily: `'Lato', 'Helvetica Neue', Helvetica, Arial, sans-serif`,
+                 fontFamily: ` 'Montserrat', sans-serif`,
               }}
             />
           </Box>
