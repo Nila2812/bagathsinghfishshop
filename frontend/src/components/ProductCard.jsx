@@ -39,41 +39,32 @@ const ProductCard = ({ product, onAddToCart, onUpdateCart }) => {
   return (
     <Card
       sx={{
-        width: 200,
-        height: 270,
+        width: "100%",
+        maxWidth: 180, // card auto fits in grid
         borderRadius: 2,
         boxShadow: "0px 3px 10px rgba(0,0,0,0.1)",
         textAlign: "center",
-        p: 1,
+        p: 0.5,
         backgroundColor: "white",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "space-evenly",
+        justifyContent: "space-between",
         transition: "transform 0.2s ease, box-shadow 0.2s ease",
         "&:hover": {
           transform: "translateY(-4px)",
           boxShadow: "0px 6px 14px rgba(0,0,0,0.15)",
         },
-        "@media (max-width: 768px)": {
-          width: 160,
-          height: 220,
-        },
-        "@media (max-width: 480px)": {
-          width: 160,
-          height: 210,
-        },
       }}
     >
       <CardMedia
         component="img"
-        height="130"
         image={product.image}
         alt={product.name}
         sx={{
           borderRadius: 2,
           objectFit: "cover",
-          "@media (max-width: 768px)": { height: 110 },
-          "@media (max-width: 480px)": { height: 100 },
+          width: "100%",
+          height: { xs: 100, sm: 130 },
         }}
       />
 
@@ -83,15 +74,13 @@ const ProductCard = ({ product, onAddToCart, onUpdateCart }) => {
           sx={{
             fontWeight: "bold",
             color: "black",
-            wordWrap: "break-word",
-            whiteSpace: "normal",
             overflow: "hidden",
             textOverflow: "ellipsis",
             display: "-webkit-box",
             WebkitLineClamp: 2,
             WebkitBoxOrient: "vertical",
             minHeight: "2.8em",
-            fontSize: { xs: "0.75rem", sm: "0.8rem" },
+            fontSize: { xs: "0.75rem", sm: "0.85rem" },
           }}
         >
           {product.name}
@@ -114,6 +103,7 @@ const ProductCard = ({ product, onAddToCart, onUpdateCart }) => {
               backgroundColor: "#e23a3a",
               textTransform: "none",
               fontSize: "0.75rem",
+              py: 0.5,
               "&:hover": { backgroundColor: "#cc3232" },
             }}
           >

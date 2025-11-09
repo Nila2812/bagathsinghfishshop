@@ -26,7 +26,7 @@ const Footer = () => {
         px: { xs: 3, sm: 6, md: 5 },
         mt: 6,
         md:0,
-        fontFamily: `'Lato', 'Helvetica Neue', Helvetica, Arial, sans-serif`,
+         fontFamily: ` 'Montserrat', sans-serif`,
       }}
     >
       {/* === TOP FOOTER GRID === */}

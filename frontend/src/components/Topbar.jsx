@@ -29,7 +29,7 @@ const Topbar = () => {
         px: isMobile ? 1 : isTablet ? 3 : 5,
         height: isMobile ? 36 : isTablet ? 38 : 40,
         justifyContent: "center",
-        fontFamily: `'Lato', 'Helvetica Neue', Helvetica, Arial, sans-serif`,
+        fontFamily: ` 'Montserrat', sans-serif`,
       }}
     >
       <Toolbar
@@ -43,7 +43,7 @@ const Topbar = () => {
           minHeight: "auto",
           py: 0,
           gap: isMobile ? 0.5 : 1,
-          fontFamily: `'Lato', 'Helvetica Neue', Helvetica, Arial, sans-serif`,
+           fontFamily: ` 'Montserrat', sans-serif`,
         }}
       >
         {/* === Left: Phone Number === */}

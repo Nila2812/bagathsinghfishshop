@@ -4,7 +4,11 @@ import Topbar from "../components/Topbar";
 import MainNavbar from "../components/MainNavbar";
 import CategoryBar from "../components/CategoryBar";
 import HomeBanner from "../components/HomeBanner";
-import HomeCategorySection from "../components/HomeCategorySection";
+import FAQSection from "../components/FAQSection";
+import HowItWorks from "../components/HowItWorksSection";
+//import HomeCategorySection from "../components/HomeCategorySection";
+import Footer from "../components/Footer";
+import CategoryCarousel from "../components/CategoryCarousel";
 
 const HomePage = () => {
   return (
@@ -15,9 +19,8 @@ const HomePage = () => {
 
       <Box
         sx={{
-          mt: { xs: "210px", md: "150px" },
+          mt: { xs: "200px", md: "150px" },
           px: 0,
-          pb: 4,
           position: "relative",
         }}
       >
@@ -29,7 +32,11 @@ const HomePage = () => {
             discountedPrice: 600,
           }}
         />
-          <HomeCategorySection />
+          {/* <HomeCategorySection /> */}
+        <CategoryCarousel />
+        <HowItWorks />
+        <FAQSection  />
+        <Footer />
       </Box>
     </>
   );

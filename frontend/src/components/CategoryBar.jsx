@@ -82,7 +82,7 @@ const CategoryBar = ({ fixed = true }) => {
       <GlobalStyles
         styles={{
           body: {
-            fontFamily: `'Lato', 'Helvetica Neue', Helvetica, Arial, sans-serif`,
+             fontFamily: ` 'Montserrat', sans-serif`,
           },
         }}
       />
@@ -90,7 +90,7 @@ const CategoryBar = ({ fixed = true }) => {
       <AppBar
         position={fixed ? "fixed" : "static"}
         sx={{
-          top: { xs: 160, md: 101 },
+          top: { xs: 150, md: 100 },
           backgroundColor: "#ffff",
           color: "#47332bff",
           maxHeight: 50,

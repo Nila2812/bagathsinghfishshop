@@ -116,6 +116,7 @@ const HomeBanner = ({ offer }) => {
                     sx={{
                       mb: 1,
                       textTransform: "uppercase",
+                       fontFamily: ` 'Montserrat', sans-serif`,
                       fontWeight: "bold",
                       letterSpacing: 1,
                       color: "#ffeb3b",
