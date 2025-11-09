@@ -4,6 +4,8 @@ import Topbar from "../components/Topbar";
 import MainNavbar from "../components/MainNavbar";
 import CategoryBar from "../components/CategoryBar";
 import HomeBanner from "../components/HomeBanner";
+import FAQSection from "../components/FAQSection";
+import HowItWorks from "../components/HowItWorksSection";
 //import HomeCategorySection from "../components/HomeCategorySection";
 import Footer from "../components/Footer";
 import CategoryCarousel from "../components/CategoryCarousel";
@@ -32,6 +34,8 @@ const HomePage = () => {
         />
           {/* <HomeCategorySection /> */}
         <CategoryCarousel />
+        <HowItWorks />
+        <FAQSection  />
         <Footer />
       </Box>
     </>
