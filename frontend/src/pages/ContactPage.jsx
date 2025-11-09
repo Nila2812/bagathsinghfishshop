@@ -85,7 +85,6 @@ const ContactPage = () => {
               alignItems: "center",
               textAlign: "center",
               color: "#fff",
-              px: 2,
               background:
                 "linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.5))",
             }}
@@ -104,7 +103,13 @@ const ContactPage = () => {
               variant="body1"
               sx={{
                 mt: 1,
-                fontSize: { xs: "0.8rem", md: "1.1rem" },
+               fontSize: {
+                  xs: "0.65rem",   // for small screens (mobile, like iPhone SE)
+                  sm: "0.8rem",    // for slightly larger phones
+                  md: "1.1rem",    // for tablets and small laptops
+                  lg: "1.3rem",    // for desktops
+                },
+
                 maxWidth: { xs: "90%", md: "700px" },
               }}
             >
