@@ -26,34 +26,36 @@ const CategoryBar = ({ fixed = true }) => {
   const [activeCategoryId, setActiveCategoryId] = useState(null);
 
   useEffect(() => {
-    axios.get("http://localhost:5000/api/category")
-      .then(res => {
+    axios
+      .get("http://localhost:5000/api/category")
+      .then((res) => {
         const all = res.data;
 
-        const mainCategories = all.filter(cat => !cat.parentCategory);
-        const subCategories = all.filter(cat => !!cat.parentCategory);
+        const mainCategories = all.filter((cat) => !cat.parentCategory);
+        const subCategories = all.filter((cat) => !!cat.parentCategory);
 
-        const structured = mainCategories.map(main => {
-          const children = subCategories.filter(sub => {
-            const subParentId = typeof sub.parentCategory === "object"
-              ? sub.parentCategory._id
-              : sub.parentCategory;
+        const structured = mainCategories.map((main) => {
+          const children = subCategories.filter((sub) => {
+            const subParentId =
+              typeof sub.parentCategory === "object"
+                ? sub.parentCategory._id
+                : sub.parentCategory;
             return subParentId === main._id;
           });
 
           return {
             _id: main._id,
             name: main.name_en,
-            subcategories: children.map(sub => ({
+            subcategories: children.map((sub) => ({
               _id: sub._id,
-              name: sub.name_en
-            }))
+              name: sub.name_en,
+            })),
           };
         });
 
         setCategories(structured);
       })
-      .catch(err => {
+      .catch((err) => {
         console.error("Failed to fetch categories:", err);
       });
   }, []);
@@ -72,7 +74,7 @@ const CategoryBar = ({ fixed = true }) => {
 
   const formatCategoryName = (name) =>
     name
-      .toLowerCase()
+      ?.toLowerCase()
       .split(" ")
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
@@ -93,122 +95,137 @@ const CategoryBar = ({ fixed = true }) => {
           top: { xs: 150, md: 100 },
           backgroundColor: "#ffff",
           color: "#47332bff",
-          maxHeight: 50,
+          height: 50,
           borderBottom: "1px solid #ddd",
           boxShadow: "0 3px 6px rgba(0, 0, 0, 0.2)",
           zIndex: 1,
+          overflow: "hidden",
         }}
       >
         <Toolbar
           sx={{
-            justifyContent: "center",
+            display: "flex",
             alignItems: "center",
-            gap: { xs: 1.5, md: 5 },
-            overflowX: "auto",
-            whiteSpace: "nowrap",
-            px: 2,
+            justifyContent: { xs: "flex-start", sm: "center" }, // ✅ center for larger screens, start for small
+            gap: { xs: 2, sm: 3, md: 4 },
+            px: { xs: 2, sm: 3, md: 6 },
             py: 0,
+            overflowX: "auto",
+            overflowY: "hidden",
+            whiteSpace: "nowrap",
+            scrollBehavior: "smooth",
+            msOverflowStyle: "none",
             scrollbarWidth: "none",
             "&::-webkit-scrollbar": { display: "none" },
           }}
         >
-          {categories.map((cat) => (
-            <Box
-              key={cat._id}
-              onMouseEnter={(e) => handleMouseEnter(e, cat._id)}
-              onMouseLeave={handleMouseLeave}
-              onClick={() => {
-                if (!cat.subcategories?.length) {
-                  navigate(`/category/${cat._id}`);
-                }
-              }}
-              sx={{
-                position: "relative",
-                cursor: cat.subcategories?.length ? "default" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                fontSize: "0.95rem",
-                fontWeight: 600,
-                color: "#4b2c20",
-                transition: "color 0.3s ease",
-                "&:hover": {
-                  color: "#b8860b",
-                },
-                px: 1.2,
-                py: 0.5,
-                borderRadius: "6px",
-              }}
-            >
-              <Typography
+          <Box
+            sx={{
+              display: "inline-flex",
+              justifyContent: { xs: "flex-start", sm: "center" },
+              flexWrap: "nowrap",
+              gap: { xs: 2, sm: 3, md: 4 },
+              mx: "auto", // ✅ keeps center alignment even when scrollable
+            }}
+          >
+            {categories.map((cat) => (
+              <Box
+                key={cat._id}
+                onMouseEnter={(e) => handleMouseEnter(e, cat._id)}
+                onMouseLeave={handleMouseLeave}
+                onClick={() => {
+                  if (!cat.subcategories?.length) {
+                    navigate(`/category/${cat._id}`);
+                  }
+                }}
                 sx={{
-                  fontSize: isMobile ? "0.80rem" : isTablet ? "0.85rem" : "0.9rem",
-                  fontWeight: 500,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  cursor: cat.subcategories?.length ? "default" : "pointer",
+                  px: 1.2,
+                  py: 0.5,
+                  borderRadius: "6px",
+                  flexShrink: 0,
+                  color: "#4b2c20",
+                  fontWeight: 600,
+                  transition: "color 0.3s ease",
+                  "&:hover": { color: "#b8860b" },
                 }}
               >
-                {formatCategoryName(cat.name)}
-              </Typography>
-
-              {cat.subcategories?.length > 0 && (
-                <ExpandMoreIcon
+                <Typography
                   sx={{
-                    fontSize: "1rem",
-                    ml: 0.4,
-                    color: activeCategoryId === cat._id ? "#b8860b" : "#4b2c20",
-                    transition: "transform 0.3s ease, color 0.3s ease",
-                    transform:
-                      activeCategoryId === cat._id ? "rotate(180deg)" : "rotate(0deg)",
-                  }}
-                />
-              )}
-
-              {cat.subcategories?.length > 0 && (
-                <Menu
-                  anchorEl={anchorEl}
-                  open={activeCategoryId === cat._id}
-                  onClose={handleMouseLeave}
-                  TransitionComponent={Fade}
-                  TransitionProps={{ timeout: 200 }}
-                  MenuListProps={{
-                    onMouseLeave: handleMouseLeave,
-                    sx: {
-                      backgroundColor: "#fffef5",
-                      borderRadius: "8px",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                      minWidth: 160,
-                      py: 0,
-                      color: "#4b2c20",
-                    },
-                  }}
-                  anchorOrigin={{
-                    vertical: "bottom",
-                    horizontal: "left",
-                  }}
-                  transformOrigin={{
-                    vertical: "top",
-                    horizontal: "left",
+                    fontSize: isMobile ? "0.8rem" : isTablet ? "0.85rem" : "0.9rem",
+                    fontWeight: 500,
                   }}
                 >
-                  {cat.subcategories.map((sub) => (
-                    <MenuItem
-                      key={sub._id}
-                      onClick={() => navigate(`/category/${sub._id}`)}
-                      sx={{
-                        fontSize: "0.9rem",
+                  {formatCategoryName(cat.name)}
+                </Typography>
+
+                {cat.subcategories?.length > 0 && (
+                  <ExpandMoreIcon
+                    sx={{
+                      fontSize: "1rem",
+                      ml: 0.4,
+                      color:
+                        activeCategoryId === cat._id ? "#b8860b" : "#4b2c20",
+                      transition: "transform 0.3s ease, color 0.3s ease",
+                      transform:
+                        activeCategoryId === cat._id
+                          ? "rotate(180deg)"
+                          : "rotate(0deg)",
+                    }}
+                  />
+                )}
+
+                {cat.subcategories?.length > 0 && (
+                  <Menu
+                    anchorEl={anchorEl}
+                    open={activeCategoryId === cat._id}
+                    onClose={handleMouseLeave}
+                    TransitionComponent={Fade}
+                    TransitionProps={{ timeout: 200 }}
+                    MenuListProps={{
+                      onMouseLeave: handleMouseLeave,
+                      sx: {
+                        backgroundColor: "#fffef5",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                        minWidth: 160,
+                        py: 0,
                         color: "#4b2c20",
-                        transition: "background-color 0.3s, color 0.3s",
-                        "&:hover": {
-                          backgroundColor: "#fff0d2",
-                          color: "#b8860b",
-                        },
-                      }}
-                    >
-                      {formatCategoryName(sub.name)}
-                    </MenuItem>
-                  ))}
-                </Menu>
-              )}
-            </Box>
-          ))}
+                      },
+                    }}
+                    anchorOrigin={{
+                      vertical: "bottom",
+                      horizontal: "left",
+                    }}
+                    transformOrigin={{
+                      vertical: "top",
+                      horizontal: "left",
+                    }}
+                  >
+                    {cat.subcategories.map((sub) => (
+                      <MenuItem
+                        key={sub._id}
+                        onClick={() => navigate(`/category/${sub._id}`)}
+                        sx={{
+                          fontSize: "0.9rem",
+                          color: "#4b2c20",
+                          transition: "background-color 0.3s, color 0.3s",
+                          "&:hover": {
+                            backgroundColor: "#fff0d2",
+                            color: "#b8860b",
+                          },
+                        }}
+                      >
+                        {formatCategoryName(sub.name)}
+                      </MenuItem>
+                    ))}
+                  </Menu>
+                )}
+              </Box>
+            ))}
+          </Box>
         </Toolbar>
       </AppBar>
     </>

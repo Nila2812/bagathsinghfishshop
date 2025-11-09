@@ -86,7 +86,6 @@ const AboutPage = () => {
               alignItems: "center",
               textAlign: "center",
               color: "#ffffff",
-              px: 2,
               background:
                 "linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.6))",
             }}

@@ -4,14 +4,14 @@ import { Box, Typography, Button } from "@mui/material";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
-const HomeBanner = ({ offer }) => {
+const HomeBanner = () => {
   const bannerImages = [
     "src/img/Home2.png",
     "src/img/Home1.png",
-     "src/img/Home3.png",
+    "src/img/Home3.png",
     "src/img/Home4.jpg",
     "src/img/Home5.png",
-     "src/img/Home6.png",
+    "src/img/Home6.png",
   ];
 
   const sliderSettings = {
@@ -28,11 +28,12 @@ const HomeBanner = ({ offer }) => {
       <Box
         sx={{
           position: "absolute",
-          bottom: "15px",
+          bottom: "10px",
           width: "100%",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
+          zIndex: 1,
         }}
       >
         <ul style={{ margin: 0, padding: 0 }}>{dots}</ul>
@@ -55,12 +56,11 @@ const HomeBanner = ({ offer }) => {
     <Box
       sx={{
         width: "100%",
-        height: { xs: "240px", md: "420px" },
+        height: { xs: "240px", sm: "300px", md: "420px" },
         position: "relative",
         overflow: "hidden",
       }}
     >
-      {/* Custom dot styling (active + hover) */}
       <style>
         {`
           .slick-dots li {
@@ -83,14 +83,13 @@ const HomeBanner = ({ offer }) => {
           <Box
             key={index}
             sx={{
-              height: { xs: "240px", md: "420px" },
+              height: { xs: "240px", sm: "300px", md: "420px" },
               backgroundImage: `url(${image})`,
               backgroundSize: "cover",
               backgroundPosition: "center",
               position: "relative",
             }}
           >
-            {/* Overlay */}
             <Box
               sx={{
                 position: "absolute",
@@ -100,151 +99,87 @@ const HomeBanner = ({ offer }) => {
                 height: "100%",
                 backgroundColor: "rgba(0, 0, 0, 0.45)",
                 display: "flex",
+                flexDirection: "column",
                 justifyContent: "center",
                 alignItems: "center",
-                color: "white",
                 textAlign: "center",
-                flexDirection: "column",
-                px: 2,
+                px: { xs: 2, sm: 4, md: 6 },
+                zIndex: 2,
               }}
             >
-              {offer ? (
-                <>
-                  {/* Product Name */}
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      mb: 1,
-                      textTransform: "uppercase",
-                       fontFamily: ` 'Montserrat', sans-serif`,
-                      fontWeight: "bold",
-                      letterSpacing: 1,
-                      color: "#ffeb3b",
-                    }}
-                  >
-                    {offer.product}
-                  </Typography>
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: "bold",
+                  color: "#fff",
+                  textShadow: "0 2px 5px rgba(0,0,0,0.6)",
+                  fontSize: { xs: "0.9rem", sm: "1.2rem", md: "1.5rem" },
+                  maxWidth: "90%",
+                }}
+              >
+                “Fresh Meat, Juicy Chicken & Daily Catch Fish – All in One Place!”
+              </Typography>
+              <Typography
+                variant="body1"
+                sx={{
+                  color: "#fff",
+                  mt: 1,
+                  opacity: 0.9,
+                  fontStyle: "italic",
+                  fontSize: { xs: "0.75rem", sm: "0.9rem", md: "1rem" },
+                  maxWidth: "85%",
+                }}
+              >
+                Bringing the taste of freshness from our shop to your kitchen.
+              </Typography>
 
-                  {/* Offer Circle */}
-                  <Box
-                    sx={{
-                      width: 150,
-                      height: 150,
-                      borderRadius: "50%",
-                      backgroundColor: "#cc1d2e",
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      boxShadow: "0 0 15px rgba(0,0,0,0.4)",
-                      mb: 2,
-                    }}
-                  >
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        fontSize: "13px",
-                        color: "white",
-                        letterSpacing: 1,
-                      }}
-                    >
-                      ⭐SPECIAL OFFER⭐
-                    </Typography>
-                    <Typography variant="h4" sx={{ fontWeight: "bold", color: "white" }}>
-                      {offer.discount}%
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontWeight: "bold", color: "white" }}>
-                      OFF
-                    </Typography>
-                  </Box>
-
-                  {/* Price Details */}
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                    {offer.originalPrice ? (
-                      <>
-                        <Typography
-                          variant="h6"
-                          sx={{ textDecoration: "line-through", opacity: 0.8 }}
-                        >
-                          ₹{offer.originalPrice}
-                        </Typography>
-                        <Typography
-                          variant="h4"
-                          sx={{ color: "#ffeb3b", fontWeight: "bold" }}
-                        >
-                          ₹{offer.discountedPrice}
-                        </Typography>
-                      </>
-                    ) : (
-                      <Typography
-                        variant="h4"
-                        sx={{ color: "#ffeb3b", fontWeight: "bold" }}
-                      >
-                        ₹{offer.discountedPrice}
-                      </Typography>
-                    )}
-                  </Box>
-                </>
-              ) : (
-                <>
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      fontWeight: "bold",
-                      color: "#fff",
-                      textShadow: "0 2px 5px rgba(0,0,0,0.6)",
-                    }}
-                  >
-                    “Fresh Meat, Juicy Chicken & Daily Catch Fish – All in One Place!”
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      mt: 2,
-                      opacity: 0.9,
-                      fontStyle: "italic",
-                    }}
-                  >
-                    Bringing the taste of freshness from our shop to your kitchen.
-                  </Typography>
-
-                  <Box sx={{ mt: 4, display: "flex", gap: 3 }}>
-                    <Button
-                      variant="contained"
-                      sx={{
-                        backgroundColor: "#cc1d2e",
-                        color: "white",
-                        px: 4,
-                        py: 1,
-                        borderRadius: "25px",
-                        fontWeight: "bold",
-                        "&:hover": {
-                          backgroundColor: "#a81825",
-                        },
-                      }}
-                    >
-                      Explore All Products
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      sx={{
-                        borderColor: "white",
-                        color: "white",
-                        px: 4,
-                        py: 1,
-                        borderRadius: "25px",
-                        fontWeight: "bold",
-                        "&:hover": {
-                          backgroundColor: "white",
-                          color: "#cc1d2e",
-                        },
-                      }}
-                    >
-                      Contact Us
-                    </Button>
-                  </Box>
-                </>
-              )}
+              <Box
+                sx={{
+                  mt: { xs: 2, sm: 3 },
+                  display: "flex",
+                  gap: { xs: 1.5, sm: 2 },
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                }}
+              >
+                <Button
+                  variant="contained"
+                  sx={{
+                    backgroundColor: "#cc1d2e",
+                    color: "white",
+                    px: { xs: 2, sm: 3 },
+                    py: { xs: 0.5, sm: 0.8 },
+                    borderRadius: "20px",
+                    fontWeight: "bold",
+                    fontSize: { xs: "0.7rem", sm: "0.9rem" },
+                    whiteSpace: "nowrap",
+                    "&:hover": {
+                      backgroundColor: "#a81825",
+                    },
+                  }}
+                >
+                  Explore
+                </Button>
+                <Button
+                  variant="outlined"
+                  sx={{
+                    borderColor: "white",
+                    color: "white",
+                    px: { xs: 2, sm: 3 },
+                    py: { xs: 0.5, sm: 0.8 },
+                    borderRadius: "20px",
+                    fontWeight: "bold",
+                    fontSize: { xs: "0.7rem", sm: "0.9rem" },
+                    whiteSpace: "nowrap",
+                    "&:hover": {
+                      backgroundColor: "white",
+                      color: "#cc1d2e",
+                    },
+                  }}
+                >
+                  Contact
+                </Button>
+              </Box>
             </Box>
           </Box>
         ))}

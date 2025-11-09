@@ -24,7 +24,7 @@ const AddOffer = () => {
     costPrice: "",
     weightValue: "",
     weightUnit: "",
-    discountPercent: "0", // ✅ Default discount
+    discountPercent: "0",
     sellingPrice: "",
     startDate: "",
     endDate: "",
@@ -40,7 +40,6 @@ const AddOffer = () => {
       setFormData(prev => {
         const updated = { ...prev, [name]: value };
 
-        // ✅ When product is selected
         if (name === "productIds") {
           const selected = productOptions.find(p => p.value === value);
           if (selected) {
@@ -49,7 +48,6 @@ const AddOffer = () => {
             updated.weightValue = selected.weightValue;
             setSelectedProduct(selected);
 
-            // ✅ Recalculate selling price if discount already exists
             const discount = parseFloat(prev.discountPercent || "0");
             const cost = parseFloat(selected.price);
             if (!isNaN(discount) && !isNaN(cost)) {
@@ -58,7 +56,6 @@ const AddOffer = () => {
           }
         }
 
-        // ✅ When discount is changed
         if (name === "discountPercent" && selectedProduct) {
           const discount = parseFloat(value);
           const cost = parseFloat(selectedProduct.price);
@@ -79,6 +76,17 @@ const AddOffer = () => {
     }
 
     try {
+      // ✅ Step 1: Check if offer already exists for this product
+      const existingRes = await axios.get(`http://localhost:5000/api/offers/by-product/${formData.productIds}`);
+      const existingOffer = existingRes.data;
+
+      if (existingOffer && existingOffer._id) {
+        // ✅ Step 2: Delete the old offer
+        await axios.delete(`http://localhost:5000/api/offers/${existingOffer._id}`);
+        console.log("Old offer deleted:", existingOffer._id);
+      }
+
+      // ✅ Step 3: Create the new offer
       await axios.post("http://localhost:5000/api/offers/add", formData);
       alert("Offer created successfully!");
       navigate(-1);
@@ -91,13 +99,10 @@ const AddOffer = () => {
   const handleCancel = () => navigate(-1);
 
   const fields = [
-    // ✅ First 4 fields untouched
     { name: "title_en", label: "Offer Title (English)", required: true },
     { name: "title_ta", label: "Offer Title (Tamil)", required: true },
     { name: "description_en", label: "Description (English)", fullWidth: true, required: true },
     { name: "description_ta", label: "Description (Tamil)", fullWidth: true, required: true },
-
-    // ✅ Product selection and pricing flow
     {
       name: "productIds",
       label: "Select Product",
@@ -111,8 +116,6 @@ const AddOffer = () => {
     { name: "weightUnit", label: "Weight Unit", type: "text", required: true, readOnly: true },
     { name: "discountPercent", label: "Discount Percentage (%)", type: "number", required: true },
     { name: "sellingPrice", label: "Selling Price (₹)", type: "number", required: true, readOnly: true },
-
-    // ✅ Remaining fields
     { name: "startDate", label: "Start Date", type: "date" },
     { name: "endDate", label: "End Date", type: "date" },
     { name: "isActive", label: "Is Active", type: "checkbox" },

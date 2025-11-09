@@ -1,95 +1,35 @@
+// routes/offerRoutes.js
 import express from "express";
-import Offer from "../models/Offer.js";
-import Product from "../models/Product.js";
+import {
+  getProductsForOffer,
+  addOffer,
+  getAllOffers,
+  updateOffer,
+  deleteOffer,
+  getActiveOffers,
+  getOfferByProductId, 
+} from "../controllers/offerController.js";
 
 const router = express.Router();
 
 // Fetch product list with price
-router.get("/products", async (req, res) => {
-  try {
-    const products = await Product.find({}, "_id name_en price weightValue weightUnit ");
+router.get("/products", getProductsForOffer);
 
-    const formatted = products.map(p => ({
-      value: p._id,
-      label: p.name_en,
-      price: p.price,
-      weightValue: p.weightValue,
-      weightUnit: p.weightUnit
+// ✅ EXTRA ROUTE FOR OFFERCAROUSEL (put before "/:id" routes)
+router.get("/active", getActiveOffers);
 
-    }));
-    res.json(formatted);
-  } catch (err) {
-    console.error("Error fetching products:", err);
-    res.status(500).json({ error: "Failed to fetch products" });
-  }
-});
-
-
-
+//to delete automatically while adding offer
+router.get("/by-product/:productId", getOfferByProductId);
 // Add new offer
-router.post("/add", async (req, res) => {
-  try {
-    const newOffer = new Offer(req.body);
-    await newOffer.save();
-    res.status(201).json({ message: "Offer created", offer: newOffer });
-  } catch (err) {
-    console.error("Error creating offer:", err);
-    res.status(500).json({ error: "Failed to create offer" });
-  }
-});
+router.post("/add", addOffer);
 
 // GET all offers with product name
-router.get("/", async (req, res) => {
-  try {
-    const offers = await Offer.find().populate("productIds", "name_en");
+router.get("/", getAllOffers);
 
-  const enriched = offers.map((offer, index) => ({
-     id: index + 1,
-    _id: offer._id,
-  title_en: offer.title_en,
-  title_ta: offer.title_ta,
-  description_en: offer.description_en,
-  description_ta: offer.description_ta,
-  discountPercent: offer.discountPercent,
-  costPrice: offer.costPrice,
-  sellingPrice: offer.sellingPrice,
-  isActive: offer.isActive,
-  startDate: offer.startDate,
-  endDate: offer.endDate,
-  productName: offer.productIds?.name_en || "Unknown",
-}));
+// Update offer
+router.put("/:id", updateOffer);
 
-
-    res.json(enriched);
-  } catch (err) {
-    console.error("Error fetching offers:", err);
-    res.status(500).json({ error: "Failed to fetch offers" });
-  }
-});
-
-
-router.put("/:id", async (req, res) => {
-  try {
-    const updated = await Offer.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json({ offer: updated });
-  } catch (err) {
-    console.error("Error updating offer:", err);
-    res.status(500).json({ error: "Failed to update offer" });
-  }
-});
-
-
-router.delete("/:id", async (req, res) => {
-  try {
-    await Offer.findByIdAndDelete(req.params.id);
-    res.json({ message: "Offer deleted" });
-  } catch (err) {
-    console.error("Error deleting offer:", err);
-    res.status(500).json({ error: "Failed to delete offer" });
-  }
-});
-
-
-
+// Delete offer
+router.delete("/:id", deleteOffer);
 
 export default router;
