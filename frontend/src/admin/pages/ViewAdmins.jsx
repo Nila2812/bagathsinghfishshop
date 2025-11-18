@@ -14,21 +14,7 @@ const ViewAdmins = () => {
     { field: "address", headerName: "Address", width: 250 },
     { field: "phone", headerName: "Phone", width: 150 },
     { field: "whatsappNumber", headerName: "WhatsApp", width: 150 },
-    {
-      field: "mapLink",
-      headerName: "Map Link",
-      width: 200,
-      renderCell: (params) => (
-        <a
-          href={params.value}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: "#1976d2", textDecoration: "underline" }}
-        >
-          View Map
-        </a>
-      ),
-    },
+    
     {
       field: "createdAt",
       headerName: "Created At",
@@ -51,7 +37,7 @@ const ViewAdmins = () => {
           address: admin.address,
           phone: admin.phone,
           whatsappNumber: admin.whatsappNumber,
-          mapLink: `https://maps.google.com/?q=${admin.coordinates?.lat},${admin.coordinates?.lng}`,
+         
           createdAt: admin.createdAt,
         }));
         setAdmins(formatted);

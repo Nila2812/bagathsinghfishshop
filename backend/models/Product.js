@@ -28,9 +28,25 @@ const productSchema = new mongoose.Schema({
   },
   weightUnit: {
     type: String,
-    enum: ['g', 'kg' , 'piece'],
+    enum: ['g', 'kg', 'piece'],
     required: true
   },
+
+  // ✅ New fields
+  minOrderValue: {
+    type: Number,
+    required: true
+  },
+  minOrderUnit: {
+    type: String,
+    enum: ['g', 'kg', 'piece'],
+    required: true
+  },
+  baseUnit: {
+  type: String,
+  enum: ['250g', '500g', '1kg', 'piece'],
+  required: true
+},
   stockQty: {
     type: Number,
     required: true

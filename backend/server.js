@@ -8,7 +8,8 @@ import offerRoutes from './routes/offerRoutes.js';
 import dashboardRoutes from "./routes/dashboardroutes.js";
 import systemRoutes from "./routes/systemroutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
-
+import cartRoutes from "./routes/cartRoutes.js";
+import addressRoutes from "./routes/address.js";
 
 // Load environment variables
 dotenv.config();
@@ -33,6 +34,8 @@ app.use('/api/offers', offerRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/admins", adminRoutes);
 app.use("/api/system", systemRoutes);
+app.use("/api/cart", cartRoutes);
+app.use("/api/address", addressRoutes);
 
 // Basic test route
 app.get('/', (req, res) => {

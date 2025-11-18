@@ -20,8 +20,7 @@ const AddAdmin = () => {
     address: "",
     phone: "",
     whatsappNumber: "",
-    lat: "",
-    lng: "",
+    
   });
 
   const [errors, setErrors] = useState({});
@@ -62,21 +61,7 @@ const AddAdmin = () => {
       }));
     }
 
-    if (name === "lat") {
-      const lat = parseFloat(value);
-      setErrors((prev) => ({
-        ...prev,
-        lat: isNaN(lat) || lat < -90 || lat > 90 ? "Latitude must be between -90 and 90" : "",
-      }));
-    }
-
-    if (name === "lng") {
-      const lng = parseFloat(value);
-      setErrors((prev) => ({
-        ...prev,
-        lng: isNaN(lng) || lng < -180 || lng > 180 ? "Longitude must be between -180 and 180" : "",
-      }));
-    }
+    
   };
 
   const handleSubmit = async () => {
@@ -106,10 +91,6 @@ if (errorFields.length > 0) {
         address: formData.address.trim(),
         phone: formData.phone,
         whatsappNumber: formData.whatsappNumber,
-        coordinates: {
-          lat: parseFloat(formData.lat),
-          lng: parseFloat(formData.lng),
-        },
       };
 
       await axios.post("http://localhost:5000/api/admins", payload);
@@ -173,22 +154,7 @@ if (errorFields.length > 0) {
       error: !!errors.whatsappNumber,
       helperText: errors.whatsappNumber,
     },
-    {
-      name: "lat",
-      label: "Latitude",
-      type: "number",
-      required: true,
-      error: !!errors.lat,
-      helperText: errors.lat,
-    },
-    {
-      name: "lng",
-      label: "Longitude",
-      type: "number",
-      required: true,
-      error: !!errors.lng,
-      helperText: errors.lng,
-    },
+    
   ];
 
   return (

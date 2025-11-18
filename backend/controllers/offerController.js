@@ -101,7 +101,7 @@ export const getActiveOffers = async (req, res) => {
       isActive: true,
       // If endDate exists, it must be greater than or equal to today
       $or: [
-        { endDate: { $exists: false } }, // No endDate (永久优惠)
+        { endDate: { $exists: false } }, // No endDate 
         { endDate: null }, // endDate is null
         { endDate: { $gte: currentDate } } // endDate is in the future
       ]
@@ -110,8 +110,6 @@ export const getActiveOffers = async (req, res) => {
     const offers = await Offer.find(query)
       .populate('productIds') // Populate full product details including image
       .sort({ createdAt: -1 });
-
-    console.log(`Found ${offers.length} valid active offers`); // Debug log
 
     const enriched = offers.map(offer => {
       const offerObj = offer.toObject();
