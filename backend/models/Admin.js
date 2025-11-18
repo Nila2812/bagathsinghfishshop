@@ -14,10 +14,7 @@ const adminSchema = new mongoose.Schema({
   address: String,
   phone: String,
   whatsappNumber: String,
-  coordinates: {
-    lat: Number,
-    lng: Number
-  }
+  
 }, {
   timestamps: true // ✅ keeps createdAt and updatedAt
 });
