@@ -64,7 +64,7 @@ const Dashboard = () => {
           <CircularProgress />
         </Box>
       ) : (
-        <Grid container spacing={2}>
+        <Grid container gap={2}>
           {[
             { key: "products", label: "Total Products", icon: "🐟" },
             { key: "offers", label: "Total Offers", icon: "🎁" },

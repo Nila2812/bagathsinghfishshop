@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   AppBar,
   Toolbar,
@@ -7,17 +7,19 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
+import { useLanguage } from "./LanguageContext";
 
 const Topbar = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
+  const { language, toggleLanguage } = useLanguage();
 
-  const [language, setLanguage] = useState("EN");
-
-  const handleToggle = () => {
-    setLanguage((prev) => (prev === "EN" ? "TA" : "EN"));
-  };
+  // 🎯 Disclaimer in both languages
+  const disclaimer =
+    language === "EN"
+      ? "Weight may reduce after cleaning, depending on the fish variety."
+      : "மீன் வகைக்கு ஏற்ப சுத்தம் செய்த பின் எடை குறையலாம்.";
 
   return (
     <AppBar
@@ -29,7 +31,7 @@ const Topbar = () => {
         px: isMobile ? 1 : isTablet ? 3 : 5,
         height: isMobile ? 36 : isTablet ? 38 : 40,
         justifyContent: "center",
-        fontFamily: ` 'Montserrat', sans-serif`,
+        fontFamily: `'Montserrat', sans-serif`,
       }}
     >
       <Toolbar
@@ -40,13 +42,11 @@ const Topbar = () => {
           justifyContent: "space-between",
           alignItems: "center",
           width: "100%",
-          minHeight: "auto",
           py: 0,
           gap: isMobile ? 0.5 : 1,
-           fontFamily: ` 'Montserrat', sans-serif`,
         }}
       >
-        {/* === Left: Phone Number === */}
+        {/* === Left: Phone === */}
         <Typography
           variant="body2"
           sx={{
@@ -56,7 +56,7 @@ const Topbar = () => {
             whiteSpace: "nowrap",
           }}
         >
-          📞 +91 98765 43210
+          📞 +91 91506 47008
         </Typography>
 
         {/* === Center: Scrolling Disclaimer === */}
@@ -67,22 +67,23 @@ const Topbar = () => {
             overflow: "hidden",
             whiteSpace: "nowrap",
             mx: 1,
-            //backgroundColor: "rgba(0,0,0,0.2)",
-            borderRadius: "4px",
-            px: 1,
           }}
         >
           <Typography
             component="div"
             sx={{
               display: "inline-block",
-              color: "#ff0000ff",
+              color: "#FFD700",
               fontSize: isMobile ? "0.65rem" : isTablet ? "0.75rem" : "0.9rem",
               fontWeight: 500,
-              animation: "scroll-left 10s linear infinite",
+              animation: "scroll-left 12s linear infinite",
+              fontFamily:
+                language === "TA"
+                  ? "'Latha', 'Noto Sans Tamil', 'Tiro Tamil', sans-serif"
+                  : "'Poppins', 'Lato', sans-serif",
             }}
           >
-            Weight may reduce after cleaning, depending on the fish variety.
+            {disclaimer}
           </Typography>
         </Box>
 
@@ -92,18 +93,14 @@ const Topbar = () => {
             display: "flex",
             alignItems: "center",
             justifyContent: "flex-end",
-            backgroundColor: "#000000ff",
+            backgroundColor: "#000000",
             borderRadius: "20px",
             padding: isMobile ? "2px 6px" : "4px 10px",
             cursor: "pointer",
             width: isMobile ? "70px" : "90px",
-            //border: "1px solid #FFD6D6",
             position: "relative",
-            "&:hover": {
-              color: "#FFD6D6",
-            },
           }}
-          onClick={handleToggle}
+          onClick={toggleLanguage}
         >
           <Typography
             variant="body2"
@@ -132,7 +129,6 @@ const Topbar = () => {
             TA
           </Typography>
 
-          {/* Sliding toggle */}
           <Box
             sx={{
               position: "absolute",
@@ -148,13 +144,12 @@ const Topbar = () => {
         </Box>
       </Toolbar>
 
-      {/* === Animation Keyframes === */}
       <style>
         {`
           @keyframes scroll-left {
             0% { transform: translateX(100%); }
             100% { transform: translateX(-100%); }
-        }
+          }
         `}
       </style>
     </AppBar>

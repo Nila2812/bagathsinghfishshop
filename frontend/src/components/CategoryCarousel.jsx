@@ -6,6 +6,7 @@ import axios from "axios";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "./LanguageContext"; 
 
 const CategoryCarousel = () => {
   const [categories, setCategories] = useState([]);
@@ -14,8 +15,8 @@ const CategoryCarousel = () => {
   const [slidesToShow, setSlidesToShow] = useState(6);
   const sliderRef = useRef(null);
   const navigate = useNavigate();
+  const { language } = useLanguage(); // ✅ Use selected language (EN / TA)
 
-  // Fetch categories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -26,7 +27,8 @@ const CategoryCarousel = () => {
         data.forEach((cat) => {
           const formatted = {
             _id: cat._id,
-            name: cat.name_en,
+            name_en: cat.name_en,
+            name_ta: cat.name_ta,
             image: cat.image?.data
               ? `data:${cat.image.contentType};base64,${cat.image.data}`
               : "/placeholder.png",
@@ -37,7 +39,8 @@ const CategoryCarousel = () => {
             cat.subcategories.forEach((sub) => {
               allCategories.push({
                 _id: sub._id,
-                name: sub.name_en,
+                name_en: sub.name_en,
+                name_ta: sub.name_ta,
                 image: sub.image?.data
                   ? `data:${sub.image.contentType};base64,${sub.image.data}`
                   : "/placeholder.png",
@@ -47,8 +50,6 @@ const CategoryCarousel = () => {
         });
 
         setCategories(allCategories);
-
-        // ✅ Fix: ensure slider starts at beginning
         setTimeout(() => sliderRef.current?.slickGoTo(0, true), 0);
       } catch (err) {
         console.error("Failed to fetch categories:", err);
@@ -74,7 +75,6 @@ const CategoryCarousel = () => {
     return () => window.removeEventListener("resize", updateSlidesToShow);
   }, []);
 
-  // ✅ Hide arrows if not needed
   useEffect(() => {
     setShowArrows(categories.length > slidesToShow);
   }, [categories, slidesToShow]);
@@ -115,7 +115,7 @@ const CategoryCarousel = () => {
         position: "relative",
       }}
     >
-      {/* Title */}
+      {/* ✅ Title - dynamic language */}
       <Typography
         variant="h4"
         sx={{
@@ -127,21 +127,23 @@ const CategoryCarousel = () => {
           fontSize: { xs: "1.2rem", sm: "1.6rem", md: "2rem" },
         }}
       >
-        Shop by Category
+        {language === "EN" ? "Shop by Category" : "வகைப்படி வாங்குங்கள்"}
       </Typography>
 
-      {/* ✅ Subtext / Quote */}
+      {/* ✅ Subtext */}
       <Typography
         variant="subtitle1"
         sx={{
           color: "#000000",
           fontFamily: `'Poppins', sans-serif`,
           fontSize: { xs: "0.7rem", sm: "1rem" },
-          mt:0,
+          mt: 0,
           mb: { xs: 2.5, md: 4.5 },
         }}
       >
-        Order online. Relax. We’ll deliver.
+        {language === "EN"
+          ? "Order online. Relax. We’ll deliver."
+          : "ஆன்லைனில் ஆர்டர் செய்யுங்கள். நாங்கள் வழங்குகிறோம்."}
       </Typography>
 
       <Box sx={{ position: "relative", pb: 4 }}>
@@ -178,7 +180,7 @@ const CategoryCarousel = () => {
                 <Box
                   component="img"
                   src={cat.image}
-                  alt={cat.name}
+                  alt={language === "EN" ? cat.name_en : cat.name_ta}
                   sx={{
                     width: "100%",
                     height: "100%",
@@ -198,7 +200,7 @@ const CategoryCarousel = () => {
                   textTransform: "capitalize",
                 }}
               >
-                {cat.name}
+                {language === "EN" ? cat.name_en : cat.name_ta}
               </Typography>
             </Box>
           ))}
@@ -208,7 +210,7 @@ const CategoryCarousel = () => {
   );
 };
 
-// ✅ Arrow Button Component
+// ✅ Arrow Button Component (unchanged)
 const ArrowButton = ({ onClick, direction, currentSlide, categories, slidesToShow }) => {
   const isPrevHidden = direction === "prev" && currentSlide === 0;
   const isNextHidden =

@@ -1,5 +1,30 @@
 import Product from "../models/Product.js";
 import Category from "../models/Category.js";
+// utils/productFormatter.js
+export const formatProduct = (p) => {
+  const imageData = p.image?.data
+    ? Buffer.from(p.image.data).toString("base64")
+    : null;
+
+  return {
+    _id: p._id,
+    name_en: p.name_en,
+    name_ta: p.name_ta,
+    price: p.price,
+    weightValue: p.weightValue,
+    weightUnit: p.weightUnit,
+    stockQty: p.stockQty,
+    isAvailable: p.isAvailable,
+    category: p.categoryId?.name_en || "Uncategorized",
+    image: imageData
+      ? {
+          data: imageData,
+          contentType: p.image.contentType,
+        }
+      : null,
+  };
+};
+
 
 export const getProductsByCategory = async (req, res) => {
   try {
@@ -21,32 +46,52 @@ export const getProductsByCategory = async (req, res) => {
       categoryId: { $in: allCategoryIds },
     }).populate("categoryId", "name_en parentCategory");
 
-    const formatted = products.map((p) => {
-      const imageData = p.image?.data
-        ? Buffer.from(p.image.data).toString("base64")
-        : null;
-
-      return {
-        _id: p._id,
-        name_en: p.name_en,
-        name_ta: p.name_ta,
-        price: p.price,
-        weightValue: p.weightValue,
-        weightUnit: p.weightUnit,
-        stockQty: p.stockQty,
-        isAvailable: p.isAvailable,
-        image: imageData
-          ? {
-              data: imageData,
-              contentType: p.image.contentType,
-            }
-          : null,
-      };
-    });
-
-    res.json(formatted);
+    res.json(products.map(formatProduct));
   } catch (err) {
     console.error("Error fetching products by category:", err);
     res.status(500).json({ error: "Failed to fetch products by category" });
   }
 };
+
+// GET all products (clean format for frontend)
+export const getAllProducts = async (req, res) => {
+  try {
+    const products = await Product.find().populate("categoryId", "name_en name_ta");
+
+   res.json(products.map(formatProduct));
+  } catch (err) {
+    console.error("Error fetching all products:", err);
+    res.status(500).json({ error: "Failed to fetch all products" });
+  }
+};
+
+
+export const searchProducts = async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    if (!query) {
+      return res.status(400).json({ message: "Query is required" });
+    }
+
+    const products = await Product.find({
+      $or: [
+        { name_en: { $regex: query, $options: "i" } },
+        { name_ta: { $regex: query, $options: "i" } }
+      ]
+    }).populate("categoryId", "name_en");
+
+   res.json(products.map(formatProduct)); // 🔥 USE FORMATTER HERE
+  } catch (error) {
+    console.error("Search API Error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+
+
+
+
+
+

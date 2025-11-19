@@ -1,18 +1,20 @@
 import React from "react";
 import { Box, Grid, Stack, Typography } from "@mui/material";
-
+import { useLanguage } from "./LanguageContext";
 const MapAndAddress = () => {
   // 🗺️ Google Maps Embed URL
+  const { language } = useLanguage(); 
   const mapEmbedUrl =
-    "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3929.985681195775!2d78.1215132735399!3d9.935148974150318!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b00c5ed3a268eed%3A0xe58a025693d4c11a!2sAhimsapuram%208th%20St%2C%20Sellur%2C%20Madurai%2C%20Tamil%20Nadu%20625002!5e0!3m2!1sen!2sin!4v1761735891451!5m2!1sen!2sin";
+    "https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d3928.1826907435043!2d77.96151347503232!3d10.084112190025559!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zMTDCsDA1JzAyLjgiTiA3N8KwNTcnNTAuNyJF!5e0!3m2!1sen!2sin!4v1761753848650!5m2!1sen!2sin";
 
   // 🏠 Address data
   const address = {
-    title:"Visit Us",
-    english: "123 Fishermen Street, Thoothukudi, Tamil Nadu - 628001",
-    tamil: "123 மீனவர் தெரு, தூத்துக்குடி, தமிழ்நாடு - 628001",
-    phone: "+91 98765 43210",
-    landmark: "Opposite to St. Peter’s Church",
+   title: language === "EN" ? "📍 Visit Us" : "📍 எங்களை அணுகுங்கள்",
+    english: "Bulgishbegam Complex, Main Road, Vadipatti.T - 625218, Tamil Nadu, India.",
+    tamil: "புல்கிஷ்பேகம் வளாகம், மெயின் ரோடு, வடிப்பட்டி.டி - 625218, தமிழ்நாடு, இந்தியா.",
+    phone: "+91 91506 47008",
+    landmarkEnglish: "Near Panchayat Office",
+    landmarkTamil: "பஞ்சாயத்து அலுவலகம் அருகில்",
   };
 
   return (
@@ -108,7 +110,7 @@ const MapAndAddress = () => {
               📞 {address.phone}
             </Typography>
 
-            {/* 🏁 Landmark */}
+               {/* 🏁 Landmark */}
             <Typography
               variant="body2"
               sx={{
@@ -117,7 +119,8 @@ const MapAndAddress = () => {
                 textAlign: { xs: "center", md: "left" },
               }}
             >
-              📍 <strong>Landmark:</strong> {address.landmark}
+              📍 <strong>Landmark:</strong> {address.landmarkEnglish} (
+              {address.landmarkTamil})
             </Typography>
           </Stack>
         </Grid>

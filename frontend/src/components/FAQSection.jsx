@@ -7,14 +7,15 @@ import {
   AccordionDetails,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { useLanguage } from "./LanguageContext"; // ✅ Use context
 
-/**
- * Props:
- * - language: "en" | "ta"
- * Example: <FAQSection language={language} />
- */
+// ✅ Define font families clearly at the top
+const tamilFont = "'Latha', 'Noto Sans Tamil', 'Tiro Tamil', sans-serif";
+const englishFont = "'Poppins', 'Lato', sans-serif";
 
-const FAQSection = ({ language = "en" }) => {
+const FAQSection = () => {
+  const { language } = useLanguage(); // EN or TA
+
   const faqs = [
     {
       en: {
@@ -92,12 +93,12 @@ const FAQSection = ({ language = "en" }) => {
       en: {
         question: "How do offers and discounts work?",
         answer:
-          "Offers are displayed under the 'Today's Offers' section. They are managed by the admin and may include discounts on sea fish, live fish, or special products. Offer details such as price, percentage, and description will be shown on the product.",
+          "Offers are displayed under the 'Today's Offers' section. They are managed by the admin and may include discounts on sea fish, live fish, or special products.",
       },
       ta: {
         question: "ஆஃபர்கள் மற்றும் தள்ளுபடிகள் எப்படி செயல்படுகின்றன?",
         answer:
-          "'இன்றைய ஆஃபர்கள்' பகுதியில் ஆஃபர்கள் காணப்படும். அவை நிர்வாகியால் நிர்வகிக்கப்படுகின்றன மற்றும் கடல் மீன், லைவ் மீன் அல்லது சிறப்பு பொருட்களுக்கு தள்ளுபடிகள் உள்ளடக்கலாம். விலை, சதவீதம், விளக்கம் போன்ற விவரங்கள் பொருளில் காட்டப்படும்.",
+          "'இன்றைய ஆஃபர்கள்' பகுதியில் ஆஃபர்கள் காணப்படும். அவை நிர்வாகியால் நிர்வகிக்கப்படுகின்றன மற்றும் கடல் மீன், லைவ் மீன் அல்லது சிறப்பு பொருட்களுக்கு தள்ளுபடிகள் உள்ளடக்கலாம்.",
       },
     },
     {
@@ -126,17 +127,13 @@ const FAQSection = ({ language = "en" }) => {
     },
   ];
 
-  const tamilFontFamily = "'Latha', 'Noto Sans Tamil', 'Tiro Tamil', sans-serif";
-  const englishFontFamily = "'Poppins', 'Lato', 'Helvetica Neue', sans-serif";
-
   return (
     <Box
       sx={{
         backgroundColor: "#fafafa",
-        py: { xs: 4, md: 8 },
+        py: { xs: 1.5, md: 5},
         px: { xs: 2, sm: 4, md: 8 },
-        transition: "font-family 0.3s ease",
-        fontFamily: language === "ta" ? tamilFontFamily : englishFontFamily,
+        fontFamily: language === "TA" ? tamilFont : englishFont,
       }}
     >
       <Typography
@@ -148,10 +145,11 @@ const FAQSection = ({ language = "en" }) => {
           color: "#4E2C1E",
           textTransform: "uppercase",
           letterSpacing: "0.5px",
-          fontFamily: language === "ta" ? tamilFontFamily : englishFontFamily,
+          fontSize: { xs: "1.2rem", sm: "1.5rem", md: "2rem" },
+          fontFamily: language === "TA" ? tamilFont : englishFont,
         }}
       >
-        {language === "ta"
+        {language === "TA"
           ? "அடிக்கடி கேட்கப்படும் கேள்விகள்"
           : "Frequently Asked Questions"}
       </Typography>
@@ -177,32 +175,31 @@ const FAQSection = ({ language = "en" }) => {
             sx={{
               backgroundColor: "#fff",
               "&:hover": { backgroundColor: "#f9f4f0" },
-              fontFamily:
-                language === "ta" ? tamilFontFamily : englishFontFamily,
             }}
           >
             <Typography
               sx={{
                 fontWeight: 600,
-                fontSize: { xs: "0.9rem", md: "1rem" },
+                fontSize: { xs: "0.8rem", md: "1rem" },
                 color: "#3C1E0A",
+                fontFamily: language === "TA" ? tamilFont : englishFont,
               }}
             >
-              {language === "ta" ? faq.ta.question : faq.en.question}
+              {language === "TA" ? faq.ta.question : faq.en.question}
             </Typography>
           </AccordionSummary>
+
           <AccordionDetails
             sx={{
               backgroundColor: "#fff",
               color: "#555",
-              fontSize: { xs: "0.85rem", md: "0.95rem" },
+              fontSize: { xs: "0.75rem", md: "0.95rem" },
               lineHeight: 1.6,
               whiteSpace: "pre-line",
-              fontFamily:
-                language === "ta" ? tamilFontFamily : englishFontFamily,
+              fontFamily: language === "TA" ? tamilFont : englishFont,
             }}
           >
-            {language === "ta" ? faq.ta.answer : faq.en.answer}
+            {language === "TA" ? faq.ta.answer : faq.en.answer}
           </AccordionDetails>
         </Accordion>
       ))}

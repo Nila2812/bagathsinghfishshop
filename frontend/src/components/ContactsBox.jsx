@@ -6,8 +6,8 @@ import EmailIcon from "@mui/icons-material/Email";
 
 const ContactsBox = () => {
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  const phoneNumber = "919876543210";
-  const email = "contact@yourshop.com";
+  const phoneNumber = "+91 91506 47008";
+  const email = "bagathsinghfish.shop@gmail.com";
 
   const handleCallClick = () => {
     if (isMobile) {
@@ -33,19 +33,19 @@ const ContactsBox = () => {
     {
       title: "Call Us",
       icon: <PhoneIcon sx={{ fontSize: { xs: 50, md: 70 }, color: "#0078ff" }} />,
-      text: "+91 98765 43210",
+      text: "+91 91506 47008",
       onClick: handleCallClick,
     },
     {
       title: "WhatsApp Us",
       icon: <WhatsAppIcon sx={{ fontSize: { xs: 50, md: 70 }, color: "#25D366" }} />,
-      text: "+91 98765 43210",
+      text: "+91 91506 47008",
       onClick: handleWhatsAppClick,
     },
     {
       title: "Email Us",
       icon: <EmailIcon sx={{ fontSize: { xs: 50, md: 70 }, color: "#EA4335" }} />,
-      text: "contact@yourshop.com",
+      text: "bagathsinghfish.shop@gmail.com",
       onClick: handleEmailClick,
     },
   ];

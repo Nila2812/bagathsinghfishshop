@@ -1,4 +1,7 @@
+/* ---------- FINAL CLEAN & FIXED MAIN NAVBAR ---------- */
+
 import React, { useEffect, useState } from "react";
+import SearchDrawer from "./SearchDrawer";
 import {
   AppBar, Toolbar, Typography, Box, IconButton, InputBase, Badge,
   Menu, MenuItem, Drawer, List, ListItemButton, ListItemText, Divider, Tooltip
@@ -17,16 +20,25 @@ import { getClientId } from "../utils/clientId";
 import { getDistanceKm } from "../utils/distance";
 import AddressFormModal from "./AddressFormModal";
 import AddressListModal from "./AddressListModal";
+import LoginDrawer from "./LoginDrawer";
 
 const MainNavbar = ({ fixed = true }) => {
+
+  /* ----------------------------- STATE ----------------------------- */
+
   const [editingAddress, setEditingAddress] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchDrawerOpen, setSearchDrawerOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [menuDrawerOpen, setMenuDrawerOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
-  const [address, setAddress] = useState(null);
-  const [deliverable, setDeliverable] = useState(null);
+  const [loginDrawerOpen, setLoginDrawerOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
+
+  const [address, setAddress] = useState(null);
+  const [deliverable, setDeliverable] = useState(null);
 
   const navigate = useNavigate();
   const { getCartCount } = useCart();
@@ -34,8 +46,11 @@ const MainNavbar = ({ fixed = true }) => {
 
   const SHOP = { lat: 9.919470515872366, lon: 78.15947123056876 };
 
+  /* ----------------------------- LOAD ADDRESS ----------------------------- */
+
   useEffect(() => {
     const clientId = getClientId();
+
     fetch(`/api/address/${clientId}`)
       .then(r => r.json())
       .then(items => {
@@ -44,19 +59,35 @@ const MainNavbar = ({ fixed = true }) => {
           setAddress(def);
           const d = getDistanceKm(SHOP.lat, SHOP.lon, def.lat, def.lon);
           setDeliverable(d <= 3);
-        } else {
-          setAddress(null);
-          setDeliverable(null);
         }
       })
       .catch(() => {});
   }, []);
 
+  const deliveryMessage =
+    deliverable === null ? "" :
+    deliverable ? "Deliverable" : "Not Deliverable";
+
+  /* ----------------------------- CART EVENT ----------------------------- */
+
   useEffect(() => {
     const handleOpenCart = () => setCartOpen(true);
-    window.addEventListener('openCart', handleOpenCart);
-    return () => window.removeEventListener('openCart', handleOpenCart);
+    window.addEventListener("openCart", handleOpenCart);
+    return () => window.removeEventListener("openCart", handleOpenCart);
   }, []);
+
+  /* ----------------------------- FUNCTIONS ----------------------------- */
+
+  const handleSearch = (e) => {
+    if (e.key === "Enter" && searchTerm.trim() !== "") {
+      navigate(`/search?query=${encodeURIComponent(searchTerm.trim())}`);
+    }
+  };
+
+  const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
+  const handleMenuClose = () => setAnchorEl(null);
+
+  const toggleMenuDrawer = (open) => () => setMenuDrawerOpen(open);
 
   const handleSavedAddress = (saved) => {
     setAddress(saved);
@@ -71,145 +102,317 @@ const MainNavbar = ({ fixed = true }) => {
     setListOpen(false);
   };
 
-  const handleAddressClick = () => {
-    setListOpen(true);
-  };
-
-  const mainTextColor = "#000000";
+  const mainTextColor = "#282828ff";
   const secondaryText = "#7d221d";
+
+  /* ----------------------------- RETURN UI ----------------------------- */
 
   return (
     <>
-      {/* Desktop */}
-      <AppBar position={fixed ? "fixed" : "relative"} elevation={0}
+      {/* ============================================================= */}
+      {/* ====================== DESKTOP NAVBAR ======================== */}
+      {/* ============================================================= */}
+
+      <AppBar
+        position={fixed ? "fixed" : "relative"}
+        elevation={0}
         sx={{
-          top: fixed ? 40 : "auto", backgroundColor: "#ffffff",
-          borderBottom: "1px solid #E0E0E0", borderTop: fixed ? "1px solid #E0E0E0" : "none",
-          px: { xs: 1, sm: 1 }, py: 0.5, display: { xs: "none", md: "flex" },
-          boxShadow: fixed ? "none" : "0px 2px 4px rgba(0,0,0,0.05)",
-          fontFamily: `'Montserrat', sans-serif`
+          top: fixed ? 40 : "auto",
+          backgroundColor: "#ffffff",
+          borderBottom: "1px solid #E0E0E0",
+          px: 1,
+          py: 0.5,
+          display: "none",
+          "@media (min-width:1024px)": { display: "flex" },
+          boxShadow: "none",
         }}
       >
         <Toolbar sx={{ justifyContent: "space-evenly", width: "100%" }}>
-          <Box component="img" src={logo} alt="Logo" 
-            sx={{ width: 65, height: 65, cursor: "pointer" }} 
-            onClick={() => navigate("/")} />
+          
+          {/* Logo */}
+          <Box
+            component="img"
+            src={logo}
+            sx={{ width: 80, height: 65, cursor: "pointer" }}
+            onClick={() => navigate("/")}
+          />
 
-          <Box sx={{ display: "flex", flexDirection: "column", cursor: "pointer" }}
-            onClick={handleAddressClick}>
+          {/* Address */}
+          <Box onClick={() => setListOpen(true)} sx={{ cursor: "pointer" }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
               <RoomIcon sx={{ color: mainTextColor }} />
-              <Tooltip title={address ? `${address.doorNo || ""} ${address.street || ""}`.trim() : "Select address"}>
+              <Tooltip title={address ? `${address.doorNo} ${address.street}` : "Select address"}>
                 <Typography sx={{
-                  fontWeight: 600, color: mainTextColor,
-                  maxWidth: 160, whiteSpace: "nowrap",
-                  overflow: "hidden", textOverflow: "ellipsis"
+                  fontWeight: 600,
+                  maxWidth: 160,
+                   color: mainTextColor,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
                 }}>
-                  {address 
-                    ? `${address.doorNo || ""} ${address.street || ""}`.trim() || "Your address"
-                    : "Select your address"}
+                  {address ? `${address.doorNo || ""} ${address.street || ""}` : "Select address"}
                 </Typography>
               </Tooltip>
             </Box>
+
             {address && (
-              <Typography variant="subtitle2"
-                sx={{ color: deliverable ? "#2e7d32" : "red", ml: 3.5 }}>
-                {deliverable ? "Deliverable" : "Not Deliverable"}
+              <Typography variant="subtitle2" sx={{ color: deliverable ? "green" : "red", ml: 3.5 }}>
+                {deliveryMessage}
               </Typography>
             )}
           </Box>
 
-          <Box sx={{ display: "flex", alignItems: "center", backgroundColor: "#f8f8f8",
-            borderRadius: 2, border: `1px solid ${mainTextColor}`, px: 1.5, py: 0.6, width: "35%" }}>
+          {/* Search */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              background: "#f8f8f8",
+              borderRadius: 2,
+              border: `1px solid ${mainTextColor}`,
+              px: 1.5,
+              py: 0.6,
+              width: "35%",
+            }}
+          >
             <SearchIcon sx={{ mr: 1, color: mainTextColor }} />
-            <InputBase placeholder="Search products..." 
-              sx={{ width: "100%", color: secondaryText, fontFamily: `'Montserrat', sans-serif` }} />
+            <InputBase
+              placeholder="Search products..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={handleSearch}
+              sx={{ width: "100%", color: secondaryText }}
+            />
           </Box>
 
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
-            <AccountCircleIcon sx={{ color: mainTextColor }} />
-            <Typography sx={{ color: mainTextColor }}>Login / Register</Typography>
+          {/* Login */}
+          <Box sx={{ display: "flex", alignItems: "center", cursor: "pointer" }}
+            onClick={() => setLoginDrawerOpen(true)}>
+            <AccountCircleIcon sx={{ color: mainTextColor}} />
+            <Typography sx={{ ml: 0.6 , color: mainTextColor}}>Login / Sign Up</Typography>
           </Box>
 
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.6, cursor: "pointer" }}
+          {/* Cart */}
+          <Box sx={{ display: "flex", alignItems: "center", cursor: "pointer" }}
             onClick={() => setCartOpen(true)}>
             <Badge badgeContent={cartCount} color="error">
-              <ShoppingCartIcon sx={{ color: mainTextColor }} />
+              <ShoppingCartIcon sx={{ color: mainTextColor}} />
             </Badge>
-            <Typography sx={{ color: mainTextColor }}>Cart</Typography>
+            <Typography sx={{ ml: 0.6, color: mainTextColor }}>Cart</Typography>
           </Box>
 
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.4 }}>
-            <Typography sx={{ cursor: "pointer", color: mainTextColor }}
-              onClick={(e) => setAnchorEl(e.currentTarget)}>More</Typography>
-            <ExpandMoreIcon sx={{ color: mainTextColor, cursor: "pointer" }} />
-          </Box>
-
-          <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}
-            sx={{ "& .MuiPaper-root": { backgroundColor: "#ffffff", borderRadius: "8px", border: `1px solid ${mainTextColor}` } }}>
-            <MenuItem onClick={() => { setAnchorEl(null); navigate("/about"); }}>About Us</MenuItem>
-            <MenuItem onClick={() => { setAnchorEl(null); navigate("/contact"); }}>Contact Us</MenuItem>
-          </Menu>
+          {/* More */}
+          <IconButton onClick={handleMenuOpen}>
+            <Typography sx={{ color: mainTextColor}}>More</Typography>
+            <ExpandMoreIcon sx={{color: mainTextColor,}} />
+          </IconButton>
         </Toolbar>
       </AppBar>
 
-      {/* Mobile */}
-      <AppBar position={fixed ? "fixed" : "relative"} elevation={0}
+      {/* ============================================================= */}
+      {/* ======================= TABLET NAVBAR ======================== */}
+      {/* ============================================================= */}
+
+      <AppBar
+          position={fixed ? "fixed" : "relative"}
+          elevation={0}
+          sx={{
+            top: fixed ? 36 : "auto",
+            background: "#ffffff",
+            color: mainTextColor,
+            width: "100% !important",  // ⭐ FIX: prevent overflow
+            overflow: "hidden",        // ⭐ FIX
+            display: "none",
+            "@media (min-width:600px) and (max-width:1023px)": {
+              display: "flex",
+            },
+            boxShadow: "none",
+          }}
+        >
+       <Toolbar
         sx={{
-          top: fixed ? 36 : "auto", backgroundColor: "#ffffff", color: mainTextColor,
-          px: 2, py: 1, display: { xs: "flex", md: "none" }, flexDirection: "column",
-          boxShadow: fixed ? "none" : "0px 2px 4px rgba(0,0,0,0.05)"
+          justifyContent: "space-between",
+          width: "100%",
+          px: 2,             // ⭐ increases left-right padding
+          pr: 3,             // ⭐ pushes More button slightly left
+          color: mainTextColor,
         }}
       >
-        <Toolbar sx={{ justifyContent: "space-between", alignItems: "center", px: 0, gap: 1 }}>
-          <IconButton sx={{ color: mainTextColor }} onClick={() => setDrawerOpen(true)}>
-            <MenuIcon />
-          </IconButton>
-          <Box component="img" src={logo} alt="Logo"
-            sx={{ width: 45, height: 45, cursor: "pointer" }}
-            onClick={() => navigate("/")} />
-          
-          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", cursor: "pointer" }}
-            onClick={handleAddressClick}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
-              <RoomIcon sx={{ fontSize: 20, color: mainTextColor }} />
-              <Typography sx={{
-                fontWeight: 600, fontSize: "0.9rem", color: mainTextColor,
-                maxWidth: 120, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"
-              }}>
-                {address 
-                  ? `${address.doorNo || ""} ${address.street || ""}`.trim() || "Address"
-                  : "Select address"}
-              </Typography>
-            </Box>
-            {address && (
-              <Typography variant="caption"
-                sx={{ color: deliverable ? "#2e7d32" : "red", ml: 3.2, mt: 0.1 }}>
-                {deliverable ? "Deliverable" : "Not Deliverable"}
-              </Typography>
-            )}
+          {/* Logo */}
+          <Box
+            component="img"
+            src={logo}
+            sx={{ width: 60, height: 55, cursor: "pointer" }}
+            onClick={() => navigate("/")}
+          />
+
+          {/* Address */}
+<Box onClick={() => setListOpen(true)} sx={{ cursor: "pointer" }}>
+  <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
+    <RoomIcon sx={{ fontSize: 22, color: mainTextColor }} />
+
+    <Typography
+      sx={{
+        fontWeight: 600,
+        maxWidth: 140,
+        fontSize: "0.9rem",
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        color: mainTextColor,
+      }}
+    >
+      {address ? `${address.doorNo || ""} ${address.street || ""}` : "Select address"}
+    </Typography>
+  </Box>
+
+  {address && (
+    <Typography
+      variant="subtitle2"
+      sx={{
+        color: deliverable ? "green" : "red",
+        ml: 3.5,
+        mt: "-2px",
+        fontSize: "0.75rem",
+      }}
+    >
+      {deliveryMessage}
+    </Typography>
+  )}
+</Box>
+
+          {/* Search */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              border: `1px solid ${mainTextColor}`,
+              borderRadius: 2,
+              px: 1.5,
+              py: 0.6,
+              width: "30%",  // ❗ fixed shrinking issue
+              background: "#f8f8f8",
+            }}
+          >
+            <SearchIcon sx={{ mr: 1 }} />
+            <InputBase
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={handleSearch}
+              sx={{ width: "100%" }}
+            />
           </Box>
 
-          <IconButton sx={{ color: mainTextColor }} onClick={() => setCartOpen(true)}>
+          {/* Login */}
+          <IconButton onClick={() => setLoginDrawerOpen(true)}>
+            <AccountCircleIcon sx={{color: mainTextColor, }}/>
+          </IconButton>
+
+          {/* Cart */}
+          <IconButton onClick={() => setCartOpen(true)}>
             <Badge badgeContent={cartCount} color="error">
-              <ShoppingCartIcon />
+              <ShoppingCartIcon sx={{color: mainTextColor, }} />
             </Badge>
           </IconButton>
-        </Toolbar>
 
-        <Box sx={{
-          display: "flex", alignItems: "center", backgroundColor: "#f8f8f8",
-          borderRadius: 0, border: `1px solid ${mainTextColor}`, px: 1.5, py: 0.6,
-          width: "100%", mt: 0.8, mx: 1.2, boxSizing: "border-box"
-        }}>
-          <SearchIcon sx={{ color: mainTextColor, fontSize: 20, mr: 1 }} />
-          <InputBase placeholder="Search products..." 
-            sx={{ width: "100%", fontSize: "1rem", color: secondaryText }} />
-        </Box>
+          {/* More */}
+          <IconButton onClick={handleMenuOpen} sx={{ mr: 3}}>
+            <Typography sx={{ color: mainTextColor }}>More</Typography>
+            <ExpandMoreIcon sx={{ color: mainTextColor }} />
+          </IconButton>
+
+        </Toolbar>
       </AppBar>
 
-      <Drawer anchor="left" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
-        <Box sx={{ width: 250, backgroundColor: "#ffffff", height: "100%", color: mainTextColor }}>
+      {/* ============================================================= */}
+      {/* ======================= MOBILE NAVBAR ======================== */}
+      {/* ============================================================= */}
+
+      <AppBar
+  elevation={0}
+  sx={{
+    display: { xs: "flex", sm: "none" },
+    background: "#ffffff",
+    color: mainTextColor,
+    top: fixed ? 36 : "auto",
+    width: "100% !important",   // ⭐ FIX tablet/mobile overflow
+    overflow: "hidden",         // ⭐ Prevent horizontal scroll
+    boxShadow: "none",
+  }}
+>
+
+        <Toolbar sx={{ justifyContent: "space-between", px: 1 }}>
+
+          {/* Drawer button */}
+          <IconButton onClick={toggleMenuDrawer(true)}>
+            <MenuIcon sx={{color: mainTextColor,}} />
+          </IconButton>
+
+         {/* Address */}
+<Box sx={{ cursor: "pointer" }} onClick={() => setListOpen(true)}>
+  <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
+    <RoomIcon sx={{ fontSize: 20, color: mainTextColor }} />
+
+    <Typography
+      sx={{
+        fontWeight: 600,
+        maxWidth: 110,
+        fontSize: "0.8rem",
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        color: mainTextColor,
+      }}
+    >
+      {address ? `${address.doorNo || ""} ${address.street || ""}` : "Select address"}
+    </Typography>
+  </Box>
+
+  {address && (
+    <Typography
+      sx={{
+        color: deliverable ? "green" : "red",
+        ml: 3.2,
+        mt: "-2px",
+        fontSize: "0.7rem",
+      }}
+    >
+      {deliveryMessage}
+    </Typography>
+  )}
+</Box>
+
+
+          {/* Logo */}
+          <Box
+            component="img"
+            src={logo}
+            sx={{ width: 49, height: 45, cursor: "pointer" }}
+            onClick={() => navigate("/")}
+          />
+
+          {/* Icons */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <IconButton onClick={() => setSearchDrawerOpen(true)}>
+              <SearchIcon sx={{color: mainTextColor,}}/>
+            </IconButton>
+
+            <IconButton onClick={() => setCartOpen(true)}>
+              <Badge badgeContent={cartCount} color="error">
+                <ShoppingCartIcon sx={{color: mainTextColor,}} />
+              </Badge>
+            </IconButton>
+          </Box>
+        </Toolbar>
+      </AppBar>
+
+      {/* ============================================================= */}
+      {/* =========================== DRAWERS ========================== */}
+      {/* ============================================================= */}
+
+      <Drawer anchor="left" open={menuDrawerOpen} onClose={toggleMenuDrawer(false)}>
+        <Box sx={{ width: 200 }}>
           <List>
             <ListItemButton onClick={() => navigate("/about")}>
               <ListItemText primary="About Us" />
@@ -219,7 +422,12 @@ const MainNavbar = ({ fixed = true }) => {
               <ListItemText primary="Contact Us" />
             </ListItemButton>
             <Divider />
-            <ListItemButton onClick={() => navigate("/login")}>
+            <ListItemButton
+              onClick={() => {
+                setLoginDrawerOpen(true);
+                setMenuDrawerOpen(false);
+              }}
+            >
               <ListItemText primary="Login / Register" />
             </ListItemButton>
           </List>
@@ -253,6 +461,21 @@ const MainNavbar = ({ fixed = true }) => {
           setEditingAddress(addr);
           setFormOpen(true);
         }}
+      />
+
+      <LoginDrawer open={loginDrawerOpen} onClose={() => setLoginDrawerOpen(false)} />
+
+      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+        <MenuItem onClick={() => { handleMenuClose(); navigate("/about"); }}>About Us</MenuItem>
+        <MenuItem onClick={() => { handleMenuClose(); navigate("/contact"); }}>Contact Us</MenuItem>
+      </Menu>
+
+      <SearchDrawer
+        open={searchDrawerOpen}
+        onClose={() => setSearchDrawerOpen(false)}
+        onSearch={(term) =>
+          navigate(`/search?query=${encodeURIComponent(term)}`)
+        }
       />
     </>
   );

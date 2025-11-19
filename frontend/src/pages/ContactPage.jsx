@@ -6,15 +6,29 @@ import ContactsBox from "../components/ContactsBox";
 import MapAndAddress from "../components/MapAndAddress";
 import Footer from "../components/Footer";
 import { Box, Typography } from "@mui/material";
+import { useLanguage } from "../components/LanguageContext"; 
+
+const tamilFont = "'Latha', 'Noto Sans Tamil', 'Tiro Tamil', sans-serif";
+const englishFont = "'Poppins', 'Lato', sans-serif";
 
 const ContactPage = () => {
+  const { language } = useLanguage(); // 👈 get current language
+
+  const bannerTitle =
+    language === "TA" ? "எங்களை அணுகுங்கள்" : "Contact Us";
+
+  const bannerDesc =
+    language === "TA"
+      ? "எங்களைத் தொடர்பு கொள்ளுங்கள் — உதவ தயாராக உள்ளோம்!"
+      : "We’re here to help! Reach out for any inquiries, feedback, or support — we’d love to hear from you.";
+
   return (
     <Box
       sx={{
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
-        fontFamily: `"Lato", "Helvetica Neue", Helvetica, Arial, sans-serif`,
+        fontFamily: language === "TA" ? tamilFont : englishFont,
       }}
     >
       {/* 🧭 Fixed Header */}
@@ -30,14 +44,13 @@ const ContactPage = () => {
         }}
       >
         <Topbar />
-      <MainNavbar fixed />
-
+        <MainNavbar fixed />
       </Box>
 
       {/* 📜 Scrollable Content */}
       <Box
         sx={{
-          mt: { xs: "150px", md: "100px" },
+          mt: { xs: "92px", sm: "108px", md: "110px" },
           px: 0,
           pb: 0,
           overflowY: "auto",
@@ -45,7 +58,7 @@ const ContactPage = () => {
           backgroundColor: "#fafafa",
         }}
       >
-        {/* 👇 Category Bar (scrolls with page) */}
+        {/* 👇 Category Bar */}
         <Box sx={{ zIndex: 1 }}>
           <CategoryBar fixed={false} />
         </Box>
@@ -55,7 +68,7 @@ const ContactPage = () => {
           sx={{
             position: "relative",
             width: "100%",
-            height: { xs: "250px", md: "350px" },
+            height: { xs: "200px", sm: "300px", md: "350px" },
             overflow: "hidden",
           }}
         >
@@ -93,41 +106,44 @@ const ContactPage = () => {
               variant="h3"
               sx={{
                 fontWeight: "bold",
-                fontSize: { xs: "1.8rem", md: "2.8rem" },
+               fontSize: { xs: "1.5rem", md: "2.8rem" },
                 color: "#fff",
+                fontFamily: language === "TA" ? tamilFont : englishFont,
               }}
             >
-              Contact Us
+              {bannerTitle}
             </Typography>
+
             <Typography
               variant="body1"
               sx={{
                 mt: 1,
-               fontSize: {
-                  xs: "0.65rem",   // for small screens (mobile, like iPhone SE)
-                  sm: "0.8rem",    // for slightly larger phones
-                  md: "1.1rem",    // for tablets and small laptops
-                  lg: "1.3rem",    // for desktops
+                fontSize: {
+                  xs: "0.65rem",
+                  sm: "0.8rem",
+                  md: "1.1rem",
+                  lg: "1.2rem",
                 },
-
                 maxWidth: { xs: "90%", md: "700px" },
+                fontFamily: language === "TA" ? tamilFont : englishFont,
               }}
             >
-              We’re here to help! Reach out for any inquiries, feedback, or
-              support — we’d love to hear from you.
+              {bannerDesc}
             </Typography>
           </Box>
         </Box>
 
         {/* 📞 Contact Options */}
-        <Box sx={{ mx: { xs: 2, md: 6 }, my: {xs:6, md:13} }}>
+        <Box sx={{ mx: { xs: 2, md: 6 }, my: { xs: 6, md: 13 } }}>
           <ContactsBox />
         </Box>
-        <Box sx={{ mx: { xs: 2, md: 6 }, my: {xs:6, md:13} }}>
+
+        <Box sx={{ mx: { xs: 2, md: 6 }, my: { xs: 6, md: 13 } }}>
           <MapAndAddress />
         </Box>
-        <Box sx={{ mt: "auto" , mb:0}}>
-      <Footer />
+
+        <Box sx={{ mt: "auto", mb: 0 }}>
+          <Footer />
         </Box>
       </Box>
     </Box>
