@@ -20,7 +20,7 @@ const OrderStatusSummary = () => {
   if (!summary) return <CircularProgress />;
 
   return (
-    <Grid container spacing={2}>
+    <Grid container gap={2}>
       {statusLabels.map(({ key, label, color }) => (
         <Grid size={{ xs: 12, sm: 4 }} key={key}>
           <Card sx={{ bgcolor: "#fff", boxShadow: 2 }}>

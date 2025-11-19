@@ -10,16 +10,19 @@ import {
   Fade,
   useMediaQuery,
   useTheme,
+  Button,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "./LanguageContext"; // ✅ import context hook
 
 const CategoryBar = ({ fixed = true }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
   const navigate = useNavigate();
+  const { language, toggleLanguage } = useLanguage(); // ✅ context hook
 
   const [categories, setCategories] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -30,7 +33,6 @@ const CategoryBar = ({ fixed = true }) => {
       .get("http://localhost:5000/api/category")
       .then((res) => {
         const all = res.data;
-
         const mainCategories = all.filter((cat) => !cat.parentCategory);
         const subCategories = all.filter((cat) => !!cat.parentCategory);
 
@@ -45,10 +47,12 @@ const CategoryBar = ({ fixed = true }) => {
 
           return {
             _id: main._id,
-            name: main.name_en,
+            name_en: main.name_en,
+            name_ta: main.name_ta,
             subcategories: children.map((sub) => ({
               _id: sub._id,
-              name: sub.name_en,
+              name_en: sub.name_en,
+              name_ta: sub.name_ta,
             })),
           };
         });
@@ -72,6 +76,7 @@ const CategoryBar = ({ fixed = true }) => {
     }, 200);
   };
 
+
   const formatCategoryName = (name) =>
     name
       ?.toLowerCase()
@@ -84,7 +89,7 @@ const CategoryBar = ({ fixed = true }) => {
       <GlobalStyles
         styles={{
           body: {
-             fontFamily: ` 'Montserrat', sans-serif`,
+            fontFamily: `'Montserrat', sans-serif`,
           },
         }}
       />
@@ -92,23 +97,23 @@ const CategoryBar = ({ fixed = true }) => {
       <AppBar
         position={fixed ? "fixed" : "static"}
         sx={{
-          top: { xs: 150, md: 100 },
-          backgroundColor: "#ffff",
+          top: { xs: 91.7, sm: 108, md: 110 },
+          background: "linear-gradient(180deg, #f9f9f9ff 0%, #f7d7d7ff 100%)",
           color: "#47332bff",
-          height: 50,
+          height: { xs: 35, sm: 35, md: 40 },
+          borderTop: "1px solid #ddd",
           borderBottom: "1px solid #ddd",
           boxShadow: "0 3px 6px rgba(0, 0, 0, 0.2)",
           zIndex: 1,
-          overflow: "hidden",
         }}
       >
         <Toolbar
           sx={{
+            minHeight: { xs: 35, sm: 35, md: 40 },
             display: "flex",
             alignItems: "center",
-            justifyContent: { xs: "flex-start", sm: "center" }, // ✅ center for larger screens, start for small
-            gap: { xs: 2, sm: 3, md: 4 },
-            px: { xs: 2, sm: 3, md: 6 },
+            justifyContent: { xs: "flex-start", sm: "center", md: "center" },
+            px: { xs: 1, sm: 3, md: 6 },
             py: 0,
             overflowX: "auto",
             overflowY: "hidden",
@@ -122,12 +127,14 @@ const CategoryBar = ({ fixed = true }) => {
           <Box
             sx={{
               display: "inline-flex",
-              justifyContent: { xs: "flex-start", sm: "center" },
+              alignItems: "center",
               flexWrap: "nowrap",
-              gap: { xs: 2, sm: 3, md: 4 },
-              mx: "auto", // ✅ keeps center alignment even when scrollable
+              gap: { xs: 1.5, sm: 3, md: 4 },
+              flexShrink: 0,
             }}
           >
+            
+            {/* ✅ Category List */}
             {categories.map((cat) => (
               <Box
                 key={cat._id}
@@ -143,29 +150,35 @@ const CategoryBar = ({ fixed = true }) => {
                   alignItems: "center",
                   cursor: cat.subcategories?.length ? "default" : "pointer",
                   px: 1.2,
-                  py: 0.5,
+                  py: 0.3,
                   borderRadius: "6px",
                   flexShrink: 0,
                   color: "#4b2c20",
                   fontWeight: 600,
-                  transition: "color 0.3s ease",
-                  "&:hover": { color: "#b8860b" },
+                  transition: "color 0.3s ease, background-color 0.3s ease",
+                  "&:hover": {
+                    color: "#b8860b",
+                    backgroundColor: "#fff9e6",
+                  },
                 }}
               >
                 <Typography
                   sx={{
                     fontSize: isMobile ? "0.8rem" : isTablet ? "0.85rem" : "0.9rem",
                     fontWeight: 500,
+                    lineHeight: 1.2,
                   }}
                 >
-                  {formatCategoryName(cat.name)}
+                  {formatCategoryName(
+                    language === "EN" ? cat.name_en : cat.name_ta
+                  )}
                 </Typography>
 
                 {cat.subcategories?.length > 0 && (
                   <ExpandMoreIcon
                     sx={{
                       fontSize: "1rem",
-                      ml: 0.4,
+                      ml: 0.3,
                       color:
                         activeCategoryId === cat._id ? "#b8860b" : "#4b2c20",
                       transition: "transform 0.3s ease, color 0.3s ease",
@@ -218,7 +231,9 @@ const CategoryBar = ({ fixed = true }) => {
                           },
                         }}
                       >
-                        {formatCategoryName(sub.name)}
+                        {formatCategoryName(
+                          language === "EN" ? sub.name_en : sub.name_ta
+                        )}
                       </MenuItem>
                     ))}
                   </Menu>

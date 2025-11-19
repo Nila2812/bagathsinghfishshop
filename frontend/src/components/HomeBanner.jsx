@@ -1,10 +1,18 @@
 import React from "react";
-import Slider from "react-slick";
 import { Box, Typography, Button } from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import Slider from "react-slick";
+import { useLanguage } from "./LanguageContext"; 
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
+const tamilFont = "'Latha', 'Noto Sans Tamil', 'Tiro Tamil', sans-serif";
+const englishFont = "'Poppins', 'Lato', sans-serif";
+
 const HomeBanner = () => {
+  const { language } = useLanguage(); 
+  const navigate = useNavigate(); 
+
   const bannerImages = [
     "src/img/Home2.png",
     "src/img/Home1.png",
@@ -13,6 +21,22 @@ const HomeBanner = () => {
     "src/img/Home5.png",
     "src/img/Home6.png",
   ];
+
+  // ✨ Language-specific text
+  const textContent = {
+    EN: {
+      title: "“Fresh Meat, Juicy Chicken & Daily Catch Fish – All in One Place!”",
+      subtitle: "Bringing the taste of freshness from our shop to your kitchen.",
+      explore: "Explore",
+      contact: "Contact Us",
+    },
+    TA: {
+      title: "“இறைச்சி, கோழி, கடல் உணவு — ஒரே இடத்தில்!”",
+      subtitle: "எங்கள் கடையிலிருந்து பசுமை உங்கள் வீடு வரை!",
+      explore: "ஆராய்க",
+      contact: "தொடர்பு கொள்ள",
+    },
+  };
 
   const sliderSettings = {
     dots: true,
@@ -24,7 +48,7 @@ const HomeBanner = () => {
     slidesToScroll: 1,
     arrows: false,
     fade: true,
-    appendDots: dots => (
+    appendDots: (dots) => (
       <Box
         sx={{
           position: "absolute",
@@ -39,7 +63,7 @@ const HomeBanner = () => {
         <ul style={{ margin: 0, padding: 0 }}>{dots}</ul>
       </Box>
     ),
-    customPaging: i => (
+    customPaging: () => (
       <div
         style={{
           width: "9px",
@@ -55,12 +79,15 @@ const HomeBanner = () => {
   return (
     <Box
       sx={{
+        mb: 6,
         width: "100%",
-        height: { xs: "240px", sm: "300px", md: "420px" },
+        height: { xs: "235px", sm: "300px", md: "400px" },
         position: "relative",
         overflow: "hidden",
+        fontFamily: language === "EN" ? englishFont : tamilFont,
       }}
     >
+      {/* 🎨 Custom Dots Style */}
       <style>
         {`
           .slick-dots li {
@@ -83,13 +110,14 @@ const HomeBanner = () => {
           <Box
             key={index}
             sx={{
-              height: { xs: "240px", sm: "300px", md: "420px" },
+              height: { xs: "235px", sm: "300px", md: "400px" },
               backgroundImage: `url(${image})`,
               backgroundSize: "cover",
               backgroundPosition: "center",
               position: "relative",
             }}
           >
+            {/* Overlay with Text */}
             <Box
               sx={{
                 position: "absolute",
@@ -99,86 +127,95 @@ const HomeBanner = () => {
                 height: "100%",
                 backgroundColor: "rgba(0, 0, 0, 0.45)",
                 display: "flex",
-                flexDirection: "column",
                 justifyContent: "center",
                 alignItems: "center",
                 textAlign: "center",
-                px: { xs: 2, sm: 4, md: 6 },
-                zIndex: 2,
+                px: { xs: 2, sm: 3, md: 4 },
+                boxSizing: "border-box",
               }}
             >
-              <Typography
-                variant="h5"
-                sx={{
-                  fontWeight: "bold",
-                  color: "#fff",
-                  textShadow: "0 2px 5px rgba(0,0,0,0.6)",
-                  fontSize: { xs: "0.9rem", sm: "1.2rem", md: "1.5rem" },
-                  maxWidth: "90%",
-                }}
-              >
-                “Fresh Meat, Juicy Chicken & Daily Catch Fish – All in One Place!”
-              </Typography>
-              <Typography
-                variant="body1"
-                sx={{
-                  color: "#fff",
-                  mt: 1,
-                  opacity: 0.9,
-                  fontStyle: "italic",
-                  fontSize: { xs: "0.75rem", sm: "0.9rem", md: "1rem" },
-                  maxWidth: "85%",
-                }}
-              >
-                Bringing the taste of freshness from our shop to your kitchen.
-              </Typography>
-
               <Box
                 sx={{
-                  mt: { xs: 2, sm: 3 },
-                  display: "flex",
-                  gap: { xs: 1.5, sm: 2 },
-                  flexWrap: "wrap",
-                  justifyContent: "center",
+                  maxWidth: "600px",
+                  mx: "auto",
+                  px: { xs: 1, sm: 2 },
                 }}
               >
-                <Button
-                  variant="contained"
+                <Typography
+                  variant="h5"
                   sx={{
-                    backgroundColor: "#cc1d2e",
-                    color: "white",
-                    px: { xs: 2, sm: 3 },
-                    py: { xs: 0.5, sm: 0.8 },
-                    borderRadius: "20px",
                     fontWeight: "bold",
-                    fontSize: { xs: "0.7rem", sm: "0.9rem" },
-                    whiteSpace: "nowrap",
-                    "&:hover": {
-                      backgroundColor: "#a81825",
-                    },
+                    color: "#fff",
+                    textShadow: "0 2px 5px rgba(0,0,0,0.6)",
+                    fontSize: { xs: "0.9rem", sm: "1.2rem", md: "1.5rem" },
+                    fontFamily: language === "EN" ? englishFont : tamilFont,
                   }}
                 >
-                  Explore
-                </Button>
-                <Button
-                  variant="outlined"
+                  {textContent[language].title}
+                </Typography>
+
+                <Typography
+                  variant="body1"
                   sx={{
-                    borderColor: "white",
-                    color: "white",
-                    px: { xs: 2, sm: 3 },
-                    py: { xs: 0.5, sm: 0.8 },
-                    borderRadius: "20px",
-                    fontWeight: "bold",
-                    fontSize: { xs: "0.7rem", sm: "0.9rem" },
-                    whiteSpace: "nowrap",
-                    "&:hover": {
-                      backgroundColor: "white",
-                      color: "#cc1d2e",
-                    },
+                    color: "#fff",
+                    mt: 1,
+                    opacity: 0.9,
+                    fontSize: { xs: "0.75rem", sm: "0.9rem", md: "1rem" },
+                    fontFamily: language === "EN" ? englishFont : tamilFont,
                   }}
                 >
-                  Contact
-                </Button>
+                  {textContent[language].subtitle}
+                </Typography>
+
+                <Box
+                  sx={{
+                    mt: { xs: 2, sm: 3 },
+                    display: "flex",
+                    gap: { xs: 1.5, sm: 2 },
+                    flexWrap: "wrap",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Button
+                    variant="contained"
+                      onClick={() => navigate("/products")}
+                    sx={{
+                      backgroundColor: "#cc1d2e",
+                      color: "white",
+                      px: { xs: 2, sm: 3 },
+                      py: { xs: 0.5, sm: 0.8 },
+                      fontWeight: "bold",
+                      fontSize: { xs: "0.7rem", sm: "0.9rem" },
+                      whiteSpace: "nowrap",
+                      "&:hover": {
+                        backgroundColor: "#a81825",
+                      },
+                    }}
+                  >
+                    {textContent[language].explore}
+                  </Button>
+
+                  <Button
+                    variant="outlined"
+                    onClick={() => navigate("/contact")} // ✅ Navigation
+                    sx={{
+                      borderColor: "white",
+                      color: "white",
+                      px: { xs: 2, sm: 3 },
+                      py: { xs: 0.5, sm: 0.8 },
+                      borderRadius: "20px",
+                      fontWeight: "bold",
+                      fontSize: { xs: "0.7rem", sm: "0.9rem" },
+                      whiteSpace: "nowrap",
+                      "&:hover": {
+                        backgroundColor: "white",
+                        color: "#cc1d2e",
+                      },
+                    }}
+                  >
+                    {textContent[language].contact}
+                  </Button>
+                </Box>
               </Box>
             </Box>
           </Box>

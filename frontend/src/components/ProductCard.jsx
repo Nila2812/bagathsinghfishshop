@@ -14,9 +14,13 @@ import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import { useCart } from "../context/CartContext";
-
+import { useLanguage } from "./LanguageContext"; // import language context
+const tamilFont = "'Latha', 'Noto Sans Tamil', 'Tiro Tamil', sans-serif";
+const englishFont = "'Poppins', 'Lato', sans-serif";
 const ProductCard = ({ product }) => {
-  const {
+  const [quantity, setQuantity] = useState(0);
+  const { language } = useLanguage();
+const {
     addToCart,
     incrementWeight,
     decrementWeight,
@@ -25,7 +29,6 @@ const ProductCard = ({ product }) => {
     getCartItemId,
     loading,
   } = useCart();
-
   const inCart = isInCart(product._id);
   const weightDisplay = getProductWeight(product._id);
   const cartItemId = getCartItemId(product._id);
@@ -87,9 +90,38 @@ const ProductCard = ({ product }) => {
     }
   };
 
+  // Decode base64 image if available
+const productImage = product.image
+  ? `data:${product.image.contentType};base64,${product.image.data}`
+  : "../img/placeholder.jpg";
+
   return (
     <>
       <Card
+      sx={{
+        width: "100%",
+        maxWidth: 180,
+        borderRadius: 2,
+        boxShadow: "0px 3px 10px rgba(0,0,0,0.1)",
+        textAlign: "center",
+        px:{ xs: 0.5, sm: 0.8, md:1},
+        py:{ xs: 0.5, sm: 0.8, md:1},
+        m:0.1,
+       background: "white",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        transition: "transform 0.2s ease, box-shadow 0.2s ease",
+        "&:hover": {
+          transform: "translateY(-4px)",
+          boxShadow: "0px 6px 14px rgba(0,0,0,0.15)",
+        },
+      }}
+    >
+      <CardMedia
+        component="img"
+        image={productImage}
+        alt={language === "EN" ? product.name_en : product.name_ta}
         sx={{
           width: "100%",
           maxWidth: 180,
@@ -107,44 +139,39 @@ const ProductCard = ({ product }) => {
             boxShadow: "0px 6px 14px rgba(0,0,0,0.15)",
           },
         }}
-      >
-        <CardMedia
-          component="img"
-          image={product.image}
-          alt={product.name}
-          sx={{
-            borderRadius: 2,
-            objectFit: "cover",
-            width: "100%",
-            height: { xs: 100, sm: 130 },
-          }}
         />
 
         <CardContent sx={{ p: 1 }}>
-          <Typography
-            variant="subtitle2"
-            sx={{
-              fontWeight: "bold",
-              color: "black",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-              minHeight: "2.8em",
-              fontSize: { xs: "0.75rem", sm: "0.85rem" },
-            }}
-          >
-            {product.name}
+           {/* Product Name */}
+        <Typography
+          variant="subtitle2"
+          sx={{
+            fontWeight: "bold",
+            color: "black",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            minHeight: "2.8em",
+            fontSize: { xs: "0.75rem", sm: "0.85rem" },
+            fontFamily: language === "EN" ? englishFont : tamilFont,
+          }}
+        >
+          {language === "EN" ? product.name_en : product.name_ta}
           </Typography>
 
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ fontSize: { xs: "0.7rem", sm: "0.8rem" } }}
-          >
-            {product.weight} | ₹{product.price}
-          </Typography>
+           {/* Price & Weight */}
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{
+            fontSize: { xs: "0.7rem", sm: "0.8rem" },
+            fontFamily: language === "EN" ? englishFont : tamilFont,
+          }}
+        >
+          {`${product.weight}`} | ₹{product.price}
+        </Typography>
 
           {!inCart ? (
             <Button
@@ -169,6 +196,7 @@ const ProductCard = ({ product }) => {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
+                  mt:1,
                   gap: 0.5,
                   mb: 0.5,
                 }}
@@ -231,11 +259,10 @@ const ProductCard = ({ product }) => {
                   borderColor: "#e23a3a",
                   color: "#e23a3a",
                   py: 0.3,
-                  px: 1,
-                  
+                  px: 1,      
                 }}
-              >
-                
+              >      
+              Cart
               </Button>
             </Box>
           )}
