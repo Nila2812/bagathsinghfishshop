@@ -2,19 +2,18 @@ import express from "express";
 import multer from "multer";
 import Product from "../models/Product.js";
 import Category from "../models/Category.js";
-import { getAllProducts ,getProductsByCategory, searchProducts } from "../controllers/productController.js";
+import { getAllProducts, getProductsByCategory, searchProducts } from "../controllers/productController.js";
 
 const router = express.Router();
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// Add product route
-router.get("/by-category/:id", getProductsByCategory);
-
-//get all products 
-router.get("/", getAllProducts); 
-//search product
+// GET routes - order matters! More specific routes first
 router.get("/search", searchProducts);
+router.get("/by-category/:id", getProductsByCategory);
+router.get("/", getAllProducts);
+
+// Add a product
 router.post("/add", upload.single("image"), async (req, res) => {
   try {
     const {
@@ -55,18 +54,6 @@ router.post("/add", upload.single("image"), async (req, res) => {
   }
 });
 
-
-//delete by id
-router.delete("/:id", async (req, res) => {
-  try {
-    await Product.findByIdAndDelete(req.params.id);
-    res.json({ message: "Product deleted successfully" });
-  } catch (err) {
-    console.error("Error deleting product:", err);
-    res.status(500).json({ error: "Failed to delete product" });
-  }
-});
-
 // Update a product
 router.put("/:id", upload.single("image"), async (req, res) => {
   try {
@@ -101,8 +88,10 @@ router.put("/:id", upload.single("image"), async (req, res) => {
       };
     }
 
-    const updated = await Product.findByIdAndUpdate(req.params.id, updateData, { new: true }).populate("categoryId", "name_en parentCategory");
+    const updated = await Product.findByIdAndUpdate(req.params.id, updateData, { new: true })
+      .populate("categoryId", "name_en parentCategory");
 
+    // Get category hierarchy for proper formatting
     const categories = await Category.find({}, "_id name_en parentCategory");
     const parentCategories = {};
     categories.forEach(cat => {
@@ -110,6 +99,7 @@ router.put("/:id", upload.single("image"), async (req, res) => {
         parentCategories[cat._id.toString()] = cat.name_en;
       }
     });
+    
     const subToParentMap = {};
     categories.forEach(cat => {
       if (cat.parentCategory) {
@@ -153,7 +143,15 @@ router.put("/:id", upload.single("image"), async (req, res) => {
   }
 });
 
-// Get products by category
-router.get("/by-category/:id", getProductsByCategory);
+// Delete a product
+router.delete("/:id", async (req, res) => {
+  try {
+    await Product.findByIdAndDelete(req.params.id);
+    res.json({ message: "Product deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting product:", err);
+    res.status(500).json({ error: "Failed to delete product" });
+  }
+});
 
 export default router;
