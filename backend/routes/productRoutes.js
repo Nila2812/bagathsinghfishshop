@@ -2,13 +2,19 @@ import express from "express";
 import multer from "multer";
 import Product from "../models/Product.js";
 import Category from "../models/Category.js";
-import { getProductsByCategory } from "../controllers/productController.js";
+import { getAllProducts ,getProductsByCategory, searchProducts } from "../controllers/productController.js";
 
 const router = express.Router();
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// Add a product
+// Add product route
+router.get("/by-category/:id", getProductsByCategory);
+
+//get all products 
+router.get("/", getAllProducts); 
+//search product
+router.get("/search", searchProducts);
 router.post("/add", upload.single("image"), async (req, res) => {
   try {
     const {
@@ -49,65 +55,8 @@ router.post("/add", upload.single("image"), async (req, res) => {
   }
 });
 
-// Get all products
-router.get("/", async (req, res) => {
-  try {
-    const categories = await Category.find({}, "_id name_en parentCategory");
-    const products = await Product.find().populate("categoryId", "name_en parentCategory");
 
-    const parentCategories = {};
-    categories.forEach(cat => {
-      if (!cat.parentCategory) {
-        parentCategories[cat._id.toString()] = cat.name_en;
-      }
-    });
-
-    const subToParentMap = {};
-    categories.forEach(cat => {
-      if (cat.parentCategory) {
-        const parentId = cat.parentCategory.toString();
-        subToParentMap[cat._id.toString()] = parentCategories[parentId] || "Uncategorized";
-      }
-    });
-
-    const formatted = products.map(p => {
-      const catId = p.categoryId?._id?.toString();
-      const subcategoryName = p.categoryId?.name_en || "None";
-      const parentName = subToParentMap[catId] || parentCategories[catId] || "Uncategorized";
-
-      const imageData = p.image?.data
-        ? Buffer.from(p.image.data).toString("base64")
-        : null;
-
-      return {
-        _id: p._id,
-        name_en: p.name_en,
-        name_ta: p.name_ta,
-        price: p.price,
-        weightValue: p.weightValue,
-        weightUnit: p.weightUnit,
-        baseUnit: p.baseUnit,
-        stockQty: p.stockQty,
-        isAvailable: p.isAvailable,
-        category: parentName,
-        subcategory: subcategoryName === parentName ? "None" : subcategoryName,
-        image: imageData
-          ? {
-              data: imageData,
-              contentType: p.image.contentType,
-            }
-          : null,
-      };
-    });
-
-    res.json(formatted);
-  } catch (err) {
-    console.error("Error fetching products:", err);
-    res.status(500).json({ error: "Failed to fetch products" });
-  }
-});
-
-// Delete a product
+//delete by id
 router.delete("/:id", async (req, res) => {
   try {
     await Product.findByIdAndDelete(req.params.id);

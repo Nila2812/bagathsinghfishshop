@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   CircularProgress,
   Typography,
@@ -18,19 +18,21 @@ import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import CloseIcon from "@mui/icons-material/Close";
 import axios from "axios";
-
-// 🧭 Navbar Components
 import Topbar from "../components/Topbar";
 import MainNavbar from "../components/MainNavbar";
 import CategoryBar from "../components/CategoryBar";
 import Footer from "../components/Footer";
 import ProductCard from "../components/ProductCard";
+import { useLanguage } from "../components/LanguageContext";
 
 const CategoryProducts = () => {
   const { id } = useParams();
+  const { language } = useLanguage();
+  const navigate = useNavigate();
+
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
-  const [categoryName, setCategoryName] = useState("");
+  const [category, setCategory] = useState({});
   const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState([]);
 
@@ -40,31 +42,78 @@ const CategoryProducts = () => {
   const [sortOrder, setSortOrder] = useState("");
   const [activeFilters, setActiveFilters] = useState([]);
 
-  // 🧭 Fetch category and products
-  useEffect(() => {
-    const fetchCategoryAndProducts = async () => {
-      try {
-        const categoryRes = await axios.get(`http://localhost:5000/api/category/${id}`);
-        setCategoryName(categoryRes.data.name_en || categoryRes.data.name);
+  // 🧭 Fetch category + products (supports /category/:id and /products)
+ useEffect(() => {
+  const fetchProducts = async () => {
+    try {
+      let res;
+      let categoryData = {};
 
-        const res = await axios.get(`http://localhost:5000/api/products/by-category/${id}`);
-        const formatted = res.data.map((p) => ({
-          _id: p._id,
-          name: p.name_en,
-          price: p.price,
-          weight: `${p.weightValue} ${p.weightUnit}`,
-          image: p.image ? `data:${p.image.contentType};base64,${p.image.data}` : null,
-        }));
-        setProducts(formatted);
-        setFilteredProducts(formatted);
-      } catch (err) {
-        console.error("Failed to fetch products or category:", err);
-      } finally {
-        setLoading(false);
+      // Detect search mode from URL
+      const params = new URLSearchParams(location.search);
+      const searchQuery = params.get("query");
+
+      if (searchQuery) {
+        // 🔍 SEARCH MODE
+        res = await axios.get(
+          `http://localhost:5000/api/products/search?query=${searchQuery}`
+        );
+        console.log("🔎 Search Response:", res.data)
+
+
+        categoryData = {
+          name_en: `Search results for "${searchQuery}"`,
+          name_ta: `"${searchQuery}" தேடல் முடிவுகள்`,
+        };
+      } 
+      else if (id) {
+        // 📂 CATEGORY MODE
+        const categoryRes = await axios.get(
+          `http://localhost:5000/api/category/${id}`
+        );
+        categoryData = categoryRes.data;
+
+        res = await axios.get(
+          `http://localhost:5000/api/products/by-category/${id}`
+        );
+         console.log("🔎 Search Response:", res.data)
+
+      } 
+      else {
+        // 📦 ALL PRODUCTS MODE
+        res = await axios.get(`http://localhost:5000/api/products`);
+
+        categoryData = {
+          name_en: "All Products",
+          name_ta: "அனைத்து பொருட்கள்",
+        };
       }
-    };
-    fetchCategoryAndProducts();
-  }, [id]);
+
+      setCategory(categoryData);
+
+      // 🎯 UNIFIED FORMAT (same for all modes)
+      const formatted = res.data.map((p) => ({
+        _id: p._id,
+        name_en: p.name_en,
+        name_ta: p.name_ta,
+        price: p.price,
+        weight: `${p.weightValue} ${p.weightUnit}`,
+        image: p.image
+          ? { data: p.image.data, contentType: p.image.contentType }
+          : null,
+      }));
+
+      setProducts(formatted);
+      setFilteredProducts(formatted);
+    } catch (err) {
+      console.error("❌ Failed:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchProducts();
+}, [id, location.search]);
 
   // 🛒 Cart Handlers
   const handleAddToCart = (product, add) => {
@@ -83,18 +132,22 @@ const CategoryProducts = () => {
     let result = [...products];
     const filters = [];
 
-    // Filter by price
+    // Price Filter
     result = result.filter((p) => p.price >= priceRange[0] && p.price <= priceRange[1]);
-    filters.push(`Price: ₹${priceRange[0]}–₹${priceRange[1]}`);
+    filters.push(
+      language === "TA"
+        ? `விலை: ₹${priceRange[0]}–₹${priceRange[1]}`
+        : `Price: ₹${priceRange[0]}–₹${priceRange[1]}`
+    );
 
-    // Sort
+    // Sort Filter
     if (sortOrder === "asc") {
       result.sort((a, b) => a.price - b.price);
-      filters.push("Sort: Low → High");
+      filters.push(language === "TA" ? "விலை: குறைந்தது முதல்" : "Sort: Low → High");
     }
     if (sortOrder === "desc") {
       result.sort((a, b) => b.price - a.price);
-      filters.push("Sort: High → Low");
+      filters.push(language === "TA" ? "விலை: அதிகம் முதல்" : "Sort: High → Low");
     }
 
     setFilteredProducts(result);
@@ -110,29 +163,23 @@ const CategoryProducts = () => {
   };
 
   const removeFilter = (filter) => {
-    const updatedFilters = activeFilters.filter((f) => f !== filter);
-    setActiveFilters(updatedFilters);
-
-    // Reset price or sort depending on what was removed
-    if (filter.includes("Price")) setPriceRange([0, 1000]);
-    if (filter.includes("Sort")) setSortOrder("");
+    const updated = activeFilters.filter((f) => f !== filter);
+    setActiveFilters(updated);
     applyFilters();
   };
 
   if (loading) {
     return (
-      <Box
-        sx={{
-          minHeight: "100vh",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
+      <Box sx={{ minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
         <CircularProgress />
       </Box>
     );
   }
+
+  const categoryDisplayName =
+    language === "TA"
+      ? category.name_ta || category.name_en
+      : category.name_en || category.name_ta;
 
   return (
     <Box
@@ -140,7 +187,7 @@ const CategoryProducts = () => {
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
-        fontFamily: `"Lato", "Helvetica Neue", Helvetica, Arial, sans-serif`,
+        fontFamily: `"Poppins", "Lato", sans-serif`,
         backgroundColor: "#fafafa",
       }}
     >
@@ -160,19 +207,11 @@ const CategoryProducts = () => {
         <MainNavbar fixed />
       </Box>
 
-      {/* 📜 Scrollable Content */}
-      <Box
-        sx={{
-          mt: { xs: "160px", md: "110px" },
-          flexGrow: 1,
-          pb: 6,
-        }}
-      >
-        <Box sx={{ zIndex: 1 }}>
-          <CategoryBar fixed={false} />
-        </Box>
+      {/* 📜 Content */}
+      <Box sx={{ mt: { xs: "92px", sm: "108px", md: "110px" }, flexGrow: 1, pb: 6 }}>
+        <CategoryBar fixed={false} />
 
-        {/* 🏠 Breadcrumb + Filter Row */}
+        {/* 🏠 Breadcrumb + Filter */}
         <Box
           sx={{
             display: "flex",
@@ -187,31 +226,17 @@ const CategoryProducts = () => {
           {/* Breadcrumb */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <HomeOutlinedIcon
-              sx={{
-                fontSize: 22,
-                color: "#333",
-                cursor: "pointer",
-                "&:hover": { color: "#be3838" },
-              }}
-              onClick={() => (window.location.href = "/")}
+              sx={{ fontSize: 22, color: "#333", cursor: "pointer", "&:hover": { color: "#be3838" } }}
+              onClick={() => navigate("/")}
             />
             <Typography variant="body2" sx={{ color: "#666", fontSize: "0.9rem" }}>
-              <span
-                style={{ color: "#333", cursor: "pointer" }}
-                onClick={() => (window.location.href = "/")}
-              >
-                Home
+              <span style={{ color: "#333", cursor: "pointer" }} onClick={() => navigate("/")}>
+                {language === "TA" ? "முகப்பு" : "Home"}
               </span>{" "}
               /{" "}
-              <span
-                style={{
-                  color: "#be3838",
-                  textTransform: "capitalize",
-                  cursor: "pointer",
-                }}
-                onClick={() => (window.location.href = `/category/${id}`)}
-              >
-                {categoryName || "Category"}
+              <span style={{ color: "#be3838", textTransform: "capitalize" }}>
+                {categoryDisplayName ||
+                  (language === "TA" ? "அனைத்து பொருட்கள்" : "All Products")}
               </span>
             </Typography>
           </Box>
@@ -227,14 +252,13 @@ const CategoryProducts = () => {
               py: 0.7,
               border: "1px solid #ccc",
               borderRadius: "6px",
-              transition: "0.2s",
-              "&:hover": { backgroundColor: "#f5f5f5", borderColor: "#999" },
+              "&:hover": { backgroundColor: "#f5f5f5" },
             }}
             onClick={() => setDrawerOpen(true)}
           >
             <FilterListIcon sx={{ color: "#333", fontSize: 18 }} />
             <Typography variant="body2" sx={{ color: "#333", fontWeight: 500 }}>
-              Filter
+              {language === "TA" ? "வடிகட்டு" : "Filter"}
             </Typography>
           </Box>
         </Box>
@@ -243,7 +267,7 @@ const CategoryProducts = () => {
         {activeFilters.length > 0 && (
           <Box
             sx={{
-              px: { xs: 2, sm: 4, md: 6 },
+              px: { xs: 1.5, sm: 4, md: 6 },
               py: 2,
               display: "flex",
               flexWrap: "wrap",
@@ -253,7 +277,7 @@ const CategoryProducts = () => {
             }}
           >
             <Typography variant="body2" sx={{ fontWeight: 500, color: "#555" }}>
-              Active Filters:
+              {language === "TA" ? "செயலில் உள்ள வடிகட்டிகள்:" : "Active Filters:"}
             </Typography>
             <Stack direction="row" spacing={1} flexWrap="wrap">
               {activeFilters.map((filter, index) => (
@@ -276,11 +300,10 @@ const CategoryProducts = () => {
                   textTransform: "none",
                   fontSize: "0.8rem",
                   color: "#555",
-                  ml: 1,
                   "&:hover": { textDecoration: "underline" },
                 }}
               >
-                Clear All
+                {language === "TA" ? "அனைத்தையும் நீக்கு" : "Clear All"}
               </Button>
             </Stack>
           </Box>
@@ -290,7 +313,9 @@ const CategoryProducts = () => {
         <Box sx={{ px: { xs: 1.5, sm: 2, md: 4, lg: 6 }, py: 4 }}>
           {filteredProducts.length === 0 ? (
             <Typography variant="h6" sx={{ mt: 4, textAlign: "center" }}>
-              No products found for this category.
+              {language === "TA"
+                ? "இந்த வகையில் பொருட்கள் இல்லை."
+                : "No products found for this category."}
             </Typography>
           ) : (
             <Box
@@ -309,7 +334,13 @@ const CategoryProducts = () => {
               {filteredProducts.map((product) => (
                 <ProductCard
                   key={product._id}
-                  product={product}
+                  product={{
+                    ...product,
+                    displayName:
+                      language === "TA"
+                        ? product.name_ta || product.name_en
+                        : product.name_en || product.name_ta,
+                  }}
                   onAddToCart={handleAddToCart}
                   onUpdateCart={handleUpdateCart}
                 />
@@ -319,7 +350,6 @@ const CategoryProducts = () => {
         </Box>
       </Box>
 
-      {/* 🦶 Footer */}
       <Footer />
 
       {/* 🧩 Filter Drawer */}
@@ -327,17 +357,21 @@ const CategoryProducts = () => {
         anchor="right"
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        PaperProps={{
-          sx: { width: { xs: "85%", sm: 350 }, p: 3 },
+        slotProps={{
+          paper: {
+            sx: {
+              width: { xs: "80%", sm: "60%", md: 320, lg: 360 },
+              p: { xs: 2, sm: 3 },
+            },
+          },
         }}
       >
         <Typography variant="h6" sx={{ mb: 2, color: "#333" }}>
-          Filter Options
+          {language === "TA" ? "வடிகட்டல் விருப்பங்கள்" : "Filter Options"}
         </Typography>
 
-        {/* Price Range */}
         <Typography variant="body2" sx={{ mt: 2, mb: 1, fontWeight: 500 }}>
-          Price Range (₹)
+          {language === "TA" ? "விலை வரம்பு (₹)" : "Price Range (₹)"}
         </Typography>
         <Slider
           value={priceRange}
@@ -348,33 +382,34 @@ const CategoryProducts = () => {
           sx={{ color: "#be3838" }}
         />
 
-        {/* Sort By */}
         <FormControl fullWidth sx={{ mt: 3 }}>
-          <InputLabel id="sort-label">Sort By</InputLabel>
+          <InputLabel id="sort-label">
+            {language === "TA" ? "தரவரிசை படி" : "Sort By"}
+          </InputLabel>
           <Select
             labelId="sort-label"
             value={sortOrder}
-            label="Sort By"
+            label={language === "TA" ? "தரவரிசை படி" : "Sort By"}
             onChange={(e) => setSortOrder(e.target.value)}
           >
-            <MenuItem value="">None</MenuItem>
-            <MenuItem value="asc">Price: Low to High</MenuItem>
-            <MenuItem value="desc">Price: High to Low</MenuItem>
+            <MenuItem value="">{language === "TA" ? "எதுவுமில்லை" : "None"}</MenuItem>
+            <MenuItem value="asc">
+              {language === "TA" ? "விலை: குறைந்தது முதல்" : "Price: Low to High"}
+            </MenuItem>
+            <MenuItem value="desc">
+              {language === "TA" ? "விலை: அதிகம் முதல்" : "Price: High to Low"}
+            </MenuItem>
           </Select>
         </FormControl>
 
-        {/* Buttons */}
         <Box sx={{ display: "flex", gap: 1.5, mt: 4 }}>
           <Button
             variant="contained"
-            sx={{
-              backgroundColor: "#be3838",
-              "&:hover": { backgroundColor: "#a62f2f" },
-            }}
+            sx={{ backgroundColor: "#be3838", "&:hover": { backgroundColor: "#a62f2f" } }}
             onClick={applyFilters}
             fullWidth
           >
-            Apply
+            {language === "TA" ? "பயன்படுத்து" : "Apply"}
           </Button>
           <Button
             variant="outlined"
@@ -382,7 +417,7 @@ const CategoryProducts = () => {
             sx={{ borderColor: "#999", color: "#333" }}
             fullWidth
           >
-            Clear
+            {language === "TA" ? "அழி" : "Clear"}
           </Button>
         </Box>
       </Drawer>

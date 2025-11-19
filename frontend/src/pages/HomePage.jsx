@@ -6,7 +6,8 @@ import CategoryBar from "../components/CategoryBar";
 import HomeBanner from "../components/HomeBanner";
 import FAQSection from "../components/FAQSection";
 import HowItWorks from "../components/HowItWorksSection";
-import HomeCategorySection from "../components/HomeCategorySection";
+
+//import HomeCategorySection from "../components/HomeCategorySection";
 import Footer from "../components/Footer";
 import CategoryCarousel from "../components/CategoryCarousel";
 import OfferCarousel from "../components/OfferCarousel";
@@ -34,7 +35,7 @@ const HomePage = () => {
       {/* 🔹 Main Content Section */}
       <Box
         sx={{
-          mt: { xs: "180px", md: "150px" }, // Adjust this based on combined header height
+          mt: { xs: "125px", md: "150px", sm:"143px"}, // Adjust this based on combined header height
           px: 0,
           position: "relative",
           backgroundColor: "#fafafa",
@@ -42,9 +43,11 @@ const HomePage = () => {
       >
         <HomeBanner />
         <OfferCarousel />
-        <CategoryCarousel />
+
+  <CategoryCarousel />
+
         <HowItWorks />
-        <HomeCategorySection />
+       
         <FAQSection />
         <Footer />
       </Box>

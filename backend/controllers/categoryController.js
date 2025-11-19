@@ -1,7 +1,7 @@
 // controllers/categoryController.js
 import Category from "../models/Category.js";
 
-// @desc    Get single category by ID
+
 // @route   GET /api/categories/:id
 export const getCategoryById = async (req, res) => {
   try {

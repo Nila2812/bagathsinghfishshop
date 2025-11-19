@@ -1,135 +1,103 @@
-import React, { useState } from "react";
-import {
-  Box,
-  Typography,
-  useMediaQuery,
-  Button,
-} from "@mui/material";
+import React from "react";
+import { Box, Typography, useMediaQuery } from "@mui/material";
+import { useLanguage } from "./LanguageContext";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
-import LocalDiningIcon from "@mui/icons-material/LocalDining";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
+import PhoneInTalkIcon from "@mui/icons-material/PhoneInTalk";
 
 const HowItWorksSection = () => {
   const isMobile = useMediaQuery("(max-width:768px)");
-  const [language, setLanguage] = useState("en"); // 'en' or 'ta'
+  const { language } = useLanguage();
 
-  const tamilFontFamily = "'Latha', 'Noto Sans Tamil', 'Tiro Tamil', sans-serif";
-  const englishFontFamily = "'Poppins', 'Lato', 'Helvetica Neue', sans-serif";
+  const tamilFont = "'Latha', 'Noto Sans Tamil', 'Tiro Tamil', sans-serif";
+  const englishFont = "'Poppins', 'Lato', sans-serif";
 
   const steps = {
-    en: [
+    EN: [
       {
-        icon: <ShoppingCartIcon sx={{ fontSize: 50, color: "#7D221D" }} />,
+        icon: <ShoppingCartIcon sx={{ fontSize: 50, color: "#f4a300" }} />,
         title: "Choose Products",
         desc: "Select from our wide range of fresh chicken, fish, and quail products.",
       },
       {
-        icon: <LocalDiningIcon sx={{ fontSize: 50, color: "#d2691e" }} />,
-        title: "Processed Freshly",
-        desc: "Your order is cleaned, cut, and prepared fresh by our expert team.",
+        icon: <PhoneInTalkIcon sx={{ fontSize: 50, color: "#7D221D" }} />,
+        title: "Admin Contacts You",
+        desc: "Our admin will contact you to confirm your order and delivery.",
       },
       {
         icon: <LocalShippingIcon sx={{ fontSize: 50, color: "#f4a300" }} />,
-        title: "Doorstep Delivery",
-        desc: "We deliver your order quickly to your doorstep, fresh and chilled.",
+        title: "Freshly Prepared & Delivered",
+        desc: "Your order is freshly processed and delivered quickly to your doorstep.",
       },
     ],
-    ta: [
+    TA: [
       {
-        icon: <ShoppingCartIcon sx={{ fontSize: 50, color: "#7D221D" }} />,
+        icon: <ShoppingCartIcon sx={{ fontSize: 50, color: "#f4a300" }} />,
         title: "தயாரிப்புகளைத் தேர்ந்தெடுக்கவும்",
         desc: "புதிய கோழி, மீன் மற்றும் காடை தயாரிப்புகளில் இருந்து தேர்ந்தெடுக்கவும்.",
       },
       {
-        icon: <LocalDiningIcon sx={{ fontSize: 50, color: "#d2691e" }} />,
-        title: "புதியதாக தயாரிக்கப்படுகிறது",
-        desc: "உங்கள் ஆர்டர் சுத்தப்படுத்தப்பட்டு, வெட்டப்பட்டு, எங்கள் நிபுணர்களால் தயாரிக்கப்படுகிறது.",
+        icon: <PhoneInTalkIcon sx={{ fontSize: 50, color: "#7D221D" }} />,
+        title: "நிர்வாகி உங்களை தொடர்புகொள்வார்",
+        desc: "ஆர்டர் மற்றும் விநியோகத்தை உறுதிப்படுத்த நிர்வாகி தொடர்புகொள்வார்.",
       },
       {
         icon: <LocalShippingIcon sx={{ fontSize: 50, color: "#f4a300" }} />,
-        title: "வீட்டுக்கு நேரடி விநியோகம்",
-        desc: "நாங்கள் உங்கள் ஆர்டரை பசுமையாகவும் குளிர்ச்சியுடனும் விரைவாக விநியோகிக்கிறோம்.",
+        title: "புதியதாக தயாரித்து விரைவில் வழங்கப்படுகிறது",
+        desc: "உங்கள் ஆர்டர் புதியதாக தயாரிக்கப்பட்டு விரைவில் வீட்டுக்கு வழங்கப்படுகிறது.",
       },
     ],
   };
 
-  const currentSteps = steps[language];
+  const current = steps[language];
 
   return (
     <Box
       sx={{
-        py: 8,
-        px: { xs: 2, sm: 4, md: 8 },
+        py: 4,
+        px: { xs: 1, sm: 4, md: 4 },
         textAlign: "center",
-        background: "linear-gradient(180deg, #fff9f9 0%, #fff 100%)",
-        fontFamily: language === "ta" ? tamilFontFamily : englishFontFamily,
-        position: "relative",
+        background: "linear-gradient(180deg, #f9f9f9ff 0%, #fcf1f1ff 100%)",
+        mb:6,
+        fontFamily: language === "TA" ? tamilFont : englishFont,
       }}
     >
-      {/* Language Switcher */}
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
-        <Button
-          onClick={() => setLanguage(language === "en" ? "ta" : "en")}
-          variant="outlined"
-          sx={{
-            borderColor: "#7D221D",
-            color: "#7D221D",
-            fontWeight: 600,
-            textTransform: "none",
-            "&:hover": {
-              backgroundColor: "#7D221D",
-              color: "#fff",
-            },
-          }}
-        >
-          {language === "en" ? "தமிழ்" : "English"}
-        </Button>
-      </Box>
-
       <Typography
         variant="h4"
         sx={{
           fontWeight: 700,
-          mb: 6,
+          mb: 3,
           color: "#3b1f1d",
-          letterSpacing: 1,
+          fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
         }}
       >
-        {language === "en" ? "HOW IT WORKS" : "எப்படி செயல்படுகிறது"}
+        {language === "EN" ? "HOW IT WORKS" : "எப்படி செயல்படுகிறது"}
       </Typography>
 
-      {/* Steps Container */}
+      {/* Steps */}
       <Box
         sx={{
           display: "flex",
           flexDirection: { xs: "column", md: "row" },
           justifyContent: "center",
           alignItems: "center",
-          gap: { xs: 5, md: 8 },
+          gap: { xs: 5, md: 6 },
           position: "relative",
+          overflow: "visible",
         }}
       >
-        {currentSteps.map((step, index) => (
-          <React.Fragment key={index}>
-            {/* Step Card */}
+        {current.map((step, i) => (
+          <React.Fragment key={i}>
             <Box
               sx={{
                 backgroundColor: "#fff",
                 boxShadow: "0px 2px 10px rgba(0,0,0,0.08)",
                 borderRadius: "20px",
-                p: 4,
-                width: { xs: "90%", sm: "80%", md: 280 },
-                height: { xs: "auto", md: 250 },
+                p: { xs: 2, sm: 4, md: 3 },
+                width: { xs: "80%", sm: "80%", md: 280 },
                 textAlign: "center",
-                transition: "0.3s",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
-                "&:hover": {
-                  transform: "translateY(-5px)",
-                  boxShadow: "0 6px 18px rgba(0,0,0,0.1)",
-                },
+                position: "relative",
+                zIndex: 2,
               }}
             >
               <Box sx={{ mb: 2 }}>{step.icon}</Box>
@@ -138,7 +106,7 @@ const HowItWorksSection = () => {
                 sx={{
                   fontWeight: 600,
                   mb: 1,
-                  color: "#2d1a19",
+                  fontSize: { xs: "0.9rem", sm: "1rem", md: "1.3rem" },
                 }}
               >
                 {step.title}
@@ -146,37 +114,50 @@ const HowItWorksSection = () => {
               <Typography
                 variant="body2"
                 sx={{
-                  color: "#555",
-                  lineHeight: 1.6,
+                  fontSize: { xs: "0.7rem", sm: "0.8rem", md: "0.8rem" },
                 }}
               >
                 {step.desc}
               </Typography>
             </Box>
 
-            {/* Curved Arrows Between Steps */}
-            {!isMobile && index !== currentSteps.length - 1 && (
+            {/* Arrow Logic */}
+            {i !== current.length - 1 && (
               <Box
                 sx={{
-                  position: "relative",
-                  width: 120,
-                  height: 100,
+                  width: isMobile ? "30px" : "120px",
+                  height: isMobile ? "50px" : "100px",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  flexShrink: 0,
                 }}
               >
                 <svg
-                  width="100%"
-                  height="100%"
-                  viewBox="0 0 120 100"
+                  width={isMobile ? "30" : "120"}
+                  height={isMobile ? "50" : "100"}
+                  viewBox={isMobile ? "0 0 30 50" : "0 0 120 100"}
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                 >
-                  <path
-                    d="M10,50 C50,0 70,100 110,50"
-                    stroke="#7D221D"
-                    strokeWidth="2.5"
-                    fill="transparent"
-                    markerEnd="url(#arrowhead)"
-                  />
+                  {isMobile ? (
+                    // 📱 Vertical arrow for mobile
+                    <path
+                      d="M15 5 L15 45"
+                      stroke="#7D221D"
+                      strokeWidth="2.5"
+                      markerEnd="url(#arrowhead)"
+                    />
+                  ) : (
+                    // 💻 Curved arrow for desktop
+                    <path
+                      d="M10,50 C50,0 70,100 110,50"
+                      stroke="#7D221D"
+                      strokeWidth="2.5"
+                      fill="transparent"
+                      markerEnd="url(#arrowhead)"
+                    />
+                  )}
                   <defs>
                     <marker
                       id="arrowhead"
@@ -192,38 +173,6 @@ const HowItWorksSection = () => {
                   </defs>
                 </svg>
               </Box>
-            )}
-
-            {/* Mobile ↓ Flow Arrows */}
-            {isMobile && index !== currentSteps.length - 1 && (
-              <svg
-                width="20"
-                height="50"
-                viewBox="0 0 20 50"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M10 0 C15 15 15 35 10 50"
-                  stroke="#7D221D"
-                  strokeWidth="2.5"
-                  fill="transparent"
-                  markerEnd="url(#arrowdown)"
-                />
-                <defs>
-                  <marker
-                    id="arrowdown"
-                    markerWidth="10"
-                    markerHeight="10"
-                    refX="6"
-                    refY="3"
-                    orient="auto"
-                    fill="#7D221D"
-                  >
-                    <path d="M0,0 L0,6 L9,3 z" />
-                  </marker>
-                </defs>
-              </svg>
             )}
           </React.Fragment>
         ))}

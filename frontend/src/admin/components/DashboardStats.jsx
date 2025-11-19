@@ -22,7 +22,7 @@ const DashboardStats = () => {
   if (!stats) return null;
 
   return (
-    <Grid container spacing={2}>
+    <Grid container gap={2}>
       {statLabels.map(({ key, label, icon }) => (
           <Grid size ={{xs:12, sm:6, md:3}} key ={key}>
           <Card sx={{ bgcolor: "#fff", boxShadow: 2 }}>
