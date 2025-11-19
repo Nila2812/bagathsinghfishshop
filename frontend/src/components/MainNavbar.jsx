@@ -14,7 +14,7 @@ import { useCart } from "../context/CartContext";
 import CartDrawer from "./CartDrawer";
 import logo from "../img/logocon.jpg";
 import { getClientId } from "../utils/clientId";
-import { getDistanceKm } from "../utils/distance";
+import { checkDeliveryDistance } from "../utils/distance";
 import AddressFormModal from "./AddressFormModal";
 import AddressListModal from "./AddressListModal";
 
@@ -42,8 +42,8 @@ const MainNavbar = ({ fixed = true }) => {
         const def = items.find(i => i.isDefault) || items[0];
         if (def) {
           setAddress(def);
-          const d = getDistanceKm(SHOP.lat, SHOP.lon, def.lat, def.lon);
-          setDeliverable(d <= 3);
+          // Since address is already saved, it's already validated - no need to check again
+          setDeliverable(true);
         } else {
           setAddress(null);
           setDeliverable(null);
@@ -59,15 +59,15 @@ const MainNavbar = ({ fixed = true }) => {
   }, []);
 
   const handleSavedAddress = (saved) => {
+    // Address was just saved/edited, so it's already validated during save
     setAddress(saved);
-    const d = getDistanceKm(SHOP.lat, SHOP.lon, saved.lat, saved.lon);
-    setDeliverable(d <= 3);
+    setDeliverable(true);
   };
 
   const handleSelectAddress = (addr) => {
+    // Selecting existing saved address - already validated when it was saved
     setAddress(addr);
-    const d = getDistanceKm(SHOP.lat, SHOP.lon, addr.lat, addr.lon);
-    setDeliverable(d <= 3);
+    setDeliverable(true);
     setListOpen(false);
   };
 
@@ -243,6 +243,7 @@ const MainNavbar = ({ fixed = true }) => {
         open={listOpen}
         onClose={() => setListOpen(false)}
         onSelect={handleSelectAddress}
+        selectedAddressId={address?._id}
         onAddNew={() => {
           setListOpen(false);
           setEditingAddress(null);

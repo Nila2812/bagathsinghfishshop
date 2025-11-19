@@ -7,8 +7,10 @@ import CloseIcon from "@mui/icons-material/Close";
 import MyLocationIcon from "@mui/icons-material/MyLocation";
 import SearchIcon from "@mui/icons-material/Search";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
 import { reverseGeocode } from "../utils/geocode";
 import { getClientId } from "../utils/clientId";
+import { checkDeliveryDistance } from "../utils/distance";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -17,23 +19,15 @@ const SHOP_CENTER = [78.15947123056876, 9.919470515872366];
 const isValidPincode = (pin) => /^[1-9][0-9]{5}$/.test(pin);
 const isValidPhone = (phone) => /^[6-9][0-9]{9}$/.test(phone);
 
-async function verifyPincode(pin) {
-  try {
-    const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
-    const data = await res.json();
-    return data[0]?.Status === "Success";
-  } catch {
-    return false;
-  }
-}
+
 
 export default function AddressFormModal({ open, onClose, onSaved, defaultValues }) {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
+  const pinnedLocation = useRef({ lat: null, lon: null });
 
-  // removed markerRef because pin is fixed in center overlay
-
-  const [step, setStep] = useState("map"); // "map" or "form"
+  const [step, setStep] = useState("map");
+  const [confirmMode, setConfirmMode] = useState(false);
   const [form, setForm] = useState({
     doorNo: "", street: "", locality: "", landmark: "",
     pincode: "", district: "", state: "", city: "",
@@ -46,6 +40,7 @@ export default function AddressFormModal({ open, onClose, onSaved, defaultValues
   const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState("");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 900);
+  const [deliveryCheck, setDeliveryCheck] = useState({ checking: false, deliverable: null, distanceKm: null });
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 900);
@@ -56,6 +51,8 @@ export default function AddressFormModal({ open, onClose, onSaved, defaultValues
   useEffect(() => {
     if (open) {
       setStep("map");
+      setConfirmMode(false);
+      setDeliveryCheck({ checking: false, deliverable: null, distanceKm: null });
       if (defaultValues) {
         setForm({ 
           ...defaultValues, 
@@ -63,6 +60,7 @@ export default function AddressFormModal({ open, onClose, onSaved, defaultValues
           name: defaultValues.name || "",
           phone: defaultValues.phone || ""
         });
+        pinnedLocation.current = { lat: defaultValues.lat, lon: defaultValues.lon };
       } else {
         setForm({
           doorNo: "", street: "", locality: "", landmark: "",
@@ -70,6 +68,7 @@ export default function AddressFormModal({ open, onClose, onSaved, defaultValues
           name: "", phone: "", saveAs: "home",
           lat: null, lon: null, fullAddress: ""
         });
+        pinnedLocation.current = { lat: null, lon: null };
       }
       setSearchValue("");
       setError("");
@@ -94,7 +93,7 @@ export default function AddressFormModal({ open, onClose, onSaved, defaultValues
       style: "mapbox://styles/mapbox/streets-v12",
       center: defaultValues?.lon ? [defaultValues.lon, defaultValues.lat] : SHOP_CENTER,
       zoom: 15,
-      dragPan: true
+      dragPan: true,
     });
 
     map.on("load", () => {
@@ -106,27 +105,39 @@ export default function AddressFormModal({ open, onClose, onSaved, defaultValues
             const lat = pos.coords.latitude;
             const lon = pos.coords.longitude;
             map.flyTo({ center: [lon, lat], zoom: 15 });
+            pinnedLocation.current = { lat, lon };
             await updateAddress(lat, lon);
           },
           () => {},
           { enableHighAccuracy: true, timeout: 5000 }
         );
       } else {
-        // center is already set via initial map center; make sure address is updated
         updateAddress(defaultValues.lat, defaultValues.lon);
       }
     });
 
-    // When dragging ends, use map center to update address (fixed-center pin behavior)
     map.on("dragend", async () => {
       const center = map.getCenter();
+      pinnedLocation.current = { lat: center.lat, lon: center.lng };
       await updateAddress(center.lat, center.lng);
+    });
+
+    map.on("zoomend", () => {
+      if (pinnedLocation.current.lat && pinnedLocation.current.lon) {
+        const currentCenter = map.getCenter();
+        const pinLat = pinnedLocation.current.lat;
+        const pinLon = pinnedLocation.current.lon;
+        
+        const threshold = 0.0001;
+        if (Math.abs(currentCenter.lat - pinLat) > threshold || 
+            Math.abs(currentCenter.lng - pinLon) > threshold) {
+          map.setCenter([pinLon, pinLat]);
+        }
+      }
     });
 
     mapInstance.current = map;
   }, [open, step, isMobile]);
-
-  // placeMarker removed - using fixed overlay pin instead
 
   const updateAddress = async (lat, lon) => {
     try {
@@ -169,6 +180,7 @@ export default function AddressFormModal({ open, onClose, onSaved, defaultValues
 
   const handleSearchSelect = (option) => {
     if (!option) return;
+    pinnedLocation.current = { lat: option.lat, lon: option.lon };
     mapInstance.current.flyTo({ center: [option.lon, option.lat], zoom: 15 });
     updateAddress(option.lat, option.lon);
   };
@@ -184,12 +196,49 @@ export default function AddressFormModal({ open, onClose, onSaved, defaultValues
       setError("Please pin your location on the map");
       return;
     }
+    
+    setConfirmMode(true);
+    if (mapInstance.current) {
+      mapInstance.current.flyTo({ 
+        center: [form.lon, form.lat], 
+        zoom: 19,
+        duration: 1000 
+      });
+    }
+  };
+
+  const handleConfirmLocation = () => {
     setStep("form");
+    setConfirmMode(false);
     setError("");
+  };
+
+  const handleBackToSelect = () => {
+    setConfirmMode(false);
+    if (mapInstance.current) {
+      mapInstance.current.flyTo({ 
+        center: [form.lon, form.lat], 
+        zoom: 15,
+        duration: 800
+      });
+    }
   };
 
   const saveAddress = async () => {
     setError("");
+
+    // Desktop: Show confirmation zoom before saving
+    if (!isMobile && !confirmMode) {
+      setConfirmMode(true);
+      if (mapInstance.current) {
+        mapInstance.current.flyTo({ 
+          center: [form.lon, form.lat], 
+          zoom: 19,
+          duration: 1000 
+        });
+      }
+      return;
+    }
 
     if (!form.doorNo || !form.street || !form.locality || !form.city || 
         !form.pincode || !form.name || !form.phone || !form.lat || !form.lon) {
@@ -207,9 +256,27 @@ export default function AddressFormModal({ open, onClose, onSaved, defaultValues
       return;
     }
 
-    const exists = await verifyPincode(form.pincode);
-    if (!exists) {
-      setError("PIN code does not exist in India Post records");
+    
+
+    // Check delivery distance using Mapbox Matrix API
+    setDeliveryCheck({ checking: true, deliverable: null, distanceKm: null });
+    const distanceResult = await checkDeliveryDistance(
+      SHOP_CENTER[1], // Shop lat
+      SHOP_CENTER[0], // Shop lon
+      form.lat,
+      form.lon,
+      3 // Max 3km
+    );
+
+    setDeliveryCheck({
+      checking: false,
+      deliverable: distanceResult.deliverable,
+      distanceKm: distanceResult.distanceKm
+    });
+
+    if (!distanceResult.deliverable) {
+     // setError(`Sorry, we don't deliver to this location. Distance: ${distanceResult.distanceKm}km (Max: 3km)`);
+      setError(`Sorry, we don't deliver to this location(Check Whether the pin on map is correct or try different location).`);
       return;
     }
 
@@ -235,10 +302,23 @@ export default function AddressFormModal({ open, onClose, onSaved, defaultValues
   if (!open) return null;
 
   const renderMapView = () => (
-    <Box sx={{ position: "relative", width: "100%", height: "100%" }}>
-      <Box ref={mapRef} sx={{ width: "100%", height: "100%" }} />
+    <Box sx={{ 
+      position: "relative", 
+      width: "100%", 
+      height: "100%",
+      display: "flex",
+      flexDirection: "column"
+    }}>
+      <Box 
+        ref={mapRef} 
+        sx={{ 
+          width: "100%", 
+          flex: 1,
+          minHeight: 0
+        }} 
+      />
 
-      {/* FIXED CENTER PIN (Rapido/Ola/Uber style) */}
+      {/* FIXED CENTER PIN */}
       <Box sx={{
         position: "absolute",
         top: "50%",
@@ -247,7 +327,6 @@ export default function AddressFormModal({ open, onClose, onSaved, defaultValues
         zIndex: 3,
         pointerEvents: "none"
       }}>
-        {/* Inline SVG pin keeps this component self-contained */}
         <Box component="span" sx={{ display: 'block', width: 30, height: 43 }}>
           <svg width="30" height="43" viewBox="0 0 30 43" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M15 0C6.716 0 0 6.716 0 15c0 10.5 15 28 15 28s15-17.5 15-28c0-8.284-6.716-15-15-15z" fill="#D31032"/>
@@ -292,7 +371,7 @@ export default function AddressFormModal({ open, onClose, onSaved, defaultValues
         onClick={centerOnPin}
         sx={{
           position: "absolute",
-          bottom: 100,
+          bottom: isMobile ? (confirmMode ? 130 : 180) : 20,
           right: 20,
           bgcolor: "#fff",
           boxShadow: 2,
@@ -303,37 +382,104 @@ export default function AddressFormModal({ open, onClose, onSaved, defaultValues
         <MyLocationIcon />
       </IconButton>
 
+      {/* Fetched Location Display */}
+      {!confirmMode && (
+        <Box sx={{
+          bgcolor: "white",
+          p: 2,
+          borderTop: "1px solid #e0e0e0",
+          maxHeight: isMobile ? "120px" : "80px",
+          overflowY: "auto"
+        }}>
+          <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start" }}>
+            <LocationOnIcon sx={{ color: "#D31032", fontSize: 20, mt: 0.3 }} />
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                Selected Location
+              </Typography>
+              <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.4 }}>
+                {form.fullAddress || "Move the map to select a location"}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      )}
+
       {/* Continue Button for Mobile */}
       {isMobile && (
         <Box sx={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          p: 2,
+          p: confirmMode ? 1.5 : 2,
           bgcolor: "white",
-          boxShadow: "0 -2px 10px rgba(0,0,0,0.1)",
-          zIndex: 2
+          boxShadow: "0 -2px 10px rgba(0,0,0,0.1)"
         }}>
-          <Button
-            variant="contained"
-            fullWidth
-            onClick={handleContinue}
-            disabled={!form.lat || !form.lon}
-            sx={{
-              bgcolor: "#D31032",
-              py: 1.5,
-              fontSize: "1rem",
-              fontWeight: 600,
-              "&:hover": { bgcolor: "b00" }
-            }}
-          >
-            Continue
-          </Button>
-          {error && (
-            <Typography variant="caption" sx={{ color: "error.main", display: "block", mt: 1 }}>
-              {error}
-            </Typography>
+          {!confirmMode ? (
+            <>
+              <Button
+                variant="contained"
+                fullWidth
+                onClick={handleContinue}
+                disabled={!form.lat || !form.lon}
+                sx={{
+                  bgcolor: "#D31032",
+                  py: 1.5,
+                  fontSize: "1rem",
+                  fontWeight: 600,
+                  "&:hover": { bgcolor: "#b00" },
+                  "&:disabled": { bgcolor: "#ccc" }
+                }}
+              >
+                Continue
+              </Button>
+              {error && (
+                <Typography variant="caption" sx={{ color: "error.main", display: "block", mt: 1 }}>
+                  {error}
+                </Typography>
+              )}
+            </>
+          ) : (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              <Box sx={{ 
+                bgcolor: "#fff8f8", 
+                border: "1px solid #ffe0e0",
+                borderRadius: 1,
+                p: 1.5,
+                mb: 0.5
+              }}>
+                <Typography variant="body2" sx={{ color: "#D31032", fontWeight: 600, textAlign: "center", mb: 0.5 }}>
+                  ✓ Is this your exact delivery location?
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary", textAlign: "center", display: "block" }}>
+                  Drag map to adjust if needed
+                </Typography>
+              </Box>
+              <Box sx={{ display: "flex", gap: 1 }}>
+                <Button
+                  variant="outlined"
+                  onClick={handleBackToSelect}
+                  sx={{
+                    flex: 1,
+                    py: 1.2,
+                    color: "#D31032",
+                    borderColor: "#D31032",
+                    "&:hover": { borderColor: "#b00", bgcolor: "#fff8f8" }
+                  }}
+                >
+                  Back
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={handleConfirmLocation}
+                  sx={{
+                    flex: 1,
+                    py: 1.2,
+                    bgcolor: "#D31032",
+                    "&:hover": { bgcolor: "#b00" }
+                  }}
+                >
+                  Confirm
+                </Button>
+              </Box>
+            </Box>
           )}
         </Box>
       )}
@@ -437,7 +583,7 @@ export default function AddressFormModal({ open, onClose, onSaved, defaultValues
                 textTransform: "capitalize",
                 ...(form.saveAs === type && {
                   bgcolor: "#D31032",
-                  "&:hover": { bgcolor: "b00" }
+                  "&:hover": { bgcolor: "#b00" }
                 })
               }}
             >
@@ -453,20 +599,68 @@ export default function AddressFormModal({ open, onClose, onSaved, defaultValues
         </Typography>
       )}
 
-      <Button
-        variant="contained"
-        fullWidth
-        onClick={saveAddress}
-        sx={{
-          bgcolor: "#D31032",
-          py: 1.5,
-          fontSize: "1rem",
-          fontWeight: 600,
-          "&:hover": { bgcolor: "b00" }
-        }}
-      >
-        Save Address
-      </Button>
+      {!confirmMode ? (
+        <Button
+          variant="contained"
+          fullWidth
+          onClick={saveAddress}
+          disabled={deliveryCheck.checking}
+          sx={{
+            bgcolor: "#D31032",
+            py: 1.5,
+            fontSize: "1rem",
+            fontWeight: 600,
+            "&:hover": { bgcolor: "#b00" },
+            "&:disabled": { bgcolor: "#ccc" }
+          }}
+        >
+          {deliveryCheck.checking ? "Checking delivery..." : "Save Address"}
+        </Button>
+      ) : (
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+          <Box sx={{ 
+            bgcolor: "#fff8f8", 
+            border: "1px solid #ffe0e0",
+            borderRadius: 1,
+            p: 1.5,
+            mb: 0.5
+          }}>
+            <Typography variant="body2" sx={{ color: "#D31032", fontWeight: 600, textAlign: "center", mb: 0.5 }}>
+              ✓ Is this your exact delivery location?
+            </Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary", textAlign: "center", display: "block" }}>
+              Drag map to adjust if needed
+            </Typography>
+          </Box>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button
+              variant="outlined"
+              onClick={handleBackToSelect}
+              sx={{
+                flex: 1,
+                color: "#D31032",
+                borderColor: "#D31032",
+                "&:hover": { borderColor: "#b00", bgcolor: "#fff8f8" }
+              }}
+            >
+              Adjust Pin
+            </Button>
+            <Button
+              variant="contained"
+              onClick={saveAddress}
+              disabled={deliveryCheck.checking}
+              sx={{
+                flex: 1,
+                bgcolor: "#D31032",
+                "&:hover": { bgcolor: "#b00" },
+                "&:disabled": { bgcolor: "#ccc" }
+              }}
+            >
+              {deliveryCheck.checking ? "Checking..." : "Confirm & Save"}
+            </Button>
+          </Box>
+        </Box>
+      )}
     </Box>
   );
 
@@ -511,23 +705,21 @@ export default function AddressFormModal({ open, onClose, onSaved, defaultValues
           </IconButton>
         </Box>
 
-        {/* Small note below header */}
-        <Box sx={{ px: 2, py: 1 }}>
-          <Typography variant="body2" sx={{   color: "red",
-    fontStyle: "bold",
-    fontWeight: 400, }}>
-            Pin exact location in the map-"Your Order will be deliverd here"
+        {/* Instruction note below header */}
+        <Box sx={{ px: 2, py: 1, bgcolor: "#fff8f8", borderBottom: "1px solid #ffe0e0" }}>
+          <Typography variant="body2" sx={{ color: "#D31032", fontWeight: 500 }}>
+            📍 Pin exact location on the map - We deliver within 3km radius
           </Typography>
         </Box>
 
         {/* Content */}
         {isMobile ? (
-          <Box sx={{ flex: 1, overflow: "hidden" }}>
+          <Box sx={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
             {step === "map" ? renderMapView() : renderFormView()}
           </Box>
         ) : (
           <Box sx={{ display: "flex", flex: 1, overflow: "hidden" }}>
-            <Box sx={{ flex: "0 0 55%", position: "relative" }}>
+            <Box sx={{ flex: "0 0 55%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
               {renderMapView()}
             </Box>
             <Box sx={{ flex: "0 0 45%", overflowY: "auto" }}>

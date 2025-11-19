@@ -214,7 +214,7 @@ const CartDrawer = ({ open, onClose }) => {
                         <Box sx={{ mt: 1, display: "flex", flexDirection: "column", gap: 0.3 }}>
                           <Box sx={{ display: "flex",  alignItems: "center" }}>
                             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                              Total Quantity~~~  
+                              Total Quantity:&nbsp;
                             </Typography>
                             <Typography variant="body2" sx={{ fontWeight: 600, color: "#e23a3a" }}>
                               {formatWeight(totalWeight, unit)}
@@ -223,7 +223,7 @@ const CartDrawer = ({ open, onClose }) => {
                           
                           <Box sx={{ display: "flex",  alignItems: "center" }}>
                             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                              Price~~~
+                              Price:&nbsp;
                             </Typography>
                             <Typography variant="body1" sx={{ fontWeight: 700, color: "#e23a3a" }}>
                               ₹{itemTotal.toFixed(2)}
@@ -242,70 +242,70 @@ const CartDrawer = ({ open, onClose }) => {
                     </Box>
 
                     {/* Add & Remove Buttons - Center Aligned */}
-<Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mt: 1.5, gap: 1.2 }}>
-  
-  {/* Add Buttons with Label */}
-  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-      Increase quantity →
-    </Typography>
-    <Box sx={{ display: "flex", gap: 0.8, flexWrap: "wrap", justifyContent: "center" }}>
-      {buttons.map((btn, index) => (
-        <Button
-          key={index}
-          size="small"
-          variant="contained"
-          onClick={() => handleAddWeight(_id, btn.value, btn.unit, stockQty)}
-          sx={{
-            minWidth: "auto",
-            px: 1.5,
-            py: 0.6,
-            fontSize: "0.75rem",
-            fontWeight: 600,
-            textTransform: "none",
-            backgroundColor: "#4caf50",
-            "&:hover": {
-              backgroundColor: "#45a049",
-            },
-          }}
-        >
-          +{btn.label}
-        </Button>
-      ))}
-    </Box>
-  </Box>
+                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mt: 1.5, gap: 1.2 }}>
+                      
+                      {/* Add Buttons with Label */}
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          Increase quantity →
+                        </Typography>
+                        <Box sx={{ display: "flex", gap: 0.8, flexWrap: "wrap", justifyContent: "center" }}>
+                          {buttons.map((btn, index) => (
+                            <Button
+                              key={index}
+                              size="small"
+                              variant="contained"
+                              onClick={() => handleAddWeight(_id, btn.value, btn.unit, stockQty)}
+                              sx={{
+                                minWidth: "auto",
+                                px: 1.5,
+                                py: 0.6,
+                                fontSize: "0.75rem",
+                                fontWeight: 600,
+                                textTransform: "none",
+                                backgroundColor: "#4caf50",
+                                "&:hover": {
+                                  backgroundColor: "#45a049",
+                                },
+                              }}
+                            >
+                              +{btn.label}
+                            </Button>
+                          ))}
+                        </Box>
+                      </Box>
 
-  {/* Remove Buttons with Label */}
-  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-      Decrease quantity →
-    </Typography>
-    <Box sx={{ display: "flex", gap: 0.8, flexWrap: "wrap", justifyContent: "center" }}>
-      {buttons.map((btn, index) => (
-        <Button
-          key={index}
-          size="small"
-          variant="contained"
-          onClick={() => handleRemoveWeight(_id, btn.value, btn.unit)}
-          sx={{
-            minWidth: "auto",
-            px: 1.5,
-            py: 0.6,
-            fontSize: "0.75rem",
-            fontWeight: 600,
-            textTransform: "none",
-            backgroundColor: "#f44336",
-            "&:hover": {
-              backgroundColor: "#e53935",
-            },
-          }}
-        >
-          -{btn.label}
-        </Button>
-      ))}
-    </Box>
-  </Box>
-</Box>
+                      {/* Remove Buttons with Label */}
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          Decrease quantity →
+                        </Typography>
+                        <Box sx={{ display: "flex", gap: 0.8, flexWrap: "wrap", justifyContent: "center" }}>
+                          {buttons.map((btn, index) => (
+                            <Button
+                              key={index}
+                              size="small"
+                              variant="contained"
+                              onClick={() => handleRemoveWeight(_id, btn.value, btn.unit)}
+                              sx={{
+                                minWidth: "auto",
+                                px: 1.5,
+                                py: 0.6,
+                                fontSize: "0.75rem",
+                                fontWeight: 600,
+                                textTransform: "none",
+                                backgroundColor: "#f44336",
+                                "&:hover": {
+                                  backgroundColor: "#e53935",
+                                },
+                              }}
+                            >
+                              -{btn.label}
+                            </Button>
+                          ))}
+                        </Box>
+                      </Box>
+                    </Box>
 
                   </Box>
                 );

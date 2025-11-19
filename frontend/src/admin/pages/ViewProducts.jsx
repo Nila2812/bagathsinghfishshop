@@ -24,8 +24,6 @@ const ViewProducts = () => {
         return val?.includes("piece") ? val.replace("piece", " Pieces") : val;
       },
     },
-    { field: "minOrderValue", headerName: "Min Order Value", width: 140 },
-    { field: "minOrderUnit", headerName: "Min Order Unit", width: 140 },
     { field: "stockQty", headerName: "Stock Qty", width: 120 },
     {
       field: "isAvailable",
@@ -66,13 +64,13 @@ const ViewProducts = () => {
         const enriched = res.data.map((p, index) => {
           let available = false;
 
-          if (["g", "kg"].includes(p.minOrderUnit)) {
-            const minOrderInKg = p.minOrderUnit === "g"
-              ? p.minOrderValue / 1000
-              : p.minOrderValue;
-            available = p.stockQty >= minOrderInKg;
-          } else if (p.minOrderUnit === "piece") {
-            available = p.stockQty >= p.minOrderValue;
+          if (["g", "kg"].includes(p.weightUnit)) {
+            const weightInKg = p.weightUnit === "g"
+              ? p.weightValue / 1000
+              : p.weightValue;
+            available = p.stockQty >= weightInKg;
+          } else if (p.weightUnit === "piece") {
+            available = p.stockQty >= p.weightValue;
           }
 
           return {

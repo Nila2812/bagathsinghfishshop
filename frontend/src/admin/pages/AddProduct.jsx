@@ -33,8 +33,6 @@ const AddProduct = () => {
     price: "",
     weightValue: "",
     weightUnit: "",
-    minOrderValue: "",
-    minOrderUnit: "",
     baseUnit: "1kg",
     stockQty: "",
     isAvailable: true,
@@ -63,8 +61,6 @@ const AddProduct = () => {
     data.append("stockQty", formData.stockQty);
     data.append("isAvailable", formData.isAvailable);
     data.append("baseUnit", formData.baseUnit);
-    data.append("minOrderValue", formData.minOrderValue);
-    data.append("minOrderUnit", formData.minOrderUnit);
     if (formData.image) {
       data.append("image", formData.image);
     }
@@ -109,18 +105,6 @@ const AddProduct = () => {
     {
       name: "weightUnit",
       label: "Weight Unit",
-      type: "select",
-      options: [
-        { value: "g", label: "g" },
-        { value: "kg", label: "kg" },
-        { value: "piece", label: "Piece" },
-      ],
-      required: true
-    },
-    { name: "minOrderValue", label: "Minimum Order Value", type: "number", required: true },
-    {
-      name: "minOrderUnit",
-      label: "Minimum Order Unit",
       type: "select",
       options: [
         { value: "g", label: "g" },
