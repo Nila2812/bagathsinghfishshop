@@ -26,6 +26,33 @@ export const formatProduct = (p) => {
 };
 
 
+// Utility function to format product with image
+export const formatProduct = (p) => {
+  const imageData = p.image?.data
+    ? Buffer.from(p.image.data).toString("base64")
+    : null;
+
+  return {
+    _id: p._id,
+    name_en: p.name_en,
+    name_ta: p.name_ta,
+    price: p.price,
+    weightValue: p.weightValue,
+    weightUnit: p.weightUnit,
+    baseUnit: p.baseUnit,
+    stockQty: p.stockQty,
+    isAvailable: p.isAvailable,
+    category: p.categoryId?.name_en || "Uncategorized",
+    image: imageData
+      ? {
+          data: imageData,
+          contentType: p.image.contentType,
+        }
+      : null,
+  };
+};
+
+// GET products by category (includes subcategories)
 export const getProductsByCategory = async (req, res) => {
   try {
     const categoryId = req.params.id;
@@ -57,15 +84,14 @@ export const getProductsByCategory = async (req, res) => {
 export const getAllProducts = async (req, res) => {
   try {
     const products = await Product.find().populate("categoryId", "name_en name_ta");
-
-   res.json(products.map(formatProduct));
+    res.json(products.map(formatProduct));
   } catch (err) {
     console.error("Error fetching all products:", err);
     res.status(500).json({ error: "Failed to fetch all products" });
   }
 };
 
-
+// Search products by name (English or Tamil)
 export const searchProducts = async (req, res) => {
   try {
     const { query } = req.query;
@@ -81,17 +107,9 @@ export const searchProducts = async (req, res) => {
       ]
     }).populate("categoryId", "name_en");
 
-   res.json(products.map(formatProduct)); // 🔥 USE FORMATTER HERE
+    res.json(products.map(formatProduct));
   } catch (error) {
     console.error("Search API Error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
-
-
-
-
-
-
-
-

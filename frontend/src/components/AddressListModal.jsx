@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { Box, Button, Typography, Card, Chip } from "@mui/material";
+import { Box, Button, Typography, Card, Chip, IconButton } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import HomeIcon from "@mui/icons-material/Home";
 import WorkIcon from "@mui/icons-material/Work";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
+import CloseIcon from "@mui/icons-material/Close";
 import { getClientId } from "../utils/clientId";
 
-export default function AddressListModal({ open, onClose, onSelect, onAddNew, onEdit }) {
+export default function AddressListModal({ open, onClose, onSelect, onAddNew, onEdit, selectedAddressId, currentAddressId }) {
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -51,11 +52,28 @@ export default function AddressListModal({ open, onClose, onSelect, onAddNew, on
         bgcolor: "#fff", borderRadius: 3, overflow: "hidden",
         display: "flex", flexDirection: "column"
       }}>
-        {/* Header */}
-        <Box sx={{ p: 2.5, borderBottom: "1px solid #e0e0e0" }}>
+        {/* Header with Close Button */}
+        <Box sx={{ 
+          p: 2.5, 
+          borderBottom: "1px solid #e0e0e0",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center"
+        }}>
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
             Select Delivery Address
           </Typography>
+          <IconButton
+            onClick={onClose}
+            sx={{
+              color: "#D31032",
+              "&:hover": {
+                backgroundColor: "rgba(211, 16, 50, 0.1)"
+              }
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
         </Box>
 
         {/* Content */}
@@ -92,7 +110,7 @@ export default function AddressListModal({ open, onClose, onSelect, onAddNew, on
                   key={addr._id}
                   sx={{
                     p: 2, cursor: "pointer",
-                    border: addr.isDefault ? "2px solid #D31032" : "1px solid #e0e0e0",
+                    border: selectedAddressId === addr._id ? "2px solid #D31032" : "1px solid #e0e0e0",
                     "&:hover": { boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }
                   }}
                   onClick={() => onSelect?.(addr)}

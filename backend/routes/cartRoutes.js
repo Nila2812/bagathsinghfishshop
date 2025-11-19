@@ -45,18 +45,6 @@ const checkStock = (totalWeight, unit, product) => {
   return requestedInKg <= stockQty;
 };
 
-// Helper: Get initial weight when first adding to cart
-const getInitialWeight = (product) => {
-  const minOrderInGrams = toGrams(product.minOrderValue, product.minOrderUnit);
-  const priceWeightInGrams = toGrams(product.weightValue, product.weightUnit);
-  
-  if (priceWeightInGrams >= minOrderInGrams) {
-    return { value: product.weightValue, unit: product.weightUnit };
-  } else {
-    return { value: product.minOrderValue, unit: product.minOrderUnit };
-  }
-};
-
 // Add product to cart
 router.post("/add", async (req, res) => {
   try {
@@ -93,7 +81,7 @@ router.post("/add", async (req, res) => {
       return res.status(200).json({ message: "Added to cart", cartItem, isNew: false });
     }
 
-    const initialWeight = getInitialWeight(product);
+    // Initial add: use weightValue and weightUnit from product
     const imageData = product.image?.data
       ? Buffer.from(product.image.data).toString("base64")
       : null;
@@ -101,17 +89,16 @@ router.post("/add", async (req, res) => {
     cartItem = new Cart({
       sessionId,
       productId,
-      totalWeight: initialWeight.value,
-      unit: initialWeight.unit,
+      totalWeight: product.weightValue,
+      unit: product.weightUnit,
       productSnapshot: {
         name_en: product.name_en,
         name_ta: product.name_ta,
         price: product.price,
         weightValue: product.weightValue,
         weightUnit: product.weightUnit,
-        minOrderValue: product.minOrderValue,
-        minOrderUnit: product.minOrderUnit,
         baseUnit: product.baseUnit,
+        stockQty: product.stockQty,
         image: imageData
           ? {
               data: imageData,
@@ -161,6 +148,12 @@ router.put("/update/:id", async (req, res) => {
     let finalUnit = cartItem.unit;
     let capped = false;
 
+    // Minimum threshold is weightValue and weightUnit
+    const minThresholdInGrams = toGrams(
+      cartItem.productSnapshot.weightValue,
+      cartItem.productSnapshot.weightUnit
+    );
+
     if (action === 'add_specific' || action === 'remove_specific') {
       // Add or remove specific amount
       if (unit === 'piece') {
@@ -190,20 +183,15 @@ router.put("/update/:id", async (req, res) => {
         capped = true;
       }
 
-      // Check minimum order
-      const minOrderInGrams = toGrams(
-        cartItem.productSnapshot.minOrderValue,
-        cartItem.productSnapshot.minOrderUnit
-      );
-
+      // Check minimum threshold
       if (finalUnit === 'piece') {
-        if (finalWeight < cartItem.productSnapshot.minOrderValue) {
+        if (finalWeight < cartItem.productSnapshot.weightValue) {
           await Cart.findByIdAndDelete(id);
           return res.json({ message: "Item removed (below minimum)", removed: true });
         }
       } else {
         const newWeightInGrams = toGrams(finalWeight, finalUnit);
-        if (newWeightInGrams < minOrderInGrams) {
+        if (newWeightInGrams < minThresholdInGrams) {
           await Cart.findByIdAndDelete(id);
           return res.json({ message: "Item removed (below minimum)", removed: true });
         }
@@ -211,10 +199,6 @@ router.put("/update/:id", async (req, res) => {
     } else if (action === 'increment' || action === 'decrement') {
       // Original increment/decrement by baseUnit
       const baseUnitParsed = parseBaseUnit(cartItem.productSnapshot.baseUnit);
-      const minOrderInGrams = toGrams(
-        cartItem.productSnapshot.minOrderValue,
-        cartItem.productSnapshot.minOrderUnit
-      );
 
       if (baseUnitParsed.unit === 'piece') {
         if (action === 'increment') {
@@ -224,7 +208,7 @@ router.put("/update/:id", async (req, res) => {
         }
         finalUnit = 'piece';
         
-        if (finalWeight < cartItem.productSnapshot.minOrderValue) {
+        if (finalWeight < cartItem.productSnapshot.weightValue) {
           await Cart.findByIdAndDelete(id);
           return res.json({ message: "Item removed (below minimum)", removed: true });
         }
@@ -239,7 +223,7 @@ router.put("/update/:id", async (req, res) => {
         finalUnit = 'kg';
         
         const newWeightInGrams = toGrams(finalWeight, finalUnit);
-        if (newWeightInGrams < minOrderInGrams) {
+        if (newWeightInGrams < minThresholdInGrams) {
           await Cart.findByIdAndDelete(id);
           return res.json({ message: "Item removed (below minimum)", removed: true });
         }

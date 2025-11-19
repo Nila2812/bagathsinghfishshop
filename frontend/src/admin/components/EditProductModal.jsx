@@ -30,21 +30,21 @@ const EditProductModal = ({ product, onClose, onSave }) => {
   };
 
   useEffect(() => {
-  let available = false;
+    let available = false;
 
-  const stock = parseFloat(form.stockQty);
-  const minValue = parseFloat(form.minOrderValue);
-  const unit = form.minOrderUnit;
+    const stock = parseFloat(form.stockQty);
+    const minValue = parseFloat(form.weightValue);
+    const unit = form.weightUnit;
 
-  if (["g", "kg"].includes(unit)) {
-    const minInKg = unit === "g" ? minValue / 1000 : minValue;
-    available = stock >= minInKg;
-  } else if (unit === "piece") {
-    available = stock >= minValue;
-  }
+    if (["g", "kg"].includes(unit)) {
+      const minInKg = unit === "g" ? minValue / 1000 : minValue;
+      available = stock >= minInKg;
+    } else if (unit === "piece") {
+      available = stock >= minValue;
+    }
 
-  setForm((prev) => ({ ...prev, isAvailable: available }));
-}, [form.minOrderValue, form.minOrderUnit, form.stockQty]);
+    setForm((prev) => ({ ...prev, isAvailable: available }));
+  }, [form.weightValue, form.weightUnit, form.stockQty]);
 
   useEffect(() => {
     axios.get("http://localhost:5000/api/category")
@@ -131,7 +131,6 @@ const EditProductModal = ({ product, onClose, onSave }) => {
             </FormControl>
           </Grid>
 
-          {/* ✅ Dynamic Base Unit */}
           <Grid size={6}>
             <FormControl fullWidth>
               <InputLabel id="base-unit-label">Base Unit</InputLabel>
@@ -148,27 +147,6 @@ const EditProductModal = ({ product, onClose, onSave }) => {
                     {opt.label}
                   </MenuItem>
                 ))}
-              </Select>
-            </FormControl>
-          </Grid>
-
-          <Grid size={6}>
-            <TextField label="Min Order Value" name="minOrderValue" type="number" value={form.minOrderValue} onChange={handleChange} fullWidth />
-          </Grid>
-          <Grid size={6}>
-            <FormControl fullWidth>
-              <InputLabel id="min-order-unit-label">Min Order Unit</InputLabel>
-              <Select
-                labelId="min-order-unit-label"
-                name="minOrderUnit"
-                value={form.minOrderUnit}
-                onChange={handleChange}
-                input={<OutlinedInput label="Min Order Unit" />}
-                sx={{ minWidth: 170, fontSize: 16 }}
-              >
-                <MenuItem value="g">g</MenuItem>
-                <MenuItem value="kg">kg</MenuItem>
-                <MenuItem value="piece">Piece</MenuItem>
               </Select>
             </FormControl>
           </Grid>

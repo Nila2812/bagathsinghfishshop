@@ -29,9 +29,8 @@ const cartSchema = new mongoose.Schema({
     price: Number,
     weightValue: Number,
     weightUnit: String,
-    minOrderValue: Number,
-    minOrderUnit: String,
     baseUnit: String,
+    stockQty: Number,
     image: {
       data: String, // base64
       contentType: String
