@@ -98,7 +98,7 @@ const CategoryBar = ({ fixed = true }) => {
         position={fixed ? "fixed" : "static"}
         sx={{
           top: { xs: 91.7, sm: 108, md: 110 },
-          background: "linear-gradient(180deg, #f9f9f9ff 0%, #f7d7d7ff 100%)",
+          background: "linear-gradient(180deg, #f9f9f9ff 0%, #f8d1d1ff 100%)",
           color: "#47332bff",
           height: { xs: 35, sm: 35, md: 40 },
           borderTop: "1px solid #ddd",

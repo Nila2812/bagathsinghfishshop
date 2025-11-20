@@ -59,7 +59,7 @@ const ViewProducts = () => {
   ];
 
   useEffect(() => {
-    axios.get("http://localhost:5000/api/products")
+    axios.get("http://localhost:5000/api/products/view-products")
       .then((res) => {
         const enriched = res.data.map((p, index) => {
           let available = false;
