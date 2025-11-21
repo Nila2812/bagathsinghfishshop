@@ -1,26 +1,38 @@
-import mongoose from 'mongoose';
+// server/models/User.js
 
-const userSchema = new mongoose.Schema({
-  phone: { 
-    type: String, 
-    required: true,
-    unique: true 
-  },
-  name: { 
-    type: String, 
-    default: "User" 
-  },
-  address: String,
-  mapLink: String,
-  coordinates: {
-    lat: Number,
-    lng: Number
-  },
-  firebaseUid: {
-    type: String,
-    required: true,
-    unique: true
-  }
-}, { timestamps: true });
+import mongoose from "mongoose";
 
-export default mongoose.model('User', userSchema);
+const UserSchema = new mongoose.Schema(
+  {
+    mobile: { 
+      type: String, 
+      required: true, 
+      unique: true,
+      match: /^[6-9]\d{9}$/
+    },
+    name: { 
+      type: String, 
+      default: "" 
+    },
+    email: { 
+      type: String, 
+      default: "" 
+    },
+    gender: { 
+      type: String, 
+      enum: ["male", "female", "other", ""], 
+      default: "" 
+    },
+    isProfileComplete: { 
+      type: Boolean, 
+      default: false 
+    },
+    otp: {
+      code: { type: String },
+      expiresAt: { type: Date }
+    }
+  },
+  { timestamps: true }
+);
+
+export default mongoose.model("User", UserSchema);

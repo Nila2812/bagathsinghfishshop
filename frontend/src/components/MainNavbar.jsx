@@ -17,7 +17,6 @@ import { useCart } from "../context/CartContext";
 import CartDrawer from "./CartDrawer";
 import logo from "../img/logocon.jpg";
 import { getClientId } from "../utils/clientId";
-import { checkDeliveryDistance } from "../utils/distance";
 import AddressFormModal from "./AddressFormModal";
 import AddressListModal from "./AddressListModal";
 import LoginDrawer from "./LoginDrawer";
@@ -30,6 +29,7 @@ const MainNavbar = ({ fixed = true }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchDrawerOpen, setSearchDrawerOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [accountAnchorEl, setAccountAnchorEl] = useState(null);
   const [menuDrawerOpen, setMenuDrawerOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
@@ -38,11 +38,35 @@ const MainNavbar = ({ fixed = true }) => {
   const [listOpen, setListOpen] = useState(false);
 
   const [address, setAddress] = useState(null);
-  const [deliverable, setDeliverable] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userName, setUserName] = useState("");
 
   const navigate = useNavigate();
   const { getCartCount } = useCart();
   const cartCount = getCartCount();
+
+  /* ----------------------------- CHECK LOGIN STATUS ----------------------------- */
+  useEffect(() => {
+    const user = localStorage.getItem("user");
+    if (user) {
+      const userData = JSON.parse(user);
+      setIsLoggedIn(true);
+      setUserName(userData.name || "User");
+    }
+
+    // Listen for login events
+    const handleLoginSuccess = () => {
+      const user = localStorage.getItem("user");
+      if (user) {
+        const userData = JSON.parse(user);
+        setIsLoggedIn(true);
+        setUserName(userData.name || "User");
+      }
+    };
+
+    window.addEventListener("loginSuccess", handleLoginSuccess);
+    return () => window.removeEventListener("loginSuccess", handleLoginSuccess);
+  }, []);
 
   const SHOP = { lat: 9.919470515872366, lon: 78.15947123056876 };
 
@@ -51,25 +75,33 @@ const MainNavbar = ({ fixed = true }) => {
   useEffect(() => {
     const clientId = getClientId();
 
+    // Check if there's a selected address in localStorage
+    const savedAddressId = localStorage.getItem('selectedAddressId');
+
     fetch(`/api/address/${clientId}`)
       .then(r => r.json())
       .then(items => {
-        const def = items.find(i => i.isDefault) || items[0];
-        if (def) {
-          setAddress(def);
-          // Since address is already saved, it's already validated - no need to check again
-          setDeliverable(true);
-        } else {
+        if (items.length === 0) {
           setAddress(null);
-          setDeliverable(null);
+          return;
         }
+
+        let selectedAddress = null;
+
+        // First, try to find the address saved in localStorage
+        if (savedAddressId) {
+          selectedAddress = items.find(i => i._id === savedAddressId);
+        }
+
+        // If not found, fall back to default address
+        if (!selectedAddress) {
+          selectedAddress = items.find(i => i.isDefault) || items[0];
+        }
+
+        setAddress(selectedAddress);
       })
       .catch(() => {});
   }, []);
-
-  const deliveryMessage =
-    deliverable === null ? "" :
-    deliverable ? "Deliverable" : "Not Deliverable";
 
   /* ----------------------------- CART EVENT ----------------------------- */
 
@@ -90,19 +122,33 @@ const MainNavbar = ({ fixed = true }) => {
   const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
 
+  const handleAccountMenuOpen = (event) => setAccountAnchorEl(event.currentTarget);
+  const handleAccountMenuClose = () => setAccountAnchorEl(null);
+
   const toggleMenuDrawer = (open) => () => setMenuDrawerOpen(open);
 
   const handleSavedAddress = (saved) => {
-    // Address was just saved/edited, so it's already validated during save
+    // Address was just saved/edited
     setAddress(saved);
-    setDeliverable(true);
+    // Save to localStorage
+    localStorage.setItem('selectedAddressId', saved._id);
   };
 
   const handleSelectAddress = (addr) => {
-    // Selecting existing saved address - already validated when it was saved
+    // Selecting existing saved address
     setAddress(addr);
-    setDeliverable(true);
+    // Save to localStorage
+    localStorage.setItem('selectedAddressId', addr._id);
     setListOpen(false);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("userId");
+    setIsLoggedIn(false);
+    setUserName("");
+    handleAccountMenuClose();
+    navigate("/");
   };
 
   const mainTextColor = "#282828ff";
@@ -143,26 +189,32 @@ const MainNavbar = ({ fixed = true }) => {
           {/* Address */}
           <Box onClick={() => setListOpen(true)} sx={{ cursor: "pointer" }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
-              <RoomIcon sx={{ color: mainTextColor }} />
-              <Tooltip title={address ? `${address.doorNo} ${address.street}` : "Select address"}>
+              <RoomIcon sx={{ color: mainTextColor, fontSize: 20 }} />
+              <Box>
                 <Typography sx={{
                   fontWeight: 600,
-                  maxWidth: 160,
-                   color: mainTextColor,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
+                  fontSize: "0.85rem",
+                  color: mainTextColor,
                 }}>
-                  {address ? `${address.doorNo || ""} ${address.street || ""}` : "Select address"}
+                  {address ? `Hey, ${address.name}` : "Select address"}
                 </Typography>
-              </Tooltip>
+                
+                {address && (
+                  <Tooltip title={`${address.doorNo} ${address.street}, ${address.locality}`}>
+                    <Typography sx={{
+                      fontSize: "0.75rem",
+                      color: "text.secondary",
+                      maxWidth: 160,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}>
+                      {`${address.doorNo || ""} ${address.street || ""}`.trim()}
+                    </Typography>
+                  </Tooltip>
+                )}
+              </Box>
             </Box>
-
-            {address && (
-              <Typography variant="subtitle2" sx={{ color: deliverable ? "green" : "red", ml: 3.5 }}>
-                {deliveryMessage}
-              </Typography>
-            )}
           </Box>
 
           {/* Search */}
@@ -188,12 +240,22 @@ const MainNavbar = ({ fixed = true }) => {
             />
           </Box>
 
-          {/* Login */}
-          <Box sx={{ display: "flex", alignItems: "center", cursor: "pointer" }}
-            onClick={() => setLoginDrawerOpen(true)}>
-            <AccountCircleIcon sx={{ color: mainTextColor}} />
-            <Typography sx={{ ml: 0.6 , color: mainTextColor}}>Login / Sign Up</Typography>
-          </Box>
+          {/* Account / Login */}
+          {isLoggedIn ? (
+            <Box sx={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
+              <IconButton onClick={handleAccountMenuOpen}>
+                <AccountCircleIcon sx={{ color: mainTextColor}} />
+                <Typography sx={{ ml: 0.6, color: mainTextColor }}>Account</Typography>
+                <ExpandMoreIcon sx={{ color: mainTextColor, fontSize: 18 }} />
+              </IconButton>
+            </Box>
+          ) : (
+            <Box sx={{ display: "flex", alignItems: "center", cursor: "pointer" }}
+              onClick={() => setLoginDrawerOpen(true)}>
+              <AccountCircleIcon sx={{ color: mainTextColor}} />
+              <Typography sx={{ ml: 0.6 , color: mainTextColor}}>Login / Sign Up</Typography>
+            </Box>
+          )}
 
           {/* Cart */}
           <Box sx={{ display: "flex", alignItems: "center", cursor: "pointer" }}
@@ -223,8 +285,8 @@ const MainNavbar = ({ fixed = true }) => {
             top: fixed ? 36 : "auto",
             background: "#ffffff",
             color: mainTextColor,
-            width: "100% !important",  // ⭐ FIX: prevent overflow
-            overflow: "hidden",        // ⭐ FIX
+            width: "100% !important",
+            overflow: "hidden",
             display: "none",
             "@media (min-width:600px) and (max-width:1023px)": {
               display: "flex",
@@ -236,8 +298,8 @@ const MainNavbar = ({ fixed = true }) => {
         sx={{
           justifyContent: "space-between",
           width: "100%",
-          px: 2,             // ⭐ increases left-right padding
-          pr: 3,             // ⭐ pushes More button slightly left
+          px: 2,
+          pr: 3,
           color: mainTextColor,
         }}
       >
@@ -250,39 +312,37 @@ const MainNavbar = ({ fixed = true }) => {
           />
 
           {/* Address */}
-<Box onClick={() => setListOpen(true)} sx={{ cursor: "pointer" }}>
-  <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
-    <RoomIcon sx={{ fontSize: 22, color: mainTextColor }} />
+          <Box onClick={() => setListOpen(true)} sx={{ cursor: "pointer" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
+              <RoomIcon sx={{ fontSize: 20, color: mainTextColor }} />
+              <Box>
+                <Typography
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: "0.8rem",
+                    color: mainTextColor,
+                  }}
+                >
+                  {address ? `Hey, ${address.name}` : "Select address"}
+                </Typography>
 
-    <Typography
-      sx={{
-        fontWeight: 600,
-        maxWidth: 140,
-        fontSize: "0.9rem",
-        whiteSpace: "nowrap",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        color: mainTextColor,
-      }}
-    >
-      {address ? `${address.doorNo || ""} ${address.street || ""}` : "Select address"}
-    </Typography>
-  </Box>
-
-  {address && (
-    <Typography
-      variant="subtitle2"
-      sx={{
-        color: deliverable ? "green" : "red",
-        ml: 3.5,
-        mt: "-2px",
-        fontSize: "0.75rem",
-      }}
-    >
-      {deliveryMessage}
-    </Typography>
-  )}
-</Box>
+                {address && (
+                  <Typography
+                    sx={{
+                      fontSize: "0.7rem",
+                      color: "text.secondary",
+                      maxWidth: 140,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {`${address.doorNo || ""} ${address.street || ""}`.trim()}
+                  </Typography>
+                )}
+              </Box>
+            </Box>
+          </Box>
 
           {/* Search */}
           <Box
@@ -293,7 +353,7 @@ const MainNavbar = ({ fixed = true }) => {
               borderRadius: 2,
               px: 1.5,
               py: 0.6,
-              width: "30%",  // ❗ fixed shrinking issue
+              width: "30%",
               background: "#f8f8f8",
             }}
           >
@@ -307,10 +367,17 @@ const MainNavbar = ({ fixed = true }) => {
             />
           </Box>
 
-          {/* Login */}
-          <IconButton onClick={() => setLoginDrawerOpen(true)}>
-            <AccountCircleIcon sx={{color: mainTextColor, }}/>
-          </IconButton>
+          {/* Account / Login */}
+          {isLoggedIn ? (
+            <IconButton onClick={handleAccountMenuOpen}>
+              <AccountCircleIcon sx={{color: mainTextColor, }}/>
+              <ExpandMoreIcon sx={{ color: mainTextColor, fontSize: 16, ml: 0.5 }} />
+            </IconButton>
+          ) : (
+            <IconButton onClick={() => setLoginDrawerOpen(true)}>
+              <AccountCircleIcon sx={{color: mainTextColor, }}/>
+            </IconButton>
+          )}
 
           {/* Cart */}
           <IconButton onClick={() => setCartOpen(true)}>
@@ -333,18 +400,17 @@ const MainNavbar = ({ fixed = true }) => {
       {/* ============================================================= */}
 
       <AppBar
-  elevation={0}
-  sx={{
-    display: { xs: "flex", sm: "none" },
-    background: "#ffffff",
-    color: mainTextColor,
-    top: fixed ? 36 : "auto",
-    width: "100% !important",   // ⭐ FIX tablet/mobile overflow
-    overflow: "hidden",         // ⭐ Prevent horizontal scroll
-    boxShadow: "none",
-  }}
->
-
+        elevation={0}
+        sx={{
+          display: { xs: "flex", sm: "none" },
+          background: "#ffffff",
+          color: mainTextColor,
+          top: fixed ? 36 : "auto",
+          width: "100% !important",
+          overflow: "hidden",
+          boxShadow: "none",
+        }}
+      >
         <Toolbar sx={{ justifyContent: "space-between", px: 1 }}>
 
           {/* Drawer button */}
@@ -352,40 +418,38 @@ const MainNavbar = ({ fixed = true }) => {
             <MenuIcon sx={{color: mainTextColor,}} />
           </IconButton>
 
-         {/* Address */}
-<Box sx={{ cursor: "pointer" }} onClick={() => setListOpen(true)}>
-  <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
-    <RoomIcon sx={{ fontSize: 20, color: mainTextColor }} />
+          {/* Address */}
+          <Box sx={{ cursor: "pointer" }} onClick={() => setListOpen(true)}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
+              <RoomIcon sx={{ fontSize: 18, color: mainTextColor }} />
+              <Box>
+                <Typography
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: "0.75rem",
+                    color: mainTextColor,
+                  }}
+                >
+                  {address ? `Hey, ${address.name}` : "Select address"}
+                </Typography>
 
-    <Typography
-      sx={{
-        fontWeight: 600,
-        maxWidth: 110,
-        fontSize: "0.8rem",
-        whiteSpace: "nowrap",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        color: mainTextColor,
-      }}
-    >
-      {address ? `${address.doorNo || ""} ${address.street || ""}` : "Select address"}
-    </Typography>
-  </Box>
-
-  {address && (
-    <Typography
-      sx={{
-        color: deliverable ? "green" : "red",
-        ml: 3.2,
-        mt: "-2px",
-        fontSize: "0.7rem",
-      }}
-    >
-      {deliveryMessage}
-    </Typography>
-  )}
-</Box>
-
+                {address && (
+                  <Typography
+                    sx={{
+                      fontSize: "0.65rem",
+                      color: "text.secondary",
+                      maxWidth: 110,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {`${address.doorNo || ""} ${address.street || ""}`.trim()}
+                  </Typography>
+                )}
+              </Box>
+            </Box>
+          </Box>
 
           {/* Logo */}
           <Box
@@ -425,14 +489,20 @@ const MainNavbar = ({ fixed = true }) => {
               <ListItemText primary="Contact Us" />
             </ListItemButton>
             <Divider />
-            <ListItemButton
-              onClick={() => {
-                setLoginDrawerOpen(true);
-                setMenuDrawerOpen(false);
-              }}
-            >
-              <ListItemText primary="Login / Register" />
-            </ListItemButton>
+            {isLoggedIn ? (
+              <ListItemButton onClick={handleLogout}>
+                <ListItemText primary="Logout" />
+              </ListItemButton>
+            ) : (
+              <ListItemButton
+                onClick={() => {
+                  setLoginDrawerOpen(true);
+                  setMenuDrawerOpen(false);
+                }}
+              >
+                <ListItemText primary="Login / Register" />
+              </ListItemButton>
+            )}
           </List>
         </Box>
       </Drawer>
@@ -469,6 +539,29 @@ const MainNavbar = ({ fixed = true }) => {
 
       <LoginDrawer open={loginDrawerOpen} onClose={() => setLoginDrawerOpen(false)} />
 
+      {/* Account Dropdown Menu */}
+      <Menu 
+        anchorEl={accountAnchorEl} 
+        open={Boolean(accountAnchorEl)} 
+        onClose={handleAccountMenuClose}
+      >
+        <MenuItem onClick={() => { handleAccountMenuClose(); navigate("/profile"); }}>
+          {userName}
+        </MenuItem>
+        <Divider />
+        <MenuItem onClick={() => { handleAccountMenuClose(); navigate("/orders"); }}>
+          My Orders
+        </MenuItem>
+        <MenuItem onClick={() => { handleAccountMenuClose(); navigate("/addresses"); }}>
+          Saved Addresses
+        </MenuItem>
+        <Divider />
+        <MenuItem onClick={handleLogout} sx={{ color: "#D32F2F" }}>
+          Logout
+        </MenuItem>
+      </Menu>
+
+      {/* More Menu */}
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
         <MenuItem onClick={() => { handleMenuClose(); navigate("/about"); }}>About Us</MenuItem>
         <MenuItem onClick={() => { handleMenuClose(); navigate("/contact"); }}>Contact Us</MenuItem>
@@ -485,4 +578,4 @@ const MainNavbar = ({ fixed = true }) => {
   );
 };
 
-export default MainNavbar;
+export default MainNavbar; 
