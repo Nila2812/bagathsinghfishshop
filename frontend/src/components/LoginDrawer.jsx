@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 
-const LoginDrawer = ({ open, onClose }) => {
+const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
   const [step, setStep] = useState(1); // 1: Mobile, 2: OTP, 3: Profile (new user), 4: Success
   const [mobile, setMobile] = useState("");
   const [otp, setOtp] = useState("");
@@ -103,6 +103,8 @@ const LoginDrawer = ({ open, onClose }) => {
           window.dispatchEvent(new Event("loginSuccess"));
           
           setStep(4);
+          onLoginSuccess && onLoginSuccess();
+
         }
         setError("");
       } else {
@@ -150,6 +152,7 @@ const LoginDrawer = ({ open, onClose }) => {
         window.dispatchEvent(new Event("loginSuccess"));
         
         setStep(4);
+        onLoginSuccess && onLoginSuccess();
         setError("");
       } else {
         setError(data.message || "Failed to complete profile");
