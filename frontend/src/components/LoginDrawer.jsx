@@ -1,24 +1,16 @@
+// src/components/LoginDrawer.jsx - FINAL VERSION WITH FIXED TIMING
+
 import React, { useState, useEffect } from "react";
 import {
-  Drawer,
-  Box,
-  Typography,
-  TextField,
-  Button,
-  IconButton,
-  Divider,
-  Backdrop,
-  Radio,
-  RadioGroup,
-  FormControlLabel,
-  FormControl,
-  FormLabel,
-  CircularProgress,
+  Drawer, Box, Typography, TextField, Button, IconButton, Divider,
+  Backdrop, Radio, RadioGroup, FormControlLabel, FormControl, FormLabel,
+  CircularProgress, Alert
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import { getClientId } from "../utils/clientId";
 
 const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
-  const [step, setStep] = useState(1); // 1: Mobile, 2: OTP, 3: Profile (new user), 4: Success
+  const [step, setStep] = useState(1);
   const [mobile, setMobile] = useState("");
   const [otp, setOtp] = useState("");
   const [name, setName] = useState("");
@@ -28,19 +20,110 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [isNewUser, setIsNewUser] = useState(false);
 
-  // Load user from localStorage on component mount
+  // OTP Timer & Rate Limiting States
+  const [timer, setTimer] = useState(0);
+  const [canResend, setCanResend] = useState(false);
+  const [resendCount, setResendCount] = useState(0);
+  const [otpAttempts, setOtpAttempts] = useState(0);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [blockUntil, setBlockUntil] = useState(null);
+  const [verificationLimitReached, setVerificationLimitReached] = useState(false);
+
+  // Check if device is blocked on mount
   useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) {
-      const user = JSON.parse(savedUser);
-      // User is already logged in
+    if (open) {
+      checkDeviceBlock();
     }
-  }, []);
+  }, [open]);
+
+  // Timer countdown
+  useEffect(() => {
+    if (timer > 0 && !verificationLimitReached) {
+      const interval = setInterval(() => {
+        setTimer(prev => {
+          if (prev <= 1) {
+            setCanResend(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [timer, verificationLimitReached]);
+
+  const checkDeviceBlock = () => {
+    const blockData = localStorage.getItem("otpBlock");
+    if (blockData) {
+      const { until } = JSON.parse(blockData);
+      const now = Date.now();
+      
+      if (now < until) {
+        setIsBlocked(true);
+        setBlockUntil(until);
+        const resetTime = new Date(until).toLocaleTimeString();
+        setError(`Device blocked due to too many attempts. Try again after ${resetTime}`);
+      } else {
+        localStorage.removeItem("otpBlock");
+        setIsBlocked(false);
+        setResendCount(0);
+      }
+    }
+  };
+
+  const blockDevice = () => {
+    const blockDuration = 3.5 * 60 * 60 * 1000; // 3.5 hours
+    const until = Date.now() + blockDuration;
+    localStorage.setItem("otpBlock", JSON.stringify({ until }));
+    setIsBlocked(true);
+    setBlockUntil(until);
+    const resetTime = new Date(until).toLocaleTimeString();
+    setError(`Device blocked due to too many attempts. Try again after ${resetTime}`);
+  };
+
+  const migrateGuestDataToUser = async (userId, sessionToken) => {
+    const clientId = getClientId();
+    
+    try {
+      const cartResponse = await fetch("/api/cart/migrate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, clientId })
+      });
+
+      if (cartResponse.ok) {
+        const cartResult = await cartResponse.json();
+        console.log(`✅ Cart: Deleted ${cartResult.deletedExistingCount} existing items, migrated ${cartResult.migratedCount} guest items`);
+      }
+
+      const addressResponse = await fetch("/api/address/migrate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, clientId })
+      });
+
+      if (addressResponse.ok) {
+        const addressResult = await addressResponse.json();
+        console.log(`✅ Address: Migrated ${addressResult.migratedCount} addresses`);
+      }
+    } catch (err) {
+      console.error("❌ Error migrating data:", err);
+    }
+  };
 
   const handleSendOtp = async () => {
     setError("");
     
-    // Validate mobile
+    if (isBlocked) {
+      checkDeviceBlock();
+      return;
+    }
+
+    if (resendCount >= 3) {
+      blockDevice();
+      return;
+    }
+    
     const isValid = /^[6-9]\d{9}$/.test(mobile);
     if (!isValid) {
       setError("Please enter a valid 10-digit mobile number starting with 6-9.");
@@ -61,6 +144,13 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
         setIsNewUser(data.isNewUser);
         setStep(2);
         setError("");
+        
+        // Start 60-second timer
+        setTimer(60);
+        setCanResend(false);
+        setResendCount(prev => prev + 1);
+        setOtpAttempts(0);
+        setVerificationLimitReached(false);
       } else {
         setError(data.message || "Failed to send OTP");
       }
@@ -70,6 +160,15 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleResendOtp = async () => {
+    if (!canResend || isBlocked || verificationLimitReached) return;
+    
+    setOtp("");
+    setOtpAttempts(0);
+    setVerificationLimitReached(false);
+    await handleSendOtp();
   };
 
   const handleVerifyOtp = async () => {
@@ -91,24 +190,52 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
       const data = await response.json();
 
       if (data.success) {
+        const newUserId = data.user.id;
+        const sessionToken = data.user.sessionToken;
+
+        localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("userId", newUserId);
+        localStorage.setItem("sessionToken", sessionToken);
+        
+        // Clear block and resend count on successful login
+        localStorage.removeItem("otpBlock");
+        setResendCount(0);
+        setIsBlocked(false);
+        
+        console.log(`🔐 Login successful for ${mobile}`);
+        
+        await migrateGuestDataToUser(newUserId, sessionToken);
+        window.dispatchEvent(new Event("loginSuccess"));
+
         if (data.isNewUser) {
-          // New user - go to profile completion (don't login yet)
           setStep(3);
         } else {
-          // Existing user - LOGIN NOW!
-          localStorage.setItem("user", JSON.stringify(data.user));
-          localStorage.setItem("userId", data.user.id);
-          
-          // 🔥 Trigger navbar update
-          window.dispatchEvent(new Event("loginSuccess"));
-          
           setStep(4);
           onLoginSuccess && onLoginSuccess();
 
         }
         setError("");
       } else {
-        setError(data.message || "Invalid OTP");
+        // Track failed attempts
+        const newAttempts = otpAttempts + 1;
+        setOtpAttempts(newAttempts);
+
+        if (newAttempts >= 4) {
+          // 🔥 FIXED: Stop timer when verification limit reached
+          setTimer(0);
+          setCanResend(false);
+          setVerificationLimitReached(true);
+          
+          // Check if this is the 3rd resend (final attempt)
+          if (resendCount >= 3) {
+            blockDevice();
+          } else {
+            setError("OTP verification limit exceeded. Please request a new OTP.");
+          }
+          setOtp("");
+        } else {
+          setError(`Invalid OTP. ${4 - newAttempts} attempt${4 - newAttempts > 1 ? 's' : ''} remaining.`);
+        }
       }
     } catch (err) {
       setError("Network error. Please try again.");
@@ -126,7 +253,6 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
       return;
     }
 
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError("Please enter a valid email address");
@@ -135,25 +261,25 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
 
     setLoading(true);
     try {
+      const sessionToken = localStorage.getItem("sessionToken");
+      
       const response = await fetch("/api/auth/complete-profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mobile, name, email, gender })
+        body: JSON.stringify({ mobile, name, email, gender, sessionToken })
       });
 
       const data = await response.json();
 
       if (data.success) {
-        // 🔥 FIX: Store user data
         localStorage.setItem("user", JSON.stringify(data.user));
-        localStorage.setItem("userId", data.user.id);
-        
-        // 🔥 FIX: Trigger navbar update for new users!
         window.dispatchEvent(new Event("loginSuccess"));
-        
         setStep(4);
         onLoginSuccess && onLoginSuccess();
         setError("");
+      } else if (data.forceLogout) {
+        setError("Session expired. Logged in from another device. Please login again.");
+        handleReset();
       } else {
         setError(data.message || "Failed to complete profile");
       }
@@ -174,12 +300,15 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
     setGender("");
     setError("");
     setIsNewUser(false);
+    setTimer(0);
+    setCanResend(false);
+    setOtpAttempts(0);
+    setVerificationLimitReached(false);
     onClose();
   };
 
   return (
     <>
-      {/* Blurred background overlay */}
       <Backdrop
         open={open}
         sx={{
@@ -204,20 +333,12 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
         <Box sx={{ p: 3, position: "relative", height: "100%" }}>
           <IconButton
             onClick={handleReset}
-            sx={{
-              position: "absolute",
-              top: 10,
-              right: 10,
-              color: "#444",
-            }}
+            sx={{ position: "absolute", top: 10, right: 10, color: "#444" }}
           >
             <CloseIcon />
           </IconButton>
 
-          <Typography
-            variant="h5"
-            sx={{ fontWeight: 700, color: "#C21807", mt: 1, mb: 1 }}
-          >
+          <Typography variant="h5" sx={{ fontWeight: 700, color: "#C21807", mt: 1, mb: 1 }}>
             Bagathsingh Fish Shop
           </Typography>
           <Typography variant="subtitle1" sx={{ color: "#555", mb: 3 }}>
@@ -225,21 +346,11 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
           </Typography>
           <Divider sx={{ mb: 3 }} />
 
-          {/* Error Message */}
+          {/* Error/Warning Messages */}
           {error && (
-            <Box
-              sx={{
-                mb: 2,
-                p: 1.5,
-                bgcolor: "#ffebee",
-                borderRadius: 1,
-                border: "1px solid #ef5350",
-              }}
-            >
-              <Typography variant="body2" sx={{ color: "#c62828" }}>
-                {error}
-              </Typography>
-            </Box>
+            <Alert severity={isBlocked ? "error" : "warning"} sx={{ mb: 2 }}>
+              {error}
+            </Alert>
           )}
 
           {/* Step 1: Enter Mobile */}
@@ -261,6 +372,7 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
                 inputProps={{ maxLength: 10 }}
                 sx={{ mb: 3 }}
                 helperText="Enter 10-digit mobile number starting with 6-9"
+                disabled={isBlocked}
               />
               <Button
                 variant="contained"
@@ -274,7 +386,7 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
                   "&:hover": { backgroundColor: "#B71C1C" },
                 }}
                 onClick={handleSendOtp}
-                disabled={loading || mobile.length !== 10}
+                disabled={loading || mobile.length !== 10 || isBlocked}
               >
                 {loading ? <CircularProgress size={24} sx={{ color: "#fff" }} /> : "Send OTP"}
               </Button>
@@ -290,6 +402,7 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
               <Typography variant="body2" sx={{ mb: 2 }}>
                 OTP sent to <strong>{mobile}</strong>
               </Typography>
+              
               <TextField
                 label="Enter 4-digit OTP"
                 variant="outlined"
@@ -301,9 +414,47 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
                   setError("");
                 }}
                 inputProps={{ maxLength: 4 }}
-                sx={{ mb: 3 }}
+                sx={{ mb: 2 }}
                 helperText="Check your terminal/console for OTP"
+                disabled={verificationLimitReached}
               />
+
+              {/* 🔥 FIXED: Timer only shows when NOT at verification limit */}
+              {!verificationLimitReached && timer > 0 && (
+                <Typography variant="body2" sx={{ mb: 2, color: "text.secondary", textAlign: "center" }}>
+                  Resend OTP available in <strong>{timer}s</strong>
+                </Typography>
+              )}
+
+              {/* 🔥 FIXED: Resend button logic */}
+              {canResend && !verificationLimitReached && resendCount < 3 && (
+                <Button
+                  variant="text"
+                  fullWidth
+                  onClick={handleResendOtp}
+                  sx={{ mb: 2, textTransform: "none" }}
+                >
+                  Resend OTP ({3 - resendCount} remaining)
+                </Button>
+              )}
+
+              {/* 🔥 NEW: Show resend button when verification limit reached (but not device blocked) */}
+              {verificationLimitReached && !isBlocked && resendCount < 3 && (
+                <Button
+                  variant="contained"
+                  fullWidth
+                  onClick={handleResendOtp}
+                  sx={{
+                    mb: 2,
+                    backgroundColor: "#FF9800",
+                    "&:hover": { backgroundColor: "#F57C00" },
+                    textTransform: "none"
+                  }}
+                >
+                  Request New OTP ({3 - resendCount} remaining)
+                </Button>
+              )}
+
               <Button
                 variant="contained"
                 fullWidth
@@ -316,16 +467,20 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
                   "&:hover": { backgroundColor: "#B71C1C" },
                 }}
                 onClick={handleVerifyOtp}
-                disabled={loading || otp.length !== 4}
+                disabled={loading || otp.length !== 4 || verificationLimitReached}
               >
                 {loading ? <CircularProgress size={24} sx={{ color: "#fff" }} /> : "Verify OTP"}
               </Button>
+              
               <Button
                 variant="text"
                 onClick={() => {
                   setStep(1);
                   setOtp("");
                   setError("");
+                  setTimer(0);
+                  setOtpAttempts(0);
+                  setVerificationLimitReached(false);
                 }}
                 sx={{ mt: 1, textTransform: "none" }}
               >
@@ -334,14 +489,14 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
             </Box>
           )}
 
-          {/* Step 3: Complete Profile (New Users Only) */}
+          {/* Step 3: Complete Profile */}
           {step === 3 && (
             <Box>
               <Typography variant="h6" sx={{ mb: 1 }}>
                 Complete Your Profile
               </Typography>
               <Typography variant="body2" sx={{ mb: 2, color: "#555" }}>
-                We need a few more details to set up your account
+                You're logged in! Just a few more details...
               </Typography>
 
               <TextField
@@ -401,16 +556,21 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
               >
                 {loading ? <CircularProgress size={24} sx={{ color: "#fff" }} /> : "Complete Profile"}
               </Button>
+              
+              <Button
+                variant="text"
+                onClick={handleReset}
+                sx={{ mt: 1, textTransform: "none", width: "100%" }}
+              >
+                Skip for now
+              </Button>
             </Box>
           )}
 
-          {/* Step 4: Success Message */}
+          {/* Step 4: Success */}
           {step === 4 && (
             <Box textAlign="center" sx={{ mt: 10 }}>
-              <Typography
-                variant="h5"
-                sx={{ fontWeight: 600, color: "#2E7D32", mb: 2 }}
-              >
+              <Typography variant="h5" sx={{ fontWeight: 600, color: "#2E7D32", mb: 2 }}>
                 🎉 Login Successful!
               </Typography>
               <Typography variant="body1" sx={{ mb: 3 }}>

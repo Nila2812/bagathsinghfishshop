@@ -1,3 +1,5 @@
+// src/components/AddressListModal.jsx - WITH LOGIN BUTTON
+
 import { useEffect, useState } from "react";
 import { Box, Button, Typography, Card, Chip, IconButton } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
@@ -5,31 +7,77 @@ import HomeIcon from "@mui/icons-material/Home";
 import WorkIcon from "@mui/icons-material/Work";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import CloseIcon from "@mui/icons-material/Close";
+import LoginIcon from "@mui/icons-material/Login";
 import { getClientId } from "../utils/clientId";
 
-export default function AddressListModal({ open, onClose, onSelect, onAddNew, onEdit, selectedAddressId, currentAddressId }) {
+export default function AddressListModal({ 
+  open, onClose, onSelect, onAddNew, onEdit, selectedAddressId, isLoggedIn, userId 
+}) {
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!open) return;
+
     setLoading(true);
-    const clientId = getClientId();
-    fetch(`/api/address/${clientId}`)
-      .then(r => r.json())
+    
+    const identifier = isLoggedIn ? userId : getClientId();
+    const type = isLoggedIn ? "user" : "client";
+
+    fetch(`/api/address/${identifier}?type=${type}`)
+      .then(r => {
+        if (!r.ok) throw new Error("Failed to fetch");
+        return r.json();
+      })
       .then(data => {
-        setAddresses(data);
+        setAddresses(Array.isArray(data) ? data : []);
         setLoading(false);
       })
-      .catch(() => {
+      .catch(err => {
+        console.error("Error fetching addresses:", err);
         setAddresses([]);
         setLoading(false);
       });
-  }, [open]);
+  }, [open, isLoggedIn, userId]);
 
   const handleDelete = async (id) => {
-    await fetch(`/api/address/${id}`, { method: "DELETE" });
-    setAddresses(prev => prev.filter(a => a._id !== id));
+    if (!window.confirm("Delete this address?")) return;
+
+    try {
+      const res = await fetch(`/api/address/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setAddresses(prev => prev.filter(a => a._id !== id));
+      } else {
+        alert("Failed to delete address");
+      }
+    } catch (err) {
+      console.error("Error deleting address:", err);
+      alert("Error deleting address");
+    }
+  };
+
+  const handleSetDefault = async (id) => {
+    try {
+      const res = await fetch(`/api/address/${id}/default`, { method: "PATCH" });
+      if (res.ok) {
+        const updated = await res.json();
+        setAddresses(prev =>
+          prev.map(a => ({ ...a, isDefault: a._id === updated._id }))
+        );
+        onSelect?.(updated);
+      } else {
+        alert("Failed to set default address");
+      }
+    } catch (err) {
+      console.error("Error setting default:", err);
+      alert("Error setting default address");
+    }
+  };
+
+  // 🔥 NEW: Open login drawer
+  const handleOpenLogin = () => {
+    onClose(); // Close address modal
+    window.dispatchEvent(new CustomEvent('openLoginDrawer'));
   };
 
   const getAddressIcon = (saveAs) => {
@@ -52,7 +100,7 @@ export default function AddressListModal({ open, onClose, onSelect, onAddNew, on
         bgcolor: "#fff", borderRadius: 3, overflow: "hidden",
         display: "flex", flexDirection: "column"
       }}>
-        {/* Header with Close Button */}
+        {/* Header */}
         <Box sx={{ 
           p: 2.5, 
           borderBottom: "1px solid #e0e0e0",
@@ -67,9 +115,7 @@ export default function AddressListModal({ open, onClose, onSelect, onAddNew, on
             onClick={onClose}
             sx={{
               color: "#D31032",
-              "&:hover": {
-                backgroundColor: "rgba(211, 16, 50, 0.1)"
-              }
+              "&:hover": { backgroundColor: "rgba(211, 16, 50, 0.1)" }
             }}
           >
             <CloseIcon />
@@ -83,27 +129,73 @@ export default function AddressListModal({ open, onClose, onSelect, onAddNew, on
               Loading addresses...
             </Typography>
           ) : addresses.length === 0 ? (
+            // 🔥 FIXED: Different UI for logged-in vs guest users
             <Box sx={{ textAlign: "center", py: 6 }}>
               <HomeIcon sx={{ fontSize: 64, color: "#e0e0e0", mb: 2 }} />
-              <Typography variant="h6" sx={{ mb: 1, color: "text.secondary" }}>
-                No address saved
-              </Typography>
-              <Typography variant="body2" sx={{ mb: 3, color: "text.secondary" }}>
-                Add your first delivery address to continue
-              </Typography>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={onAddNew}
-                sx={{
-                  backgroundColor: "#D31032",
-                  "&:hover": { backgroundColor: "#b00" }
-                }}
-              >
-                Add New Address
-              </Button>
+              
+              {isLoggedIn ? (
+                // Logged-in user with no addresses
+                <>
+                  <Typography variant="h6" sx={{ mb: 1, color: "text.secondary" }}>
+                    No address saved
+                  </Typography>
+                  <Typography variant="body2" sx={{ mb: 3, color: "text.secondary" }}>
+                    Add your first delivery address to continue
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={onAddNew}
+                    sx={{
+                      backgroundColor: "#D31032",
+                      "&:hover": { backgroundColor: "#b00" }
+                    }}
+                  >
+                    Add New Address
+                  </Button>
+                </>
+              ) : (
+                // 🔥 Guest user - show login prompt
+                <>
+                  <Typography variant="h6" sx={{ mb: 1, color: "text.secondary" }}>
+                    Login to see saved addresses
+                  </Typography>
+                  <Typography variant="body2" sx={{ mb: 3, color: "text.secondary" }}>
+                    Sign in to access your saved delivery addresses
+                  </Typography>
+                  <Box sx={{ display: "flex", gap: 2, justifyContent: "center" }}>
+                    <Button
+                      variant="contained"
+                      startIcon={<LoginIcon />}
+                      onClick={handleOpenLogin}
+                      sx={{
+                        backgroundColor: "#D31032",
+                        "&:hover": { backgroundColor: "#b00" }
+                      }}
+                    >
+                      Login / Sign Up
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      startIcon={<AddIcon />}
+                      onClick={onAddNew}
+                      sx={{
+                        borderColor: "#D31032",
+                        color: "#D31032",
+                        "&:hover": { 
+                          borderColor: "#b00",
+                          backgroundColor: "rgba(211, 16, 50, 0.05)"
+                        }
+                      }}
+                    >
+                      Add as Guest
+                    </Button>
+                  </Box>
+                </>
+              )}
             </Box>
           ) : (
+            // Display saved addresses
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
               {addresses.map(addr => (
                 <Card
@@ -160,14 +252,7 @@ export default function AddressListModal({ open, onClose, onSelect, onAddNew, on
                           variant="outlined"
                           onClick={(e) => {
                             e.stopPropagation();
-                            fetch(`/api/address/${addr._id}/default`, { method: "PATCH" })
-                              .then(r => r.json())
-                              .then(() => {
-                                setAddresses(prev =>
-                                  prev.map(a => ({ ...a, isDefault: a._id === addr._id }))
-                                );
-                                onSelect?.(addr);
-                              });
+                            handleSetDefault(addr._id);
                           }}
                           sx={{ fontSize: "0.75rem", textTransform: "none" }}
                         >
@@ -192,9 +277,7 @@ export default function AddressListModal({ open, onClose, onSelect, onAddNew, on
                         disabled={addr.isDefault}
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (confirm("Delete this address?")) {
-                            handleDelete(addr._id);
-                          }
+                          handleDelete(addr._id);
                         }}
                         sx={{ fontSize: "0.75rem", textTransform: "none" }}
                       >

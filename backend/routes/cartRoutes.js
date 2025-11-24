@@ -1,17 +1,17 @@
+// server/routes/cart.js - COMPLETE FILE WITH CAPPING FIX
+
 import express from "express";
 import Cart from "../models/Cart.js";
 import Product from "../models/Product.js";
 
 const router = express.Router();
 
-// Helper: Convert to grams for consistent calculation
 const toGrams = (value, unit) => {
   if (unit === "kg") return value * 1000;
   if (unit === "g") return value;
-  return value; // piece
+  return value;
 };
 
-// Helper: Parse baseUnit value properly
 const parseBaseUnit = (baseUnit) => {
   if (baseUnit === 'piece') {
     return { value: 1, unit: 'piece' };
@@ -32,10 +32,8 @@ const parseBaseUnit = (baseUnit) => {
   return { value, unit: 'g' };
 };
 
-// Helper: Check stock availability
 const checkStock = (totalWeight, unit, product) => {
   const stockQty = product.stockQty;
-  const stockUnit = product.weightUnit === 'piece' ? 'piece' : 'kg';
   
   if (unit === 'piece') {
     return totalWeight <= stockQty;
@@ -45,17 +43,32 @@ const checkStock = (totalWeight, unit, product) => {
   return requestedInKg <= stockQty;
 };
 
-// Add product to cart
+// ADD PRODUCT TO CART
 router.post("/add", async (req, res) => {
   try {
-    const { sessionId, productId } = req.body;
+    const { userId, clientId, productId } = req.body;
+
+    if (!userId && !clientId) {
+      return res.status(400).json({ error: "userId or clientId required" });
+    }
+
+    if (userId && clientId) {
+      return res.status(400).json({ error: "Provide either userId OR clientId, not both" });
+    }
 
     const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ error: "Product not found" });
     }
 
-    let cartItem = await Cart.findOne({ sessionId, productId });
+    let query;
+    if (userId) {
+      query = { userId: userId, productId: productId };
+    } else {
+      query = { clientId: clientId, productId: productId };
+    }
+
+    let cartItem = await Cart.findOne(query);
 
     if (cartItem) {
       const baseUnitParsed = parseBaseUnit(cartItem.productSnapshot.baseUnit);
@@ -77,20 +90,21 @@ router.post("/add", async (req, res) => {
       }
       
       cartItem.totalWeight = newWeight;
+      cartItem.lastModified = new Date();
       await cartItem.save();
+      
       return res.status(200).json({ message: "Added to cart", cartItem, isNew: false });
     }
 
-    // Initial add: use weightValue and weightUnit from product
     const imageData = product.image?.data
       ? Buffer.from(product.image.data).toString("base64")
       : null;
 
-    cartItem = new Cart({
-      sessionId,
+    const newCartItem = {
       productId,
       totalWeight: product.weightValue,
       unit: product.weightUnit,
+      lastModified: new Date(),
       productSnapshot: {
         name_en: product.name_en,
         name_ta: product.name_ta,
@@ -106,21 +120,42 @@ router.post("/add", async (req, res) => {
             }
           : null,
       },
-    });
+    };
+
+    if (userId) {
+      newCartItem.userId = userId;
+    } else {
+      newCartItem.clientId = clientId;
+    }
+
+    cartItem = new Cart(newCartItem);
     await cartItem.save();
 
     res.status(200).json({ message: "Added to cart", cartItem, isNew: true });
+
   } catch (err) {
     console.error("Error adding to cart:", err);
-    res.status(500).json({ error: "Failed to add to cart" });
+    res.status(500).json({ error: "Failed to add to cart", details: err.message });
   }
 });
 
-// Get all cart items for a session
-router.get("/:sessionId", async (req, res) => {
+// GET CART ITEMS
+router.get("/:identifier", async (req, res) => {
   try {
-    const { sessionId } = req.params;
-    const cartItems = await Cart.find({ sessionId }).populate("productId");
+    const { identifier } = req.params;
+    const { type } = req.query;
+
+    let query = {};
+    
+    if (type === 'user') {
+      query = { userId: identifier };
+    } else if (type === 'client') {
+      query = { clientId: identifier };
+    } else {
+      query = { $or: [{ userId: identifier }, { clientId: identifier }] };
+    }
+
+    const cartItems = await Cart.find(query).populate("productId");
     res.json(cartItems);
   } catch (err) {
     console.error("Error fetching cart:", err);
@@ -128,7 +163,7 @@ router.get("/:sessionId", async (req, res) => {
   }
 });
 
-// Update cart item (increment/decrement by baseUnit OR add/remove specific amounts)
+// 🔥 UPDATE CART ITEM - WITH STOCK CAPPING
 router.put("/update/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -148,14 +183,12 @@ router.put("/update/:id", async (req, res) => {
     let finalUnit = cartItem.unit;
     let capped = false;
 
-    // Minimum threshold is weightValue and weightUnit
     const minThresholdInGrams = toGrams(
       cartItem.productSnapshot.weightValue,
       cartItem.productSnapshot.weightUnit
     );
 
     if (action === 'add_specific' || action === 'remove_specific') {
-      // Add or remove specific amount
       if (unit === 'piece') {
         if (action === 'add_specific') {
           finalWeight += value;
@@ -164,7 +197,6 @@ router.put("/update/:id", async (req, res) => {
         }
         finalUnit = 'piece';
       } else {
-        // Convert to grams for calculation
         const currentInGrams = toGrams(cartItem.totalWeight, cartItem.unit);
         if (action === 'add_specific') {
           finalWeight = (currentInGrams + value) / 1000;
@@ -174,16 +206,15 @@ router.put("/update/:id", async (req, res) => {
         finalUnit = 'kg';
       }
 
-      // Check if exceeds stock
       const productStockQty = stockQty || product.stockQty;
+      
+      // 🔥 CHECK STOCK AND CAP
       if (action === 'add_specific' && !checkStock(finalWeight, finalUnit, product)) {
-        // Cap at stock limit
         finalWeight = productStockQty;
         finalUnit = finalUnit === 'piece' ? 'piece' : 'kg';
         capped = true;
       }
 
-      // Check minimum threshold
       if (finalUnit === 'piece') {
         if (finalWeight < cartItem.productSnapshot.weightValue) {
           await Cart.findByIdAndDelete(id);
@@ -197,7 +228,6 @@ router.put("/update/:id", async (req, res) => {
         }
       }
     } else if (action === 'increment' || action === 'decrement') {
-      // Original increment/decrement by baseUnit
       const baseUnitParsed = parseBaseUnit(cartItem.productSnapshot.baseUnit);
 
       if (baseUnitParsed.unit === 'piece') {
@@ -229,15 +259,21 @@ router.put("/update/:id", async (req, res) => {
         }
       }
 
-      if (!checkStock(finalWeight, finalUnit, product)) {
-        return res.status(400).json({ error: "OUT_OF_STOCK", message: "Stock limit reached" });
+      // 🔥 CHECK STOCK ON INCREMENT - CAP IF EXCEEDS
+      if (action === 'increment' && !checkStock(finalWeight, finalUnit, product)) {
+        finalWeight = product.stockQty;
+        finalUnit = finalUnit === 'piece' ? 'piece' : 'kg';
+        capped = true;
+        console.log(`⚠️  Cart capped at max stock: ${finalWeight} ${finalUnit}`);
       }
     }
 
     cartItem.totalWeight = finalWeight;
     cartItem.unit = finalUnit;
+    cartItem.lastModified = new Date();
     await cartItem.save();
 
+    // 🔥 RETURN capped status
     res.json({ message: "Cart updated", cartItem, capped });
   } catch (err) {
     console.error("Error updating cart:", err);
@@ -245,7 +281,7 @@ router.put("/update/:id", async (req, res) => {
   }
 });
 
-// Remove item from cart
+// REMOVE FROM CART
 router.delete("/remove/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -257,27 +293,99 @@ router.delete("/remove/:id", async (req, res) => {
   }
 });
 
-// Clear entire cart for a session
-router.delete("/clear/:sessionId", async (req, res) => {
+// CLEAR ENTIRE CART
+router.delete("/clear/:identifier", async (req, res) => {
   try {
-    const { sessionId } = req.params;
-    await Cart.deleteMany({ sessionId });
-    res.json({ message: "Cart cleared" });
+    const { identifier } = req.params;
+    const { type } = req.query;
+
+    let query = {};
+    
+    if (type === 'user') {
+      query = { userId: identifier };
+    } else if (type === 'client') {
+      query = { clientId: identifier };
+    } else {
+      query = { $or: [{ userId: identifier }, { clientId: identifier }] };
+    }
+
+    const result = await Cart.deleteMany(query);
+    res.json({ message: "Cart cleared", deletedCount: result.deletedCount });
   } catch (err) {
     console.error("Error clearing cart:", err);
     res.status(500).json({ error: "Failed to clear cart" });
   }
 });
 
-// Get cart count (number of unique products)
-router.get("/count/:sessionId", async (req, res) => {
+// GET CART COUNT
+router.get("/count/:identifier", async (req, res) => {
   try {
-    const { sessionId } = req.params;
-    const count = await Cart.countDocuments({ sessionId });
+    const { identifier } = req.params;
+    const { type } = req.query;
+
+    let query = {};
+    
+    if (type === 'user') {
+      query = { userId: identifier };
+    } else if (type === 'client') {
+      query = { clientId: identifier };
+    } else {
+      query = { $or: [{ userId: identifier }, { clientId: identifier }] };
+    }
+
+    const count = await Cart.countDocuments(query);
     res.json({ count });
   } catch (err) {
     console.error("Error getting cart count:", err);
     res.status(500).json({ error: "Failed to get cart count" });
+  }
+});
+
+// MIGRATE GUEST CART TO USER CART
+router.post("/migrate", async (req, res) => {
+  try {
+    const { userId, clientId } = req.body;
+
+    if (!userId || !clientId) {
+      return res.status(400).json({ error: "userId and clientId required" });
+    }
+
+    const guestItems = await Cart.find({ clientId: clientId });
+
+    if (guestItems.length === 0) {
+      return res.json({ 
+        message: "No guest cart to migrate", 
+        migratedCount: 0,
+        deletedCount: 0 
+      });
+    }
+
+    const deleteResult = await Cart.deleteMany({ userId: userId });
+
+    let migratedCount = 0;
+    for (const guestItem of guestItems) {
+      await Cart.findByIdAndUpdate(
+        guestItem._id,
+        { 
+          userId: userId,
+          clientId: null,
+          lastModified: new Date()
+        }
+      );
+      migratedCount++;
+    }
+
+    await Cart.deleteMany({ clientId: clientId });
+
+    res.json({ 
+      message: "Cart migrated successfully", 
+      migratedCount: migratedCount,
+      deletedCount: deleteResult.deletedCount
+    });
+
+  } catch (err) {
+    console.error("Error migrating cart:", err);
+    res.status(500).json({ error: "Failed to migrate cart", details: err.message });
   }
 });
 

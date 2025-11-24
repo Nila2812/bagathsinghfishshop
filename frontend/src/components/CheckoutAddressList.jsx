@@ -23,6 +23,7 @@ const BRAND_COLOR = "#D31032";
 
 export default function CheckoutAddressList({
   userId,
+  isLoggedIn,
   onSelect,
   onAddNew,
   onEdit,
@@ -38,20 +39,25 @@ export default function CheckoutAddressList({
   const isLargeScreen = useMediaQuery(theme.breakpoints.up("md"));
   const isMobile = useMediaQuery(theme.breakpoints.down("sm")); // Used for minor card padding adjustments
 
-  // LOAD ADDRESSES
+  // LOAD ADDRESSES - FIXED
   const loadAddresses = async () => {
     setLoading(true);
 
-    const idToFetch = userId || getClientId();
+    // 🔥 FIX: Use userId if logged in, otherwise use clientId
+    const idToFetch = isLoggedIn && userId ? userId : getClientId();
+    const typeParam = isLoggedIn && userId ? 'user' : 'client';
+
+    console.log('🔍 Loading addresses:', { idToFetch, typeParam, isLoggedIn, userId });
 
     try {
-      // Fetching address from backend using the provided logic
-      const response = await fetch(`/api/address/${idToFetch}`);
+      // Fetching address from backend with proper type parameter
+      const response = await fetch(`/api/address/${idToFetch}?type=${typeParam}`);
       const data = await response.json();
+      console.log('✅ Addresses loaded:', data);
       setAddresses(data || []);
       setLoading(false);
     } catch (error) {
-      console.error("Failed to load addresses:", error);
+      console.error("❌ Failed to load addresses:", error);
       setAddresses([]);
       setLoading(false);
     }
@@ -59,7 +65,7 @@ export default function CheckoutAddressList({
 
   useEffect(() => {
     loadAddresses();
-  }, [userId, refreshFlag]);
+  }, [userId, isLoggedIn, refreshFlag]);
 
   const handleDelete = async (id) => {
     try {
@@ -204,7 +210,6 @@ export default function CheckoutAddressList({
                   {/* Save As and Default Chip */}
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <Chip
-                      // --- REVISED: Use formatSaveAsLabel here to ensure capitalization ---
                       label={formatSaveAsLabel(addr.saveAs)}
                       size="small"
                       icon={getAddressIcon(addr.saveAs)}

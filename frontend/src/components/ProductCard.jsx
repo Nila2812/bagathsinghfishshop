@@ -14,13 +14,14 @@ import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import { useCart } from "../context/CartContext";
-import { useLanguage } from "./LanguageContext"; // import language context
+import { useLanguage } from "./LanguageContext";
+
 const tamilFont = "'Latha', 'Noto Sans Tamil', 'Tiro Tamil', sans-serif";
 const englishFont = "'Poppins', 'Lato', sans-serif";
+
 const ProductCard = ({ product }) => {
-  const [quantity, setQuantity] = useState(0);
   const { language } = useLanguage();
-const {
+  const {
     addToCart,
     incrementWeight,
     decrementWeight,
@@ -29,10 +30,14 @@ const {
     getCartItemId,
     loading,
   } = useCart();
+
   const inCart = isInCart(product._id);
   const weightDisplay = getProductWeight(product._id);
   const cartItemId = getCartItemId(product._id);
+  
+  // 🔥 FIX: Add missing state declarations
   const [stockWarning, setStockWarning] = useState(false);
+  const [warningMessage, setWarningMessage] = useState("Maximum stock limit reached!");
 
   if (loading && !inCart) {
     return (
@@ -63,10 +68,12 @@ const {
     try {
       const result = await addToCart(product._id);
       if (result.error === 'OUT_OF_STOCK') {
+        setWarningMessage("Maximum stock limit reached!");
         setStockWarning(true);
       }
     } catch (err) {
       if (err.response?.data?.error === 'OUT_OF_STOCK') {
+        setWarningMessage("Maximum stock limit reached!");
         setStockWarning(true);
       }
     }
@@ -74,10 +81,20 @@ const {
 
   const handleIncrement = async () => {
     try {
-      await incrementWeight(cartItemId);
+      const result = await incrementWeight(cartItemId);
+      
+      // 🔥 Check if capped and show warning, but ALLOW the increment
+      if (result && result.capped) {
+        setWarningMessage(`Maximum stock reached! Capped at ${result.cartItem.totalWeight} ${result.cartItem.unit}`);
+        setStockWarning(true);
+        // ✅ Weight still updates because state was updated in CartContext
+      }
     } catch (err) {
       if (err.response?.data?.error === 'OUT_OF_STOCK') {
+        setWarningMessage("Maximum stock limit reached!");
         setStockWarning(true);
+      } else {
+        console.error("Failed to increment:", err);
       }
     }
   };
@@ -90,46 +107,23 @@ const {
     }
   };
 
-  // Decode base64 image if available
-const productImage = product.image
-  ? `data:${product.image.contentType};base64,${product.image.data}`
-  : "../img/placeholder.jpg";
+  const productImage = product.image
+    ? `data:${product.image.contentType};base64,${product.image.data}`
+    : "../img/placeholder.jpg";
 
   return (
     <>
       <Card
-      sx={{
-        width: "100%",
-        maxWidth: 180,
-        borderRadius: 2,
-        boxShadow: "0px 3px 10px rgba(0,0,0,0.1)",
-        textAlign: "center",
-        px:{ xs: 0.5, sm: 0.8, md:1},
-        py:{ xs: 0.5, sm: 0.8, md:1},
-        m:0.1,
-       background: "white",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        transition: "transform 0.2s ease, box-shadow 0.2s ease",
-        "&:hover": {
-          transform: "translateY(-4px)",
-          boxShadow: "0px 6px 14px rgba(0,0,0,0.15)",
-        },
-      }}
-    >
-      <CardMedia
-        component="img"
-        image={productImage}
-        alt={language === "EN" ? product.name_en : product.name_ta}
         sx={{
           width: "100%",
           maxWidth: 180,
           borderRadius: 2,
           boxShadow: "0px 3px 10px rgba(0,0,0,0.1)",
           textAlign: "center",
-          p: 0.5,
-          backgroundColor: "white",
+          px: { xs: 0.5, sm: 0.8, md: 1 },
+          py: { xs: 0.5, sm: 0.8, md: 1 },
+          m: 0.1,
+          background: "white",
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
@@ -139,39 +133,48 @@ const productImage = product.image
             boxShadow: "0px 6px 14px rgba(0,0,0,0.15)",
           },
         }}
+      >
+        <CardMedia
+          component="img"
+          image={productImage}
+          alt={language === "EN" ? product.name_en : product.name_ta}
+          sx={{
+            width: "100%",
+            height: 150,
+            objectFit: "cover",
+            borderRadius: 1,
+          }}
         />
 
         <CardContent sx={{ p: 1 }}>
-           {/* Product Name */}
-        <Typography
-          variant="subtitle2"
-          sx={{
-            fontWeight: "bold",
-            color: "black",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            display: "-webkit-box",
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical",
-            minHeight: "2.8em",
-            fontSize: { xs: "0.75rem", sm: "0.85rem" },
-            fontFamily: language === "EN" ? englishFont : tamilFont,
-          }}
-        >
-          {language === "EN" ? product.name_en : product.name_ta}
+          <Typography
+            variant="subtitle2"
+            sx={{
+              fontWeight: "bold",
+              color: "black",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              minHeight: "2.8em",
+              fontSize: { xs: "0.75rem", sm: "0.85rem" },
+              fontFamily: language === "EN" ? englishFont : tamilFont,
+            }}
+          >
+            {language === "EN" ? product.name_en : product.name_ta}
           </Typography>
 
-           {/* Price & Weight */}
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{
-            fontSize: { xs: "0.7rem", sm: "0.8rem" },
-            fontFamily: language === "EN" ? englishFont : tamilFont,
-          }}
-        >
-          {`${product.weight}`} | ₹{product.price}
-        </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{
+              fontSize: { xs: "0.7rem", sm: "0.8rem" },
+              fontFamily: language === "EN" ? englishFont : tamilFont,
+            }}
+          >
+            {`${product.weight}`} | ₹{product.price}
+          </Typography>
 
           {!inCart ? (
             <Button
@@ -190,13 +193,12 @@ const productImage = product.image
             </Button>
           ) : (
             <Box sx={{ mt: 1 }}>
-              {/* Increment/Decrement Controls with Weight Display */}
               <Box
                 sx={{
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  mt:1,
+                  mt: 1,
                   gap: 0.5,
                   mb: 0.5,
                 }}
@@ -247,10 +249,8 @@ const productImage = product.image
                 </IconButton>
               </Box>
 
-              {/* View Cart Button */}
               <Button
                 size="small"
-                
                 onClick={() => window.dispatchEvent(new CustomEvent('openCart'))}
                 startIcon={<ShoppingCartIcon />}
                 sx={{
@@ -259,24 +259,29 @@ const productImage = product.image
                   borderColor: "#e23a3a",
                   color: "#e23a3a",
                   py: 0.3,
-                  px: 1,      
+                  px: 1,
                 }}
-              >      
-              Cart
+              >
+                Cart
               </Button>
             </Box>
           )}
         </CardContent>
       </Card>
 
+      {/* 🔥 Snackbar with auto-hide */}
       <Snackbar
         open={stockWarning}
         autoHideDuration={3000}
         onClose={() => setStockWarning(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert onClose={() => setStockWarning(false)} severity="warning" sx={{ width: '100%' }}>
-          Maximum stock limit reached!
+        <Alert
+          onClose={() => setStockWarning(false)}
+          severity="warning"
+          sx={{ width: "100%" }}
+        >
+          {warningMessage}
         </Alert>
       </Snackbar>
     </>

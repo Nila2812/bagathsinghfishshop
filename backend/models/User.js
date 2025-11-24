@@ -30,6 +30,11 @@ const UserSchema = new mongoose.Schema(
     otp: {
       code: { type: String },
       expiresAt: { type: Date }
+    },
+    // 🔥 NEW: Session token for single device login
+    sessionToken: {
+      type: String,
+      default: null
     }
   },
   { timestamps: true }
