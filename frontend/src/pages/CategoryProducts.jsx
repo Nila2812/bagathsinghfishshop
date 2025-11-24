@@ -165,7 +165,7 @@ const CategoryProducts = () => {
   const removeFilter = (filter) => {
     const updated = activeFilters.filter((f) => f !== filter);
     setActiveFilters(updated);
-    applyFilters();
+    //applyFilters();
   };
 
   if (loading) {
@@ -351,7 +351,6 @@ const CategoryProducts = () => {
       </Box>
 
       <Footer />
-
       {/* 🧩 Filter Drawer */}
       <Drawer
         anchor="right"
