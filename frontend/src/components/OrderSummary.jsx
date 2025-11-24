@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Box,
   Paper,
@@ -14,8 +14,7 @@ import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined
 import { useCart } from "../context/CartContext";
 
 const BRAND_COLOR = "#D31032";
-
-export default function OrderSummary({ onNext }) {
+export default function OrderSummary({ onNext, onGrandTotalChange }) {
   const { cartItems, calculateItemPrice, getTotalPrice } = useCart();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -33,6 +32,14 @@ export default function OrderSummary({ onNext }) {
   const deliveryFee = getDeliveryFee(totalAmount);
   const grandTotal = totalAmount + deliveryFee;
 
+  // Pass grand total to parent whenever it changes
+  useEffect(() => {
+    if (onGrandTotalChange) {
+      onGrandTotalChange(grandTotal);
+    }
+  }, [grandTotal, onGrandTotalChange]);
+
+
   // Calculate savings message
   const getSavingsMessage = () => {
     if (totalAmount < 200) {
@@ -46,6 +53,7 @@ export default function OrderSummary({ onNext }) {
     }
     return "You're getting FREE delivery! 🎉";
   };
+
 
   const formatWeight = (totalWeight, unit) => {
     if (unit === "piece") return `${totalWeight} pieces`;
