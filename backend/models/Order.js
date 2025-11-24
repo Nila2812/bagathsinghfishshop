@@ -6,6 +6,15 @@ const orderSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  // Store order reference from Razorpay
+  razorpayOrderId: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  razorpayPaymentId: String,
+  razorpaySignature: String,
+  
   products: [{
     productId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -19,10 +28,34 @@ const orderSchema = new mongoose.Schema({
     price: Number,
     subtotal: Number
   }],
+  
+  // Delivery Address Details
+  deliveryAddress: {
+    name: String,
+    phone: String,
+    doorNo: String,
+    street: String,
+    locality: String,
+    district: String,
+    state: String,
+    pincode: String,
+    isDefault: Boolean,
+    saveAs: String
+  },
+  
+  coordinates: {
+    lat: Number,
+    lng: Number
+  },
+  mapLink: String,
+  
+  // Price Breakdown
   totalWeight: Number,
-  totalAmount: Number,
-  deliveryCharge: Number,
-  grandTotal: Number,
+  totalAmount: Number,        // Subtotal
+  deliveryCharge: Number,     // Delivery Fee
+  grandTotal: Number,         // Total Amount to Pay (totalAmount + deliveryCharge)
+  
+  // Payment Information
   paymentMode: {
     type: String,
     enum: ['COD', 'Razorpay'],
@@ -30,23 +63,31 @@ const orderSchema = new mongoose.Schema({
   },
   paymentStatus: {
     type: String,
-    enum: ['Paid', 'Pending'],
+    enum: ['Pending', 'Paid', 'Failed'],
     default: 'Pending'
   },
-  deliveryAddress: String,
-  coordinates: {
-    lat: Number,
-    lng: Number
-  },
-  mapLink: String,
+  
+  // Order Status
   orderStatus: {
     type: String,
-    enum: ['Pending', 'Confirmed', 'Delivered'],
+    enum: ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled'],
     default: 'Pending'
   },
+  
+  // Admin Notification
   adminNotified: {
     type: Boolean,
     default: false
+  },
+  
+  // Timestamps
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
   }
 }, { timestamps: true });
 

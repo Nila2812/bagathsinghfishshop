@@ -79,7 +79,7 @@ const Footer = () => {
   // SOCIAL LINKS
   const socialLinks = {
     facebook: "https://facebook.com/",
-    instagram: "https://instagram.com/",
+    instagram: "https://www.instagram.com/invites/contact/?igsh=bpw1aip38tu3&utm_content=zvhcx0v ",
     youtube: "https://youtube.com/",
   };
 
