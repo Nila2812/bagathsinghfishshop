@@ -9,8 +9,8 @@ import SearchIcon from "@mui/icons-material/Search";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import { reverseGeocode } from "../utils/geocode";
-import { getClientId } from "../utils/clientId";
 import { checkDeliveryDistance } from "../utils/distance";
+import { getClientId } from "../utils/clientId";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -19,9 +19,7 @@ const SHOP_CENTER = [78.15947123056876, 9.919470515872366];
 const isValidPincode = (pin) => /^[1-9][0-9]{5}$/.test(pin);
 const isValidPhone = (phone) => /^[6-9][0-9]{9}$/.test(phone);
 
-
-
-export default function AddressFormModal({ open, onClose, onSaved, defaultValues }) {
+export default function AddressFormModal({ open, onClose, onSaved, defaultValues, isLoggedIn, userId }) {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const pinnedLocation = useRef({ lat: null, lon: null });
@@ -256,16 +254,14 @@ export default function AddressFormModal({ open, onClose, onSaved, defaultValues
       return;
     }
 
-    
-
-    // Check delivery distance using Mapbox Matrix API
+    // Check delivery distance
     setDeliveryCheck({ checking: true, deliverable: null, distanceKm: null });
     const distanceResult = await checkDeliveryDistance(
-      SHOP_CENTER[1], // Shop lat
-      SHOP_CENTER[0], // Shop lon
+      SHOP_CENTER[1],
+      SHOP_CENTER[0],
       form.lat,
       form.lon,
-      3 // Max 3km
+      3
     );
 
     setDeliveryCheck({
@@ -275,22 +271,30 @@ export default function AddressFormModal({ open, onClose, onSaved, defaultValues
     });
 
     if (!distanceResult.deliverable) {
-     // setError(`Sorry, we don't deliver to this location. Distance: ${distanceResult.distanceKm}km (Max: 3km)`);
-      setError(`Sorry, we don't deliver to this location(Check Whether the pin on map is correct or try different location).`);
+      setError(`Sorry, we don't deliver to this location. Please check the pin on the map.`);
       return;
     }
 
     try {
-      const clientId = getClientId();
-      const payload = { clientId, ...form };
+      // 🔥 Use userId if logged in, otherwise use clientId
+      const payload = isLoggedIn 
+        ? { userId, ...form }
+        : { clientId: getClientId(), ...form };
+
       const url = defaultValues ? `/api/address/${defaultValues._id}` : "/api/address";
       const method = defaultValues ? "PUT" : "POST";
+      
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
-      if (!res.ok) throw new Error("Failed to save");
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to save address");
+      }
+
       const saved = await res.json();
       onSaved?.(saved);
       onClose?.();

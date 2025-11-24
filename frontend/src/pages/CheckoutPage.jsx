@@ -16,7 +16,7 @@ const steps = ["Select Address", "Order Summary", "Payment Method"];
 const BRAND_COLOR = "#D31032";
 
 export default function CheckoutPage() {
-  const { user } = useAuth();
+  const authContext = useAuth();
   const theme = useTheme();
   const isLargeScreen = useMediaQuery(theme.breakpoints.up("lg"));
   const scrollContainerRef = useRef(null);
@@ -26,6 +26,47 @@ export default function CheckoutPage() {
   const [openAddressForm, setOpenAddressForm] = useState(false);
   const [editAddress, setEditAddress] = useState(null);
   const [refreshFlag, setRefreshFlag] = useState(0);
+
+  // 🔥 FIX: Get auth data with fallback to localStorage
+  const [authData, setAuthData] = useState({
+    isLoggedIn: false,
+    userId: null,
+    user: null
+  });
+
+  useEffect(() => {
+    // Try to get from context first
+    let isLoggedIn = authContext?.isLoggedIn;
+    let user = authContext?.user;
+    let userId = user?._id || user?.id;
+
+    // 🔥 Fallback to localStorage if context is not ready
+    if (isLoggedIn === undefined || !userId) {
+      const storedUser = localStorage.getItem("user");
+      const storedUserId = localStorage.getItem("userId");
+      
+      if (storedUser && storedUserId) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          isLoggedIn = true;
+          userId = storedUserId;
+          user = parsedUser;
+        } catch (err) {
+          console.error("Error parsing stored user:", err);
+        }
+      }
+    }
+
+    setAuthData({ isLoggedIn, userId, user });
+    
+    console.log('🔐 CheckoutPage Auth State:', { 
+      isLoggedIn, 
+      userId,
+      user,
+      fromContext: authContext?.isLoggedIn !== undefined,
+      fromLocalStorage: !!localStorage.getItem("user")
+    });
+  }, [authContext]);
 
   // Auto-scroll to active step on mobile
   useEffect(() => {
@@ -65,7 +106,8 @@ export default function CheckoutPage() {
     if (activeStep === 0) {
       return (
         <CheckoutAddressList
-          userId={user?._id}
+          userId={authData.userId}
+          isLoggedIn={authData.isLoggedIn}
           selectedAddressId={selectedAddress?._id}
           onSelect={(addr) => setSelectedAddress(addr)}
           onEdit={handleEdit}
@@ -394,7 +436,8 @@ export default function CheckoutPage() {
       <AddressFormModal
         open={openAddressForm}
         defaultValues={editAddress}
-        userId={user?._id}
+        userId={authData.userId}
+        isLoggedIn={authData.isLoggedIn}
         onClose={() => setOpenAddressForm(false)}
         onSaved={handleAddressSaved}
       />

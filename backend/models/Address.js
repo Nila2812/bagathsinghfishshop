@@ -1,9 +1,21 @@
 // server/models/Address.js
+
 import mongoose from "mongoose";
 
 const AddressSchema = new mongoose.Schema(
   {
-    clientId: { type: String, required: true, index: true },
+    // Either userId (logged in) OR clientId (guest)
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      index: true,
+      sparse: true
+    },
+    clientId: {
+      type: String,
+      index: true,
+      sparse: true
+    },
     doorNo: { type: String, default: "" },
     street: { type: String, default: "" },
     locality: { type: String, default: "" },
@@ -22,5 +34,9 @@ const AddressSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// 🔥 Separate indices for userId and clientId
+AddressSchema.index({ userId: 1, isDefault: 1 }, { sparse: true });
+AddressSchema.index({ clientId: 1, isDefault: 1 }, { sparse: true });
 
 export default mongoose.model("Address", AddressSchema);

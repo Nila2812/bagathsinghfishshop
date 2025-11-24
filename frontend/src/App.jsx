@@ -1,5 +1,6 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
+import useSessionChecker from "./hooks/useSessionChecker";
 import { CartProvider } from "./context/CartContext";
 import HomePage from "./pages/HomePage";
 import AboutPage from "./pages/AboutPage";
@@ -11,6 +12,7 @@ import AdminPanel from "./admin/AdminPanel";
 import ProtectedRoute from "./admin/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 const App = () => {
+  useSessionChecker();
   return (
     <CartProvider>
       <Routes>

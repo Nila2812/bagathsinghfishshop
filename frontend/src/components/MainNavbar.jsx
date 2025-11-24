@@ -1,5 +1,3 @@
-/* ---------- FINAL CLEAN & FIXED MAIN NAVBAR ---------- */
-
 import React, { useEffect, useState } from "react";
 import SearchDrawer from "./SearchDrawer";
 import {
@@ -16,22 +14,18 @@ import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import CartDrawer from "./CartDrawer";
 import logo from "../img/logocon.jpg";
-import { getClientId } from "../utils/clientId";
+import { getClientId, regenerateClientId } from "../utils/clientId";
 import AddressFormModal from "./AddressFormModal";
 import AddressListModal from "./AddressListModal";
 import LoginDrawer from "./LoginDrawer";
 
 const MainNavbar = ({ fixed = true }) => {
-
-  /* ----------------------------- STATE ----------------------------- */
-
   const [editingAddress, setEditingAddress] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchDrawerOpen, setSearchDrawerOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [accountAnchorEl, setAccountAnchorEl] = useState(null);
   const [menuDrawerOpen, setMenuDrawerOpen] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [loginDrawerOpen, setLoginDrawerOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
@@ -40,78 +34,99 @@ const MainNavbar = ({ fixed = true }) => {
   const [address, setAddress] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState("");
+  const [userId, setUserId] = useState(null);
 
   const navigate = useNavigate();
   const { getCartCount } = useCart();
   const cartCount = getCartCount();
 
-  /* ----------------------------- CHECK LOGIN STATUS ----------------------------- */
+  // Check login status
   useEffect(() => {
     const user = localStorage.getItem("user");
     if (user) {
       const userData = JSON.parse(user);
       setIsLoggedIn(true);
       setUserName(userData.name || "User");
+      setUserId(userData.id);
     }
 
-    // Listen for login events
     const handleLoginSuccess = () => {
       const user = localStorage.getItem("user");
       if (user) {
         const userData = JSON.parse(user);
         setIsLoggedIn(true);
         setUserName(userData.name || "User");
+        setUserId(userData.id);
+        fetchAddresses(userData.id, "user");
       }
     };
 
+    const handleLogout = () => {
+      setIsLoggedIn(false);
+      setUserName("");
+      setUserId(null);
+    };
+
     window.addEventListener("loginSuccess", handleLoginSuccess);
-    return () => window.removeEventListener("loginSuccess", handleLoginSuccess);
+    window.addEventListener("logout", handleLogout);
+    return () => {
+      window.removeEventListener("loginSuccess", handleLoginSuccess);
+      window.removeEventListener("logout", handleLogout);
+    };
   }, []);
 
-  const SHOP = { lat: 9.919470515872366, lon: 78.15947123056876 };
-
-  /* ----------------------------- LOAD ADDRESS ----------------------------- */
-
+  // Load addresses on mount
   useEffect(() => {
     const clientId = getClientId();
+    if (isLoggedIn && userId) {
+      fetchAddresses(userId, "user");
+    } else {
+      fetchAddresses(clientId, "client");
+    }
+  }, [isLoggedIn, userId]);
 
-    // Check if there's a selected address in localStorage
-    const savedAddressId = localStorage.getItem('selectedAddressId');
+  useEffect(() => {
+  const handleOpenLogin = () => setLoginDrawerOpen(true);
+  window.addEventListener("openLoginDrawer", handleOpenLogin);
+  return () => window.removeEventListener("openLoginDrawer", handleOpenLogin);
+}, []);
 
-    fetch(`/api/address/${clientId}`)
-      .then(r => r.json())
-      .then(items => {
-        if (items.length === 0) {
-          setAddress(null);
-          return;
-        }
+  const fetchAddresses = async (identifier, type) => {
+    try {
+      const response = await fetch(`/api/address/${identifier}?type=${type}`);
+      const items = await response.json();
 
-        let selectedAddress = null;
+      if (items.length === 0) {
+        setAddress(null);
+        return;
+      }
 
-        // First, try to find the address saved in localStorage
-        if (savedAddressId) {
-          selectedAddress = items.find(i => i._id === savedAddressId);
-        }
+      const savedAddressId = localStorage.getItem('selectedAddressId');
+      let selectedAddress = null;
 
-        // If not found, fall back to default address
-        if (!selectedAddress) {
-          selectedAddress = items.find(i => i.isDefault) || items[0];
-        }
+      if (savedAddressId) {
+        selectedAddress = items.find(i => i._id === savedAddressId);
+      }
 
-        setAddress(selectedAddress);
-      })
-      .catch(() => {});
-  }, []);
+      if (!selectedAddress) {
+        selectedAddress = items.find(i => i.isDefault) || items[0];
+      }
 
-  /* ----------------------------- CART EVENT ----------------------------- */
+      setAddress(selectedAddress);
+      if (selectedAddress) {
+        localStorage.setItem('selectedAddressId', selectedAddress._id);
+      }
+    } catch (err) {
+      console.error("Error fetching addresses:", err);
+    }
+  };
 
+  // Event listeners
   useEffect(() => {
     const handleOpenCart = () => setCartOpen(true);
     window.addEventListener("openCart", handleOpenCart);
     return () => window.removeEventListener("openCart", handleOpenCart);
   }, []);
-
-  /* ----------------------------- FUNCTIONS ----------------------------- */
 
   const handleSearch = (e) => {
     if (e.key === "Enter" && searchTerm.trim() !== "") {
@@ -128,40 +143,61 @@ const MainNavbar = ({ fixed = true }) => {
   const toggleMenuDrawer = (open) => () => setMenuDrawerOpen(open);
 
   const handleSavedAddress = (saved) => {
-    // Address was just saved/edited
     setAddress(saved);
-    // Save to localStorage
     localStorage.setItem('selectedAddressId', saved._id);
   };
 
   const handleSelectAddress = (addr) => {
-    // Selecting existing saved address
     setAddress(addr);
-    // Save to localStorage
     localStorage.setItem('selectedAddressId', addr._id);
     setListOpen(false);
   };
 
-  const handleLogout = () => {
+  // 🔥 LOGOUT WITH API CALL
+  const handleLogout = async () => {
+    try {
+      const userId = localStorage.getItem("userId");
+      
+      // Call logout endpoint (optional, for logging purposes)
+      if (userId) {
+        await fetch("/api/auth/logout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId })
+        });
+      }
+    } catch (err) {
+      console.error("Logout API error:", err);
+    }
+
+    // Clear all data
     localStorage.removeItem("user");
     localStorage.removeItem("userId");
+    localStorage.removeItem("sessionToken");
+    localStorage.removeItem("selectedAddressId");
+    
     setIsLoggedIn(false);
     setUserName("");
+    setUserId(null);
+    setAddress(null);
     handleAccountMenuClose();
+    
+    // Generate NEW clientId for fresh guest session
+    regenerateClientId();
+    
+    // Trigger global logout event
+    window.dispatchEvent(new Event("logout"));
+    
+    console.log(`🔓 User logged out`);
     navigate("/");
   };
 
   const mainTextColor = "#282828ff";
   const secondaryText = "#7d221d";
 
-  /* ----------------------------- RETURN UI ----------------------------- */
-
   return (
     <>
-      {/* ============================================================= */}
-      {/* ====================== DESKTOP NAVBAR ======================== */}
-      {/* ============================================================= */}
-
+      {/* DESKTOP NAVBAR */}
       <AppBar
         position={fixed ? "fixed" : "relative"}
         elevation={0}
@@ -177,8 +213,6 @@ const MainNavbar = ({ fixed = true }) => {
         }}
       >
         <Toolbar sx={{ justifyContent: "space-evenly", width: "100%" }}>
-          
-          {/* Logo */}
           <Box
             component="img"
             src={logo}
@@ -186,8 +220,11 @@ const MainNavbar = ({ fixed = true }) => {
             onClick={() => navigate("/")}
           />
 
-          {/* Address */}
-          <Box onClick={() => setListOpen(true)} sx={{ cursor: "pointer" }}>
+          {/* 🔥 Address - Always clickable */}
+          <Box 
+            onClick={() => setListOpen(true)}
+            sx={{ cursor: "pointer" }}
+          >
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
               <RoomIcon sx={{ color: mainTextColor, fontSize: 20 }} />
               <Box>
@@ -196,7 +233,7 @@ const MainNavbar = ({ fixed = true }) => {
                   fontSize: "0.85rem",
                   color: mainTextColor,
                 }}>
-                  {address ? `Hey, ${address.name}` : "Select address"}
+                  {address ? `Hey, ${address.name}` : "Add address"}
                 </Typography>
                 
                 {address && (
@@ -217,7 +254,6 @@ const MainNavbar = ({ fixed = true }) => {
             </Box>
           </Box>
 
-          {/* Search */}
           <Box
             sx={{
               display: "flex",
@@ -240,7 +276,6 @@ const MainNavbar = ({ fixed = true }) => {
             />
           </Box>
 
-          {/* Account / Login */}
           {isLoggedIn ? (
             <Box sx={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
               <IconButton onClick={handleAccountMenuOpen}>
@@ -257,7 +292,6 @@ const MainNavbar = ({ fixed = true }) => {
             </Box>
           )}
 
-          {/* Cart */}
           <Box sx={{ display: "flex", alignItems: "center", cursor: "pointer" }}
             onClick={() => setCartOpen(true)}>
             <Badge badgeContent={cartCount} color="error">
@@ -266,7 +300,6 @@ const MainNavbar = ({ fixed = true }) => {
             <Typography sx={{ ml: 0.6, color: mainTextColor }}>Cart</Typography>
           </Box>
 
-          {/* More */}
           <IconButton onClick={handleMenuOpen}>
             <Typography sx={{ color: mainTextColor}}>More</Typography>
             <ExpandMoreIcon sx={{color: mainTextColor,}} />
@@ -274,36 +307,24 @@ const MainNavbar = ({ fixed = true }) => {
         </Toolbar>
       </AppBar>
 
-      {/* ============================================================= */}
-      {/* ======================= TABLET NAVBAR ======================== */}
-      {/* ============================================================= */}
-
+      {/* TABLET NAVBAR */}
       <AppBar
-          position={fixed ? "fixed" : "relative"}
-          elevation={0}
-          sx={{
-            top: fixed ? 36 : "auto",
-            background: "#ffffff",
-            color: mainTextColor,
-            width: "100% !important",
-            overflow: "hidden",
-            display: "none",
-            "@media (min-width:600px) and (max-width:1023px)": {
-              display: "flex",
-            },
-            boxShadow: "none",
-          }}
-        >
-       <Toolbar
+        position={fixed ? "fixed" : "relative"}
+        elevation={0}
         sx={{
-          justifyContent: "space-between",
-          width: "100%",
-          px: 2,
-          pr: 3,
+          top: fixed ? 36 : "auto",
+          background: "#ffffff",
           color: mainTextColor,
+          width: "100% !important",
+          overflow: "hidden",
+          display: "none",
+          "@media (min-width:600px) and (max-width:1023px)": {
+            display: "flex",
+          },
+          boxShadow: "none",
         }}
       >
-          {/* Logo */}
+        <Toolbar sx={{ justifyContent: "space-between", width: "100%", px: 2, pr: 3, color: mainTextColor }}>
           <Box
             component="img"
             src={logo}
@@ -311,32 +332,20 @@ const MainNavbar = ({ fixed = true }) => {
             onClick={() => navigate("/")}
           />
 
-          {/* Address */}
-          <Box onClick={() => setListOpen(true)} sx={{ cursor: "pointer" }}>
+          {/* 🔥 Address - Always clickable */}
+          <Box 
+            onClick={() => setListOpen(true)}
+            sx={{ cursor: "pointer" }}
+          >
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
               <RoomIcon sx={{ fontSize: 20, color: mainTextColor }} />
               <Box>
-                <Typography
-                  sx={{
-                    fontWeight: 600,
-                    fontSize: "0.8rem",
-                    color: mainTextColor,
-                  }}
-                >
-                  {address ? `Hey, ${address.name}` : "Select address"}
+                <Typography sx={{ fontWeight: 600, fontSize: "0.8rem", color: mainTextColor }}>
+                  {address ? `Hey, ${address.name}` : "Add address"}
                 </Typography>
 
                 {address && (
-                  <Typography
-                    sx={{
-                      fontSize: "0.7rem",
-                      color: "text.secondary",
-                      maxWidth: 140,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
+                  <Typography sx={{ fontSize: "0.7rem", color: "text.secondary", maxWidth: 140, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {`${address.doorNo || ""} ${address.street || ""}`.trim()}
                   </Typography>
                 )}
@@ -344,19 +353,7 @@ const MainNavbar = ({ fixed = true }) => {
             </Box>
           </Box>
 
-          {/* Search */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              border: `1px solid ${mainTextColor}`,
-              borderRadius: 2,
-              px: 1.5,
-              py: 0.6,
-              width: "30%",
-              background: "#f8f8f8",
-            }}
-          >
+          <Box sx={{ display: "flex", alignItems: "center", border: `1px solid ${mainTextColor}`, borderRadius: 2, px: 1.5, py: 0.6, width: "30%", background: "#f8f8f8" }}>
             <SearchIcon sx={{ mr: 1 }} />
             <InputBase
               placeholder="Search..."
@@ -367,83 +364,48 @@ const MainNavbar = ({ fixed = true }) => {
             />
           </Box>
 
-          {/* Account / Login */}
           {isLoggedIn ? (
             <IconButton onClick={handleAccountMenuOpen}>
-              <AccountCircleIcon sx={{color: mainTextColor, }}/>
+              <AccountCircleIcon sx={{color: mainTextColor}}/>
               <ExpandMoreIcon sx={{ color: mainTextColor, fontSize: 16, ml: 0.5 }} />
             </IconButton>
           ) : (
             <IconButton onClick={() => setLoginDrawerOpen(true)}>
-              <AccountCircleIcon sx={{color: mainTextColor, }}/>
+              <AccountCircleIcon sx={{color: mainTextColor}}/>
             </IconButton>
           )}
 
-          {/* Cart */}
           <IconButton onClick={() => setCartOpen(true)}>
             <Badge badgeContent={cartCount} color="error">
-              <ShoppingCartIcon sx={{color: mainTextColor, }} />
+              <ShoppingCartIcon sx={{color: mainTextColor}} />
             </Badge>
           </IconButton>
 
-          {/* More */}
           <IconButton onClick={handleMenuOpen} sx={{ mr: 3}}>
             <Typography sx={{ color: mainTextColor }}>More</Typography>
             <ExpandMoreIcon sx={{ color: mainTextColor }} />
           </IconButton>
-
         </Toolbar>
       </AppBar>
 
-      {/* ============================================================= */}
-      {/* ======================= MOBILE NAVBAR ======================== */}
-      {/* ============================================================= */}
-
-      <AppBar
-        elevation={0}
-        sx={{
-          display: { xs: "flex", sm: "none" },
-          background: "#ffffff",
-          color: mainTextColor,
-          top: fixed ? 36 : "auto",
-          width: "100% !important",
-          overflow: "hidden",
-          boxShadow: "none",
-        }}
-      >
+      {/* MOBILE NAVBAR */}
+      <AppBar elevation={0} sx={{ display: { xs: "flex", sm: "none" }, background: "#ffffff", color: mainTextColor, top: fixed ? 36 : "auto", width: "100% !important", overflow: "hidden", boxShadow: "none" }}>
         <Toolbar sx={{ justifyContent: "space-between", px: 1 }}>
-
-          {/* Drawer button */}
           <IconButton onClick={toggleMenuDrawer(true)}>
-            <MenuIcon sx={{color: mainTextColor,}} />
+            <MenuIcon sx={{color: mainTextColor}} />
           </IconButton>
 
-          {/* Address */}
+          {/* 🔥 Address - Always clickable */}
           <Box sx={{ cursor: "pointer" }} onClick={() => setListOpen(true)}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
               <RoomIcon sx={{ fontSize: 18, color: mainTextColor }} />
               <Box>
-                <Typography
-                  sx={{
-                    fontWeight: 600,
-                    fontSize: "0.75rem",
-                    color: mainTextColor,
-                  }}
-                >
-                  {address ? `Hey, ${address.name}` : "Select address"}
+                <Typography sx={{ fontWeight: 600, fontSize: "0.75rem", color: mainTextColor }}>
+                  {address ? `Hey, ${address.name}` : "Address"}
                 </Typography>
 
                 {address && (
-                  <Typography
-                    sx={{
-                      fontSize: "0.65rem",
-                      color: "text.secondary",
-                      maxWidth: 110,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
+                  <Typography sx={{ fontSize: "0.65rem", color: "text.secondary", maxWidth: 110, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {`${address.doorNo || ""} ${address.street || ""}`.trim()}
                   </Typography>
                 )}
@@ -451,33 +413,23 @@ const MainNavbar = ({ fixed = true }) => {
             </Box>
           </Box>
 
-          {/* Logo */}
-          <Box
-            component="img"
-            src={logo}
-            sx={{ width: 49, height: 45, cursor: "pointer" }}
-            onClick={() => navigate("/")}
-          />
+          <Box component="img" src={logo} sx={{ width: 49, height: 45, cursor: "pointer" }} onClick={() => navigate("/")} />
 
-          {/* Icons */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <IconButton onClick={() => setSearchDrawerOpen(true)}>
-              <SearchIcon sx={{color: mainTextColor,}}/>
+              <SearchIcon sx={{color: mainTextColor}}/>
             </IconButton>
 
             <IconButton onClick={() => setCartOpen(true)}>
               <Badge badgeContent={cartCount} color="error">
-                <ShoppingCartIcon sx={{color: mainTextColor,}} />
+                <ShoppingCartIcon sx={{color: mainTextColor}} />
               </Badge>
             </IconButton>
           </Box>
         </Toolbar>
       </AppBar>
 
-      {/* ============================================================= */}
-      {/* =========================== DRAWERS ========================== */}
-      {/* ============================================================= */}
-
+      {/* DRAWERS */}
       <Drawer anchor="left" open={menuDrawerOpen} onClose={toggleMenuDrawer(false)}>
         <Box sx={{ width: 200 }}>
           <List>
@@ -494,12 +446,7 @@ const MainNavbar = ({ fixed = true }) => {
                 <ListItemText primary="Logout" />
               </ListItemButton>
             ) : (
-              <ListItemButton
-                onClick={() => {
-                  setLoginDrawerOpen(true);
-                  setMenuDrawerOpen(false);
-                }}
-              >
+              <ListItemButton onClick={() => { setLoginDrawerOpen(true); setMenuDrawerOpen(false); }}>
                 <ListItemText primary="Login / Register" />
               </ListItemButton>
             )}
@@ -512,12 +459,10 @@ const MainNavbar = ({ fixed = true }) => {
       <AddressFormModal
         open={formOpen}
         onClose={() => { setFormOpen(false); setEditingAddress(null); }}
-        onSaved={(saved) => {
-          handleSavedAddress(saved);
-          setFormOpen(false);
-          setEditingAddress(null);
-        }}
+        onSaved={(saved) => { handleSavedAddress(saved); setFormOpen(false); setEditingAddress(null); }}
         defaultValues={editingAddress}
+        isLoggedIn={isLoggedIn}
+        userId={userId}
       />
 
       <AddressListModal
@@ -525,26 +470,15 @@ const MainNavbar = ({ fixed = true }) => {
         onClose={() => setListOpen(false)}
         onSelect={handleSelectAddress}
         selectedAddressId={address?._id}
-        onAddNew={() => {
-          setListOpen(false);
-          setEditingAddress(null);
-          setFormOpen(true);
-        }}
-        onEdit={(addr) => {
-          setListOpen(false);
-          setEditingAddress(addr);
-          setFormOpen(true);
-        }}
+        onAddNew={() => { setListOpen(false); setEditingAddress(null); setFormOpen(true); }}
+        onEdit={(addr) => { setListOpen(false); setEditingAddress(addr); setFormOpen(true); }}
+        isLoggedIn={isLoggedIn}
+        userId={userId}
       />
 
       <LoginDrawer open={loginDrawerOpen} onClose={() => setLoginDrawerOpen(false)} />
 
-      {/* Account Dropdown Menu */}
-      <Menu 
-        anchorEl={accountAnchorEl} 
-        open={Boolean(accountAnchorEl)} 
-        onClose={handleAccountMenuClose}
-      >
+      <Menu anchorEl={accountAnchorEl} open={Boolean(accountAnchorEl)} onClose={handleAccountMenuClose}>
         <MenuItem onClick={() => { handleAccountMenuClose(); navigate("/profile"); }}>
           {userName}
         </MenuItem>
@@ -561,21 +495,14 @@ const MainNavbar = ({ fixed = true }) => {
         </MenuItem>
       </Menu>
 
-      {/* More Menu */}
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
         <MenuItem onClick={() => { handleMenuClose(); navigate("/about"); }}>About Us</MenuItem>
         <MenuItem onClick={() => { handleMenuClose(); navigate("/contact"); }}>Contact Us</MenuItem>
       </Menu>
 
-      <SearchDrawer
-        open={searchDrawerOpen}
-        onClose={() => setSearchDrawerOpen(false)}
-        onSearch={(term) =>
-          navigate(`/search?query=${encodeURIComponent(term)}`)
-        }
-      />
+      <SearchDrawer open={searchDrawerOpen} onClose={() => setSearchDrawerOpen(false)} onSearch={(term) => navigate(`/search?query=${encodeURIComponent(term)}`)} />
     </>
   );
 };
 
-export default MainNavbar; 
+export default MainNavbar;

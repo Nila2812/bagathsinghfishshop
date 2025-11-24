@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Backdrop from "@mui/material/Backdrop";
 import LoginDrawer from "./LoginDrawer";
 import {
@@ -55,18 +55,28 @@ const CartDrawer = ({ open, onClose }) => {
 
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
   const [stockWarning, setStockWarning] = useState(false);
+  const [warningMessage, setWarningMessage] = useState("Maximum stock limit reached!");
+
+  // 🔥 AUTO-HIDE WARNING AFTER 3 SECONDS
+  useEffect(() => {
+    if (stockWarning) {
+      const timer = setTimeout(() => {
+        setStockWarning(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [stockWarning]);
 
   const handleAddWeight = async (cartItemId, value, unit, stockQty) => {
     try {
       const result = await addSpecificWeight(cartItemId, value, unit, stockQty);
       if (result?.capped) {
+        setWarningMessage(`Maximum stock reached! Capped at max quantity`);
         setStockWarning(true);
       }
     } catch (err) {
-      if (
-        err.response?.data?.error === "OUT_OF_STOCK" ||
-        err.response?.data?.capped
-      ) {
+      if (err.response?.data?.error === 'OUT_OF_STOCK' || err.response?.data?.capped) {
+        setWarningMessage("Maximum stock limit reached!");
         setStockWarning(true);
       }
     }
@@ -195,8 +205,8 @@ const CartDrawer = ({ open, onClose }) => {
             </Box>
           </Box>
 
-          {/* CART BODY */}
-          <Box sx={{ flex: 1, overflowY: "auto", p: 2 }}>
+          <Box sx={{ flex: 1, overflowY: "auto", p: 2, position: "relative" }}>
+            {/* 🔥 Stock Warning with auto-hide */}
             {stockWarning && (
               <Alert
                 severity="warning"
@@ -206,9 +216,10 @@ const CartDrawer = ({ open, onClose }) => {
                   position: "sticky",
                   top: 0,
                   zIndex: 10,
+                  animation: "slideIn 0.3s ease-in-out"
                 }}
               >
-                Maximum stock limit reached!
+                {warningMessage}
               </Alert>
             )}
 
