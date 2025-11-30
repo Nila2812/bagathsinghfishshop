@@ -17,6 +17,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { getClientId } from "../utils/clientId";
+import { useLanguage } from "../components/LanguageContext";
 
 // Define the primary brand color for consistency
 const BRAND_COLOR = "#D31032";
@@ -33,7 +34,7 @@ export default function CheckoutAddressList({
 }) {
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(false);
-
+  const { language } = useLanguage();
   const theme = useTheme();
   // Check for large screen (md and up) to determine layout of the Continue button
   const isLargeScreen = useMediaQuery(theme.breakpoints.up("md"));
@@ -95,12 +96,13 @@ export default function CheckoutAddressList({
   };
 
   // Function to ensure the label is capitalized
-  const formatSaveAsLabel = (saveAs) => {
-    if (!saveAs) return "Other";
-    // Capitalize the first letter and keep the rest lower case (e.g., 'home' -> 'Home')
-    const lower = saveAs.toLowerCase();
-    return lower.charAt(0).toUpperCase() + lower.slice(1);
-  };
+ const formatSaveAsLabel = (saveAs) => {
+if (!saveAs) return language === "EN" ? "Other" : "மற்றவை";
+const lower = saveAs.toLowerCase();
+const labelEN = lower.charAt(0).toUpperCase() + lower.slice(1);
+const labelTA = lower === "home" ? "வீடு" : lower === "work" ? "வேலை" : "மற்றவை";
+return language === "EN" ? labelEN : labelTA;
+};
 
   const handleEditClick = (e, addr) => {
     e.stopPropagation();
@@ -109,7 +111,7 @@ export default function CheckoutAddressList({
 
   const handleDeleteClick = (e, addr) => {
     e.stopPropagation();
-    if (confirm("Are you sure you want to delete this address?")) {
+    if (confirm(language === "EN" ? "Delete this address?" : "இந்த முகவரியை நீக்கவா?")) {
       handleDelete(addr._id);
     }
   };
@@ -131,13 +133,13 @@ export default function CheckoutAddressList({
         component="h2"
         sx={{ fontWeight: 600, mb: 3 }}
       >
-        Select Delivery Address
+       {language === "EN" ? "Select Delivery Address" : "டெலிவரி முகவரியை தேர்வு செய்"}
       </Typography>
 
       {/* Loading State */}
       {loading && (
         <Typography color="text.secondary" sx={{ textAlign: "center", py: 4 }}>
-          Loading addresses...
+          {language === "EN" ? "Loading addresses..." : "முகவரி ஏற்றப்படுகிறது..."}
         </Typography>
       )}
 
@@ -146,10 +148,10 @@ export default function CheckoutAddressList({
         <Box sx={{ textAlign: "center", py: 6, border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
           <HomeIcon sx={{ fontSize: 48, color: theme.palette.grey[400], mb: 2 }} />
           <Typography variant="body1" sx={{ mb: 1, color: "text.secondary" }}>
-            No address saved yet.
+           {language === "EN" ? "No address saved yet." : "முகவரி எதுவும் சேமிக்கப்படவில்லை."}
           </Typography>
           <Typography variant="caption" sx={{ mb: 3, color: "text.secondary" }}>
-            Add your first delivery address to continue.
+           {language === "EN" ? "Add your first delivery address." : "உங்கள் முதல் முகவரியை சேர்."}
           </Typography>
 
           <Box sx={{ mt: 3 }}>
@@ -159,7 +161,7 @@ export default function CheckoutAddressList({
               onClick={onAddNew}
               sx={{ backgroundColor: BRAND_COLOR, "&:hover": { backgroundColor: BRAND_COLOR, opacity: 0.9 } }}
             >
-              Add New Address
+              {language === "EN" ? "Add New Address" : "புதிய முகவரியை சேர்"}
             </Button>
           </Box>
         </Box>
@@ -222,7 +224,7 @@ export default function CheckoutAddressList({
                     />
                     {addr.isDefault && (
                       <Chip
-                        label="DEFAULT"
+                       label={language === "EN" ? "DEFAULT" : "இயல்புநிலை"}
                         size="small"
                         sx={{ bgcolor: BRAND_COLOR, color: "white", fontWeight: 500 }}
                       />
@@ -261,7 +263,7 @@ export default function CheckoutAddressList({
                       startIcon={<EditIcon fontSize="small" />}
                       onClick={(e) => handleEditClick(e, addr)}
                     >
-                      Edit
+                     {language === "EN" ? "Edit" : "திருத்து"}
                     </Button>
 
                     <Button
@@ -271,7 +273,7 @@ export default function CheckoutAddressList({
                       disabled={addr.isDefault}
                       onClick={(e) => handleDeleteClick(e, addr)}
                     >
-                      Delete
+                     {language === "EN" ? "Delete" : "நீக்கு"}
                     </Button>
                   </Box>
                 </Box>
@@ -302,7 +304,7 @@ export default function CheckoutAddressList({
             }
           }}
         >
-          Add New Address
+         {language === "EN" ? "Add New Address" : "புதிய முகவரியை சேர்"}
         </Button>
       </Box>
 
@@ -335,7 +337,7 @@ export default function CheckoutAddressList({
               "&:hover": { backgroundColor: BRAND_COLOR, opacity: 0.9 },
             }}
           >
-            Continue
+           {language === "EN" ? "Continue" : "தொடரவும்"}
           </Button>
         </Box>
       )}
@@ -356,7 +358,7 @@ export default function CheckoutAddressList({
                     "&:hover": { backgroundColor: BRAND_COLOR, opacity: 0.9 },
                 }}
             >
-                Continue
+               {language === "EN" ? "Continue" : "தொடரவும்"}
             </Button>
         </Box>
       )}

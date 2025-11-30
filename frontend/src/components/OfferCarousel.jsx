@@ -5,9 +5,10 @@ import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import axios from "axios";
 import { useLanguage } from "./LanguageContext"; // ✅ Import language context
-
+import { useNavigate } from "react-router-dom";
 const OfferCarousel = () => {
   const { language } = useLanguage(); // ✅ Get selected language
+  const navigate = useNavigate(); 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,8 +46,9 @@ const OfferCarousel = () => {
 
       const transformedOffers = response.data.map((offer) => ({
         id: offer._id,
+         productId: offer.productIds?._id,
         title_en: offer.title_en || "SPECIAL OFFER",
-        title_ta: offer.title_ta || "சிறப்பு சலுகை",
+        title_ta: offer. title_ta || "சிறப்பு சலுகை",
         productTitle_en: offer.productIds?.name_en || "Product",
         productTitle_ta: offer.productIds?.name_ta || "பொருள்",
         description_en: offer.description_en || "",
@@ -255,9 +257,14 @@ const OfferCarousel = () => {
               {description}
             </Typography>
 
-            <Button
+           <Button
               variant="contained"
               endIcon={<ArrowForwardIcon sx={{ fontSize: { xs: "0.9rem", md: "1.2rem" } }} />}
+              onClick={() => {
+                if (currentOffer.productId) {
+                  navigate(`/product/${currentOffer.productId}`);
+                }
+              }}
               sx={{
                 backgroundColor: "#1a1a1a",
                 color: "#fff",
@@ -268,6 +275,7 @@ const OfferCarousel = () => {
                 fontSize: { xs: "0.7rem", md: "0.85rem" },
                 textTransform: "uppercase",
                 "&:hover": { backgroundColor: "#333" },
+                cursor: "pointer",
               }}
             >
               {buttonLabel}

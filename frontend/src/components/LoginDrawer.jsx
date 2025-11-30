@@ -8,10 +8,15 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { getClientId } from "../utils/clientId";
+import { useLanguage } from "./LanguageContext"; 
+// ✅ Define font families clearly at the top
+const tamilFont = "'Latha', 'Noto Sans Tamil', 'Tiro Tamil', sans-serif";
+const englishFont = "'Poppins', 'Lato', sans-serif";
 
 const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
   const [step, setStep] = useState(1);
   const [mobile, setMobile] = useState("");
+   const { language } = useLanguage();
   const [otp, setOtp] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -126,7 +131,11 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
     
     const isValid = /^[6-9]\d{9}$/.test(mobile);
     if (!isValid) {
-      setError("Please enter a valid 10-digit mobile number starting with 6-9.");
+      setError(
+  language === "EN"
+    ? "Please enter a valid 10-digit mobile number starting with 6-9."
+    : "6-9 என்ற இலக்கத்துடன் தொடங்கும் 10-அடக்கு செல்லுபடியாகும் தொலைபேசி எண்ணை உள்ளிடவும்."
+);
       return;
     }
 
@@ -325,12 +334,13 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
         onClose={handleReset}
         sx={{
           "& .MuiDrawer-paper": {
-            width: { xs: "100%", sm: 400 },
+            width: { xs: "100%", sm: 420 },
             boxShadow: "-8px 0px 24px rgba(0,0,0,0.2)",
           },
         }}
       >
-        <Box sx={{ p: 3, position: "relative", height: "100%" }}>
+        <Box sx={{ p: 3, position: "relative", height: "100%" , 
+          fontFamily: language === "TA" ? tamilFont : englishFont,}}>
           <IconButton
             onClick={handleReset}
             sx={{ position: "absolute", top: 10, right: 10, color: "#444" }}
@@ -339,10 +349,10 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
           </IconButton>
 
           <Typography variant="h5" sx={{ fontWeight: 700, color: "#C21807", mt: 1, mb: 1 }}>
-            Bagathsingh Fish Shop
+            {language === "EN"  ? "Bagathsingh Fish Shop" : "பகத்சிங் மீன் கடை"}
           </Typography>
           <Typography variant="subtitle1" sx={{ color: "#555", mb: 3 }}>
-            For the love of meat!
+         {language === "EN" ? "Your fresh food journey starts here" : "சுத்தமான உணவு பயணம் இங்கிருந்து!"}
           </Typography>
           <Divider sx={{ mb: 3 }} />
 
@@ -357,10 +367,10 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
           {step === 1 && (
             <Box>
               <Typography variant="h6" sx={{ mb: 1 }}>
-                Sign In / Sign Up
+              {language === "EN" ? "Sign In / Sign Up" : "சைன் இன் / பதிவு செய்யவும்"}
               </Typography>
               <TextField
-                label="Mobile Number"
+                label={ language === "EN" ? "Mobile Number" : "தொலைபேசி எண்"}
                 variant="outlined"
                 fullWidth
                 value={mobile}
@@ -371,7 +381,10 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
                 }}
                 inputProps={{ maxLength: 10 }}
                 sx={{ mb: 3 }}
-                helperText="Enter 10-digit mobile number starting with 6-9"
+                helperText={language === "EN" 
+                ? "Enter 10-digit mobile number starting with 6-9"
+                : "6-9 என்ற இலக்கத்துடன் தொடங்கும் 10-அடக்கு தொலைபேசி எண்ணை உள்ளிடவும்"
+              }
                 disabled={isBlocked}
               />
               <Button
@@ -388,7 +401,8 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
                 onClick={handleSendOtp}
                 disabled={loading || mobile.length !== 10 || isBlocked}
               >
-                {loading ? <CircularProgress size={24} sx={{ color: "#fff" }} /> : "Send OTP"}
+                {loading ? <CircularProgress size={24} sx={{ color: "#fff" }} /> 
+                : language === "EN" ? ("Send OTP") : ("OTP அனுப்பு" )}
               </Button>
             </Box>
           )}
@@ -397,14 +411,16 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
           {step === 2 && (
             <Box>
               <Typography variant="h6" sx={{ mb: 1 }}>
-                Enter OTP
+                { language === "EN" ? "Enter OTP" : "OTP உள்ளிடவும்"}
               </Typography>
               <Typography variant="body2" sx={{ mb: 2 }}>
-                OTP sent to <strong>{mobile}</strong>
+               {language === "EN" 
+                ? <>OTP sent to <strong>{mobile}</strong></> 
+                : <>OTP அனுப்பப்பட்டது: <strong>{mobile}</strong></>}
               </Typography>
               
               <TextField
-                label="Enter 4-digit OTP"
+                label={language === "EN" ? "Enter 4-digit OTP" : "4-அடக்கு OTP உள்ளிடவும்"}
                 variant="outlined"
                 fullWidth
                 value={otp}
@@ -422,7 +438,9 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
               {/* 🔥 FIXED: Timer only shows when NOT at verification limit */}
               {!verificationLimitReached && timer > 0 && (
                 <Typography variant="body2" sx={{ mb: 2, color: "text.secondary", textAlign: "center" }}>
-                  Resend OTP available in <strong>{timer}s</strong>
+                 {language === "EN"
+                  ? <>Resend OTP available in <strong>{timer}s</strong></>
+                  : <>OTP மறுபரிசோதனை செய்யும் நேரம்: <strong>{timer} வினாடிகள்</strong></>}
                 </Typography>
               )}
 
@@ -434,7 +452,10 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
                   onClick={handleResendOtp}
                   sx={{ mb: 2, textTransform: "none" }}
                 >
-                  Resend OTP ({3 - resendCount} remaining)
+                {language === "EN" 
+              ? `Resend OTP (${3 - resendCount} remaining)` 
+              : `OTP மீண்டும் அனுப்பு (${3 - resendCount} மீதம்)`}
+
                 </Button>
               )}
 
@@ -451,7 +472,9 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
                     textTransform: "none"
                   }}
                 >
-                  Request New OTP ({3 - resendCount} remaining)
+                   {language === "EN" 
+                ? `Request New OTP (${3 - resendCount} remaining)` 
+                : `புதிய OTP கோருக (${3 - resendCount} மீதம்)`}
                 </Button>
               )}
 
@@ -469,7 +492,12 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
                 onClick={handleVerifyOtp}
                 disabled={loading || otp.length !== 4 || verificationLimitReached}
               >
-                {loading ? <CircularProgress size={24} sx={{ color: "#fff" }} /> : "Verify OTP"}
+               {loading 
+              ? <CircularProgress size={24} sx={{ color: "#fff" }} /> 
+              : language === "EN" 
+                  ? "Verify OTP" 
+                  : "OTP சரிபார்க்கவும்"}
+
               </Button>
               
               <Button
@@ -484,7 +512,7 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
                 }}
                 sx={{ mt: 1, textTransform: "none" }}
               >
-                Edit Mobile Number
+               {language === "EN" ? "Edit Mobile Number" : "தொலைபேசி எண்ணை திருத்தவும்"}
               </Button>
             </Box>
           )}
@@ -493,14 +521,16 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
           {step === 3 && (
             <Box>
               <Typography variant="h6" sx={{ mb: 1 }}>
-                Complete Your Profile
+                {language === "EN" ? "Complete Your Profile" : "சுயவிவரத்தை முடிக்கவும்"}
               </Typography>
               <Typography variant="body2" sx={{ mb: 2, color: "#555" }}>
-                You're logged in! Just a few more details...
+                {language === "EN" 
+                  ? "You're logged in! Just a few more details..." 
+                  : "சில கூடுதல் விவரங்கள் கொடுக்கவும்..."}
               </Typography>
 
               <TextField
-                label="Full Name"
+                label={language === "EN" ? "Full Name" : "முழு பெயர்"}
                 variant="outlined"
                 fullWidth
                 value={name}
@@ -512,7 +542,7 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
               />
 
               <TextField
-                label="Email Address"
+                label={language === "EN" ? "Email Address" : "மின்னஞ்சல் முகவரி"}
                 variant="outlined"
                 fullWidth
                 type="email"
@@ -525,7 +555,7 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
               />
 
               <FormControl component="fieldset" sx={{ mb: 3 }}>
-                <FormLabel component="legend">Gender</FormLabel>
+                <FormLabel component="legend">{language === "EN" ? "Gender" : "பாலினம்"}</FormLabel>
                 <RadioGroup
                   row
                   value={gender}
@@ -534,9 +564,9 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
                     setError("");
                   }}
                 >
-                  <FormControlLabel value="male" control={<Radio />} label="Male" />
-                  <FormControlLabel value="female" control={<Radio />} label="Female" />
-                  <FormControlLabel value="other" control={<Radio />} label="Other" />
+                  <FormControlLabel value="Male" control={<Radio />} label={ language === "EN" ? "Male" : "ஆண்"}/>
+                  <FormControlLabel value="Female" control={<Radio />} label={language === "EN" ? "Female" : "பெண்"} />
+                  <FormControlLabel value="Other" control={<Radio />} label={language === "EN" ? "Other" : "மற்றவை"} />
                 </RadioGroup>
               </FormControl>
 
@@ -554,7 +584,9 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
                 onClick={handleCompleteProfile}
                 disabled={loading || !name || !email || !gender}
               >
-                {loading ? <CircularProgress size={24} sx={{ color: "#fff" }} /> : "Complete Profile"}
+                {loading ? <CircularProgress size={24} sx={{ color: "#fff" }} />  : language === "EN" 
+                  ? "Complete Profile" 
+                  : "சுயவிவரம் முடிக்கவும்"}
               </Button>
               
               <Button
@@ -562,7 +594,7 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
                 onClick={handleReset}
                 sx={{ mt: 1, textTransform: "none", width: "100%" }}
               >
-                Skip for now
+                {language === "EN" ? "Skip for now" : "இப்போதே தவிர்க்கவும்"}
               </Button>
             </Box>
           )}
@@ -571,10 +603,10 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
           {step === 4 && (
             <Box textAlign="center" sx={{ mt: 10 }}>
               <Typography variant="h5" sx={{ fontWeight: 600, color: "#2E7D32", mb: 2 }}>
-                🎉 Login Successful!
+                {language === "EN" ? "🎉 Login Successful!" : "🎉 புகுபதிவு வெற்றிகரமாகியது!"}
               </Typography>
               <Typography variant="body1" sx={{ mb: 3 }}>
-                Welcome to Bagathsingh Fish Shop! Enjoy shopping.
+               {language === "EN" ? "Welcome to Bagathsingh Fish Shop! Enjoy shopping." : "பகத்சிங் மீன் கடைக்கு வரவேற்கிறோம்! வாங்குவதை அனுபவிக்கவும்."}
               </Typography>
               <Button
                 variant="contained"
@@ -588,7 +620,7 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
                   "&:hover": { backgroundColor: "#B71C1C" },
                 }}
               >
-                Continue
+               {language === "EN" ? "Continue" : "தொடரவும்"}
               </Button>
             </Box>
           )}
@@ -597,6 +629,7 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
             variant="caption"
             sx={{
               position: "absolute",
+              mt:1,
               bottom: 16,
               color: "#777",
               left: 0,

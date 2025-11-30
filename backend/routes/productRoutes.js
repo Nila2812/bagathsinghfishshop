@@ -6,6 +6,7 @@ import {
   getProductsByCategory,
   searchProducts,
   addProduct,
+  getProductById, 
   updateProduct,
   deleteProduct,
   viewAllProducts,
@@ -13,25 +14,25 @@ import {
 
 const router = express.Router();
 
-// Multer storage
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// GET routes
+// ⚠️ CRITICAL: Order matters! Specific routes BEFORE dynamic routes
+
+// 1. Search and view routes (most specific)
 router.get("/search", searchProducts);
+router.get("/view-products", viewAllProducts);
 router.get("/by-category/:id", getProductsByCategory);
+
+// 2. Root route (before /:id to avoid conflict)
 router.get("/", getAllProducts);
 
-// POST - Add product
+// 3. POST route
 router.post("/add", upload.single("image"), addProduct);
-
-// PUT - Update product
 router.put("/:id", upload.single("image"), updateProduct);
+// 4. Dynamic :id routes (MUST come after all specific routes)
+router.get("/:id", getProductById);
 
-// DELETE - Delete product
 router.delete("/:id", deleteProduct);
-
-// VIEW ALL PRODUCTS (with parent & subcategory)
-router.get("/view-products", viewAllProducts);
 
 export default router;
