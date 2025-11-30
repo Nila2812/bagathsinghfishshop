@@ -6,16 +6,30 @@ import {
   Button,
   useTheme,
   useMediaQuery,
+  Dialog,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import Topbar from "../components/Topbar";
+import TaskAltIcon from "@mui/icons-material/TaskAlt";
 import OrderSummary from "../components/OrderSummary";
 import CheckoutAddressList from "../components/CheckoutAddressList";
 import AddressFormModal from "../components/AddressFormModal";
-
-const steps = ["Select Address", "Order Summary", "Payment Method"];
+import PaymentComponent from "../components/PaymentComponent";
+import { useCart } from "../context/CartContext";
+import { useLanguage } from "../components/LanguageContext"; 
 const BRAND_COLOR = "#D31032";
-
+// ✅ Define font families clearly at the top
+const tamilFont = "'Latha', 'Noto Sans Tamil', 'Tiro Tamil', sans-serif";
+const englishFont = "'Poppins', 'Lato', sans-serif";
 export default function CheckoutPage() {
+   const { language } = useLanguage();
+   const steps = language === "TA"
+  ? ["முகவரியை தேர்வு செய்", "ஆர்டர் விவரம்", "கட்டணம்"]
+  : ["Select Address", "Order Summary", "Payment Method"];
+   const { user } = useAuth();
+  const { cartItems, clearCart } = useCart();
   const authContext = useAuth();
   const theme = useTheme();
   const isLargeScreen = useMediaQuery(theme.breakpoints.up("lg"));
@@ -26,6 +40,9 @@ export default function CheckoutPage() {
   const [openAddressForm, setOpenAddressForm] = useState(false);
   const [editAddress, setEditAddress] = useState(null);
   const [refreshFlag, setRefreshFlag] = useState(0);
+  const [successDialog, setSuccessDialog] = useState(false);
+  const [orderId, setOrderId] = useState(null);
+  const [grandTotal, setGrandTotal] = useState(0);
 
   // 🔥 FIX: Get auth data with fallback to localStorage
   const [authData, setAuthData] = useState({
@@ -101,6 +118,20 @@ export default function CheckoutPage() {
       setActiveStep(index);
     }
   };
+const handlePaymentSuccess = (paymentData) => {
+    console.log("Payment successful:", paymentData);
+    setOrderId(paymentData.orderId);
+    setSuccessDialog(true);
+    
+    // Clear cart
+    if (clearCart) {
+      clearCart();
+    }
+  };
+
+  const handlePaymentError = (error) => {
+    console.error("Payment error:", error);
+  };
 
   const renderMainContent = () => {
     if (activeStep === 0) {
@@ -121,47 +152,31 @@ export default function CheckoutPage() {
       );
     }
 
-    if (activeStep === 1)
-      return <OrderSummary onNext={() => setActiveStep(2)} />;
-
-    if (activeStep === 2)
+    if (activeStep === 1) {
       return (
-        <Box sx={{ width: '100%' }}>
-          <Typography variant="h5" sx={{ mb: 3, fontWeight: 700 }}>
-            Payment Method
-          </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-            Please select your preferred payment option. (Currently mock payment is implemented.)
-          </Typography>
-
-          <Button
-            fullWidth
-            variant="contained"
-            size="large"
-            sx={{
-              bgcolor: BRAND_COLOR,
-              mt: 3,
-              py: 1.5,
-              "&:hover": { backgroundColor: "#b40d2c" }
-            }}
-            onClick={() => alert("Order Placed Successfully! (Mock)")}
-          >
-            Confirm & Pay
-          </Button>
-
-          <Button
-            fullWidth
-            variant="text"
-            sx={{ color: BRAND_COLOR, mt: 2 }}
-            onClick={() => setActiveStep(1)}
-          >
-            ← Back to Order Summary
-          </Button>
-        </Box>
+        <OrderSummary 
+          onNext={() => setActiveStep(2)}
+          onGrandTotalChange={(total) => {
+            console.log("OrderSummary sending grandTotal:", total);
+            setGrandTotal(total);
+          }}
+        />
       );
-  };
+    }
 
+    if (activeStep === 2) {
+      return (
+        <PaymentComponent
+          onPaymentSuccess={handlePaymentSuccess}
+          onPaymentError={handlePaymentError}
+          selectedAddress={selectedAddress}
+          grandTotal={grandTotal}
+        />
+      );
+    }
+  };
   // Mobile horizontal progress indicator
+
   const renderMobileProgress = () => (
     <Box
       ref={scrollContainerRef}
@@ -194,6 +209,7 @@ export default function CheckoutPage() {
             sx={{
               minWidth: '33.33%',
               display: 'flex',
+            mt:4,
               flexDirection: 'column',
               alignItems: 'center',
               cursor: isClickable ? 'pointer' : 'default',
@@ -270,11 +286,13 @@ export default function CheckoutPage() {
 
   // Desktop vertical progress indicator
   const renderDesktopProgress = () => (
+   
     <Box
       sx={{
         width: 320,
         flexShrink: 0,
         p: 4,
+        mt:2,
         boxSizing: "border-box",
         bgcolor: theme.palette.grey[50],
         position: "sticky",
@@ -284,8 +302,9 @@ export default function CheckoutPage() {
         borderRight: `1px solid ${theme.palette.divider}`,
       }}
     >
-      <Typography variant="h6" sx={{ mb: 4, fontWeight: 700 }}>
-        Checkout Progress
+     
+      <Typography variant="h6" sx={{ mb: 4, fontWeight: 700, }}>
+        {language === "EN" ? "Checkout Progress" : "செக்அவுட் முன்னேற்றம்"}
       </Typography>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
@@ -303,7 +322,7 @@ export default function CheckoutPage() {
                     position: 'absolute',
                     left: 11,
                     top: 36,
-                    bottom: -12,
+                    bottom: -20,
                     width: 2,
                     bgcolor: isCompleted ? BRAND_COLOR : theme.palette.divider,
                   }}
@@ -369,12 +388,12 @@ export default function CheckoutPage() {
                   </Typography>
                   {isCompleted && (
                     <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-                      Completed ✓
+                     {language === "EN" ? "Completed ✓" : "முடிந்தது ✓"}
                     </Typography>
                   )}
                   {isActive && (
                     <Typography variant="caption" sx={{ color: BRAND_COLOR, fontWeight: 600 }}>
-                      Current Step
+                     {language === "EN" ? "Current Step" : "நடப்பு நிலை"}
                     </Typography>
                   )}
                 </Box>
@@ -388,8 +407,10 @@ export default function CheckoutPage() {
 
   return (
     <>
+      <Topbar />   {/* ✅ Add here */}
       <Box
         sx={{
+          fontFamily: language === "TA" ? tamilFont : englishFont,
           display: "flex",
           minHeight: isLargeScreen ? "100vh" : "auto",
           flexDirection: {
@@ -413,6 +434,7 @@ export default function CheckoutPage() {
             flexGrow: 1,
             minWidth: 0,
             width: '100%',
+            mt:{ xs: 0, lg: 2 },
             maxWidth: '100%',
             height: { lg: "100vh" },
             overflowY: { lg: "auto" },
@@ -441,6 +463,74 @@ export default function CheckoutPage() {
         onClose={() => setOpenAddressForm(false)}
         onSaved={handleAddressSaved}
       />
+       {/* PAYMENT SUCCESS DIALOG */}
+      <Dialog
+        open={successDialog}
+        onClose={() => setSuccessDialog(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+          },
+        }}
+      >
+        <DialogContent sx={{ textAlign: "center", pt: 4, pb: 3 }}>
+          <TaskAltIcon
+            sx={{
+              fontSize: 64,
+              color: "#4CAF50",
+              mb: 2,
+              animation: "scaleIn 0.5s ease-in-out",
+              "@keyframes scaleIn": {
+                from: {
+                  transform: "scale(0)",
+                },
+                to: {
+                  transform: "scale(1)",
+                },
+              },
+            }}
+          />
+          <Typography variant="h5" sx={{ fontWeight: 700, mb: 2 }}>
+           {language === "EN" ? "Payment Successful!" : "கட்டணம் வெற்றிகரமாக முடிந்தது!"}
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 2, color: "text.secondary" }}>
+           {language === "EN" ? 
+            "Your order has been placed successfully." : 
+            "உங்கள் ஆர்டர் வெற்றிகரமாக பதிவு செய்யப்பட்டது."}
+
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{ fontWeight: 600, color: BRAND_COLOR, mb: 3 }}
+          >
+          {language === "EN" ? "Order ID:" : "ஆர்டர் எண்:"} {orderId}
+          </Typography>
+          <Typography variant="caption" sx={{ color: "text.secondary" }}>
+            You will receive an order confirmation via email shortly.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, justifyContent: "center", gap: 2 }}>
+          <Button
+            variant="outlined"
+            sx={{ color: BRAND_COLOR, borderColor: BRAND_COLOR }}
+            onClick={() => setSuccessDialog(false)}
+          >
+           {language === "EN" ? "Continue Shopping" : "ஷாப்பிங்கை தொடரவும்"}
+          </Button>
+          <Button
+            variant="contained"
+            sx={{ bgcolor: BRAND_COLOR }}
+            onClick={() => {
+              setSuccessDialog(false);
+              window.location.href = `/orders/${orderId}`;
+            }}
+          >
+           {language === "EN" ? "View Order" : "ஆர்டரை பார்க்க"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

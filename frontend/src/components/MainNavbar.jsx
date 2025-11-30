@@ -18,6 +18,7 @@ import { getClientId, regenerateClientId } from "../utils/clientId";
 import AddressFormModal from "./AddressFormModal";
 import AddressListModal from "./AddressListModal";
 import LoginDrawer from "./LoginDrawer";
+import { useLanguage } from "./LanguageContext";
 
 const MainNavbar = ({ fixed = true }) => {
   const [editingAddress, setEditingAddress] = useState(null);
@@ -30,6 +31,7 @@ const MainNavbar = ({ fixed = true }) => {
   const [loginDrawerOpen, setLoginDrawerOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
+  const { language } = useLanguage();
 
   const [address, setAddress] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -233,7 +235,9 @@ const MainNavbar = ({ fixed = true }) => {
                   fontSize: "0.85rem",
                   color: mainTextColor,
                 }}>
-                  {address ? `Hey, ${address.name}` : "Add address"}
+                  
+            {address ? `${language === "EN" ? "Hey" : "வணக்கம்"}, ${address.name}` : (language === "EN" ? "Add address" : "முகவரியைச் சேர்க்க") }
+
                 </Typography>
                 
                 {address && (
@@ -268,7 +272,7 @@ const MainNavbar = ({ fixed = true }) => {
           >
             <SearchIcon sx={{ mr: 1, color: mainTextColor }} />
             <InputBase
-              placeholder="Search products..."
+              placeholder={language === "EN" ? "Search products..." : "பொருட்களைத் தேடவும்..."}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={handleSearch}
@@ -280,7 +284,9 @@ const MainNavbar = ({ fixed = true }) => {
             <Box sx={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
               <IconButton onClick={handleAccountMenuOpen}>
                 <AccountCircleIcon sx={{ color: mainTextColor}} />
-                <Typography sx={{ ml: 0.6, color: mainTextColor }}>Account</Typography>
+                <Typography sx={{ ml: 0.6, color: mainTextColor }}>
+                  {language === "EN" ? "Account" : "கணக்கு"}
+                </Typography>
                 <ExpandMoreIcon sx={{ color: mainTextColor, fontSize: 18 }} />
               </IconButton>
             </Box>
@@ -288,7 +294,9 @@ const MainNavbar = ({ fixed = true }) => {
             <Box sx={{ display: "flex", alignItems: "center", cursor: "pointer" }}
               onClick={() => setLoginDrawerOpen(true)}>
               <AccountCircleIcon sx={{ color: mainTextColor}} />
-              <Typography sx={{ ml: 0.6 , color: mainTextColor}}>Login / Sign Up</Typography>
+              <Typography sx={{ ml: 0.6 , color: mainTextColor}}>
+                  {language === "EN" ? "Login / Sign Up" : "உள்நுழைவு / பதிவு"}
+              </Typography>
             </Box>
           )}
 
@@ -297,11 +305,15 @@ const MainNavbar = ({ fixed = true }) => {
             <Badge badgeContent={cartCount} color="error">
               <ShoppingCartIcon sx={{ color: mainTextColor}} />
             </Badge>
-            <Typography sx={{ ml: 0.6, color: mainTextColor }}>Cart</Typography>
+            <Typography sx={{ ml: 0.6, color: mainTextColor }}>
+               {language === "EN" ? "Cart" : "கார்ட்"}
+            </Typography>
           </Box>
 
           <IconButton onClick={handleMenuOpen}>
-            <Typography sx={{ color: mainTextColor}}>More</Typography>
+            <Typography sx={{ color: mainTextColor}}>
+                {language === "EN" ? "More" : "மேலும்"}
+            </Typography>
             <ExpandMoreIcon sx={{color: mainTextColor,}} />
           </IconButton>
         </Toolbar>
@@ -341,7 +353,10 @@ const MainNavbar = ({ fixed = true }) => {
               <RoomIcon sx={{ fontSize: 20, color: mainTextColor }} />
               <Box>
                 <Typography sx={{ fontWeight: 600, fontSize: "0.8rem", color: mainTextColor }}>
-                  {address ? `Hey, ${address.name}` : "Add address"}
+                
+                  {address ? `${language === "EN" ? "Hey" : "வணக்கம்"}, ${address.name}` : (language === "EN" ? "Add address" : "முகவரியைச் சேர்க்க") }
+               
+
                 </Typography>
 
                 {address && (
@@ -356,7 +371,7 @@ const MainNavbar = ({ fixed = true }) => {
           <Box sx={{ display: "flex", alignItems: "center", border: `1px solid ${mainTextColor}`, borderRadius: 2, px: 1.5, py: 0.6, width: "30%", background: "#f8f8f8" }}>
             <SearchIcon sx={{ mr: 1 }} />
             <InputBase
-              placeholder="Search..."
+              placeholder={language === "EN" ? "Search..." : "தேடவும்..."}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={handleSearch}
@@ -382,7 +397,9 @@ const MainNavbar = ({ fixed = true }) => {
           </IconButton>
 
           <IconButton onClick={handleMenuOpen} sx={{ mr: 3}}>
-            <Typography sx={{ color: mainTextColor }}>More</Typography>
+            <Typography sx={{ color: mainTextColor }}>
+                {language === "EN" ? "More" : "மேலும்"}
+            </Typography>
             <ExpandMoreIcon sx={{ color: mainTextColor }} />
           </IconButton>
         </Toolbar>
@@ -400,8 +417,9 @@ const MainNavbar = ({ fixed = true }) => {
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
               <RoomIcon sx={{ fontSize: 18, color: mainTextColor }} />
               <Box>
-                <Typography sx={{ fontWeight: 600, fontSize: "0.75rem", color: mainTextColor }}>
-                  {address ? `Hey, ${address.name}` : "Address"}
+                <Typography sx={{ fontWeight: 400, fontSize: "0.75rem", color: mainTextColor }}>
+  {address ? `${language === "EN" ? "Hey" : "வணக்கம்"}, ${address.name}` : (language === "EN" ? "Add address" : "முகவரியைச் சேர்க்க") }
+
                 </Typography>
 
                 {address && (
@@ -432,25 +450,60 @@ const MainNavbar = ({ fixed = true }) => {
       {/* DRAWERS */}
       <Drawer anchor="left" open={menuDrawerOpen} onClose={toggleMenuDrawer(false)}>
         <Box sx={{ width: 200 }}>
-          <List>
-            <ListItemButton onClick={() => navigate("/about")}>
-              <ListItemText primary="About Us" />
+         <List>
+
+            {/* About */}
+            <ListItemButton onClick={() => { navigate("/about"); setMenuDrawerOpen(false); }}>
+              <ListItemText primary={language === "EN" ? "About Us" : "எங்களைப் பற்றி"} />
             </ListItemButton>
             <Divider />
-            <ListItemButton onClick={() => navigate("/contact")}>
-              <ListItemText primary="Contact Us" />
+
+            {/* Contact */}
+            <ListItemButton onClick={() => { navigate("/contact"); setMenuDrawerOpen(false); }}>
+              <ListItemText primary={language === "EN" ? "Contact Us" : "தொடர்பு"} />
             </ListItemButton>
             <Divider />
+
+            {/* 🔥 WHEN LOGGED IN → Show Account Menu Like Laptop */}
             {isLoggedIn ? (
-              <ListItemButton onClick={handleLogout}>
-                <ListItemText primary="Logout" />
-              </ListItemButton>
+              <>
+                <ListItemButton onClick={() => { navigate("/profile"); setMenuDrawerOpen(false); }}>
+                  <ListItemText 
+                    primary={userName ? userName : (language === "EN" ? "My Account" : "என் கணக்கு")} 
+                  />
+                </ListItemButton>
+
+                <ListItemButton onClick={() => { navigate("/orders"); setMenuDrawerOpen(false); }}>
+                  <ListItemText 
+                    primary={language === "EN" ? "My Orders" : "எனது ஆர்டர்கள்"} 
+                  />
+                </ListItemButton>
+
+                <ListItemButton onClick={() => { navigate("/addresses"); setMenuDrawerOpen(false); }}>
+                  <ListItemText 
+                    primary={language === "EN" ? "Saved Addresses" : "சேமிக்கப்பட்ட முகவரிகள்"} 
+                  />
+                </ListItemButton>
+
+                <Divider />
+
+                <ListItemButton onClick={() => { handleLogout(); setMenuDrawerOpen(false); }}>
+                  <ListItemText 
+                    primary={language === "EN" ? "Logout" : "வெளியேறு"} 
+                  />
+                </ListItemButton>
+              </>
             ) : (
+              /* 🔥 WHEN LOGGED OUT → Show Login */
               <ListItemButton onClick={() => { setLoginDrawerOpen(true); setMenuDrawerOpen(false); }}>
-                <ListItemText primary="Login / Register" />
+                <ListItemText 
+                  primary={language === "EN" ? "Login / Register" : "உள்நுழைவு / பதிவு"} 
+                />
               </ListItemButton>
             )}
+
           </List>
+
         </Box>
       </Drawer>
 
@@ -484,20 +537,24 @@ const MainNavbar = ({ fixed = true }) => {
         </MenuItem>
         <Divider />
         <MenuItem onClick={() => { handleAccountMenuClose(); navigate("/orders"); }}>
-          My Orders
+          {language === "EN" ? "My Orders" : "எனது ஆர்டர்கள்"}
         </MenuItem>
         <MenuItem onClick={() => { handleAccountMenuClose(); navigate("/addresses"); }}>
-          Saved Addresses
+          {language === "EN" ? "Saved Addresses" : "சேமிக்கப்பட்ட முகவரிகள்"}
         </MenuItem>
         <Divider />
         <MenuItem onClick={handleLogout} sx={{ color: "#D32F2F" }}>
-          Logout
+           {language === "EN" ? "Logout" : "வெளியேறு"}
         </MenuItem>
       </Menu>
 
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-        <MenuItem onClick={() => { handleMenuClose(); navigate("/about"); }}>About Us</MenuItem>
-        <MenuItem onClick={() => { handleMenuClose(); navigate("/contact"); }}>Contact Us</MenuItem>
+        <MenuItem onClick={() => { handleMenuClose(); navigate("/about"); }}>
+         {language === "EN" ? "About Us" : "எங்களைப் பற்றி"}
+        </MenuItem>
+        <MenuItem onClick={() => { handleMenuClose(); navigate("/contact"); }}>
+        {language === "EN" ? "Contact Us" : "தொடர்பு"}
+        </MenuItem>
       </Menu>
 
       <SearchDrawer open={searchDrawerOpen} onClose={() => setSearchDrawerOpen(false)} onSearch={(term) => navigate(`/search?query=${encodeURIComponent(term)}`)} />

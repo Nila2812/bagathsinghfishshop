@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import Backdrop from "@mui/material/Backdrop";
 import LoginDrawer from "./LoginDrawer";
+import { useLanguage } from "./LanguageContext";
+
 import {
   Drawer,
   Box,
@@ -18,10 +20,12 @@ import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
 import { useCart } from "../context/CartContext";
-import { useNavigate } from "react-router-dom";   // ✅ Missing import fixed
-
+import { useNavigate } from "react-router-dom";   
+const tamilFont = "'Latha', 'Noto Sans Tamil', 'Tiro Tamil', sans-serif";
+const englishFont = "'Poppins', 'Lato', sans-serif";
 const CartDrawer = ({ open, onClose }) => {
   const navigate = useNavigate();   // ✅ Added
+  const { language } = useLanguage();
 
   // Drawer open for login
   const [loginOpen, setLoginOpen] = useState(false);
@@ -182,10 +186,11 @@ const CartDrawer = ({ open, onClose }) => {
               alignItems: "center",
               p: 2,
               borderBottom: "1px solid #e0e0e0",
+              fontFamily: language === "EN" ? englishFont : tamilFont,
             }}
           >
             <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              Shopping Cart
+            {language === "EN" ? "Shopping Cart" : "ஷாப்பிங் கார்ட்"}
             </Typography>
 
             <Box sx={{ display: "flex", gap: 1 }}>
@@ -227,7 +232,7 @@ const CartDrawer = ({ open, onClose }) => {
             {cartItems.length === 0 ? (
               <Box sx={{ textAlign: "center", mt: 4 }}>
                 <Typography variant="h6" color="text.secondary">
-                  Your cart is empty
+                  {language === "EN" ? "Your cart is empty" : "உங்கள் கூடை காலியாக உள்ளது"}
                 </Typography>
               </Box>
             ) : (
@@ -262,7 +267,7 @@ const CartDrawer = ({ open, onClose }) => {
                             ? `data:${productSnapshot.image.contentType};base64,${productSnapshot.image.data}`
                             : "https://via.placeholder.com/80"
                         }
-                        alt={productSnapshot.name_en}
+                        alt={language === "EN" ? productSnapshot.name_en : productSnapshot.name_ta}
                         sx={{
                           width: 80,
                           height: 80,
@@ -276,16 +281,18 @@ const CartDrawer = ({ open, onClose }) => {
                           variant="subtitle2"
                           sx={{ fontWeight: 600 }}
                         >
-                          {productSnapshot.name_en}
+                          {language === "EN" ? productSnapshot.name_en : productSnapshot.name_ta}
+
                         </Typography>
 
                         <Typography
                           variant="body2"
                           color="text.secondary"
                         >
-                          ₹{productSnapshot.price} for{" "}
-                          {productSnapshot.weightValue}
-                          {productSnapshot.weightUnit}
+                         {language === "EN"
+  ? `₹${productSnapshot.price} for ${productSnapshot.weightValue}${productSnapshot.weightUnit}`
+  : `₹${productSnapshot.price} / ${productSnapshot.weightValue}${productSnapshot.weightUnit}`}
+
                         </Typography>
 
                         <Box
@@ -307,7 +314,7 @@ const CartDrawer = ({ open, onClose }) => {
                               color="text.secondary"
                               sx={{ fontWeight: 600 }}
                             >
-                              Total Quantity:&nbsp;
+                            {language === "EN" ? "Total Quantity:" : "மொத்த அளவு:"}&nbsp;
                             </Typography>
 
                             <Typography
@@ -332,7 +339,7 @@ const CartDrawer = ({ open, onClose }) => {
                               color="text.secondary"
                               sx={{ fontWeight: 600 }}
                             >
-                              Price:&nbsp;
+                          {language === "EN" ? "Price:" : "விலை:"}&nbsp;
                             </Typography>
 
                             <Typography
@@ -370,7 +377,7 @@ const CartDrawer = ({ open, onClose }) => {
                       {/* ADD */}
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          Increase quantity →
+                         {language === "EN" ? "Increase quantity →" : "அளவு அதிகரிக்க →"}
                         </Typography>
                         <Box
                           sx={{
@@ -413,7 +420,7 @@ const CartDrawer = ({ open, onClose }) => {
                       {/* REMOVE */}
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          Decrease quantity →
+                         {language === "EN" ? "Decrease quantity →" : "அளவு குறைக்க →"}
                         </Typography>
                         <Box
                           sx={{
@@ -468,7 +475,7 @@ const CartDrawer = ({ open, onClose }) => {
               }}
             >
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography variant="body1">Subtotal:</Typography>
+                <Typography variant="body1">{language === "EN" ? "Subtotal:" : "கூட்டுத்தொகை:"}</Typography>
                 <Typography variant="body1" sx={{ fontWeight: 600 }}>
                   ₹{totalAmount.toFixed(2)}
                 </Typography>
@@ -479,14 +486,17 @@ const CartDrawer = ({ open, onClose }) => {
                 color="text.secondary"
                 sx={{ display: "block", mb: 2 }}
               >
-                Delivery charges calculated at checkout
+               {language === "EN"
+  ? "Delivery charges calculated at checkout"
+  : "டெலிவரி கட்டணம் செக்அவுடில் கணக்கிடப்படும்"}
+
               </Typography>
 
               <Divider sx={{ my: 1 }} />
 
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                  Total:
+               {language === "EN" ? "Total:" : "மொத்தம்:"}
                 </Typography>
                 <Typography
                   variant="h6"
@@ -509,7 +519,7 @@ const CartDrawer = ({ open, onClose }) => {
                 }}
                 onClick={handleCheckout}
               >
-                Proceed to Checkout
+                {language === "EN" ? "Proceed to Checkout" : "செக்அவுட் தொடரவும்"}
               </Button>
             </Box>
           )}
@@ -521,16 +531,21 @@ const CartDrawer = ({ open, onClose }) => {
         open={confirmClearOpen}
         onClose={() => setConfirmClearOpen(false)}
       >
-        <DialogTitle>Clear Cart?</DialogTitle>
+        <DialogTitle>{language === "EN" ? "Clear Cart?" : "கூடையை காலி செய்வீர்களா?"}</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to remove all items from your cart?
+           {language === "EN"
+  ? "Are you sure you want to remove all items from your cart?"
+  : "உங்கள் கூடையில் உள்ள அனைத்து பொருட்களையும் நீக்க விரும்புகிறீர்களா?"}
+
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmClearOpen(false)}>Cancel</Button>
+          <Button onClick={() => setConfirmClearOpen(false)}>
+            {language === "EN" ? "Cancel" : "ரத்து"}
+          </Button>
           <Button onClick={handleClearCart} color="error" variant="contained">
-            Clear All
+           {language === "EN" ? "Clear All" : "அனைத்தையும் நீக்கு"}
           </Button>
         </DialogActions>
       </Dialog>

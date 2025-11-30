@@ -16,6 +16,7 @@ import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import LockIcon from "@mui/icons-material/Lock";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "./LanguageContext";
 
 const BRAND_COLOR = "#D31032";
 
@@ -31,7 +32,7 @@ export default function PaymentComponent({
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const { cartItems } = useCart();
   const { user } = useAuth();
-  
+  const { language } = useLanguage();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -85,8 +86,9 @@ export default function PaymentComponent({
 
     try {
       // Calculate delivery fee based on total amount
-      const subtotal = grandTotal - getDeliveryFee(grandTotal - getDeliveryFee(grandTotal));
-      const deliveryFee = getDeliveryFee(grandTotal - deliveryFee);
+const deliveryFee = getDeliveryFee(grandTotal);
+const subtotal = grandTotal - deliveryFee;
+
 
       // Step 1: Create order on backend
       const orderResponse = await fetch("/api/orders/create", {
@@ -227,10 +229,13 @@ export default function PaymentComponent({
       {/* Header */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
-          Payment Method
+        {language === "EN" ? "Payment Method" : "கட்டண முறைகள்"}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Choose your preferred payment option to complete the order
+         {language === "EN"
+          ? "Choose your preferred payment option to complete the order"
+          : "ஆர்டரை முடிக்க விரும்பும் கட்டண முறையைத் தேர்ந்தெடுக்கவும்"}
+
         </Typography>
       </Box>
 
@@ -255,7 +260,7 @@ export default function PaymentComponent({
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
           <Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-              Total Amount to Pay
+             {language === "EN" ? "Total Amount to Pay" : "மொத்த தொகை"}
             </Typography>
             <Typography
               variant="h5"
@@ -266,7 +271,7 @@ export default function PaymentComponent({
           </Box>
           <Box sx={{ textAlign: "right" }}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-              Items in Cart
+              {language === "EN" ? "Items in Cart" : "பொருட்கள்"}
             </Typography>
             <Typography variant="h6" sx={{ fontWeight: 700 }}>
               {cartItems.length}
@@ -289,7 +294,7 @@ export default function PaymentComponent({
           variant="subtitle1"
           sx={{ fontWeight: 700, mb: 2 }}
         >
-          Select Payment Method
+          {language === "EN" ? "Select Payment Method" : "கட்டண முறையைத் தேர்வு செய்யவும்"}
         </Typography>
 
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
@@ -385,13 +390,16 @@ export default function PaymentComponent({
               variant="body2"
               sx={{ fontWeight: 600, color: "#1B5E20", mb: 0.25 }}
             >
-              Your payment is secure
+             {language === "EN" ? "Your payment is secure" : "உங்கள் கட்டணம் பாதுகாப்பாகும்"}
             </Typography>
             <Typography
               variant="caption"
               sx={{ color: "#2E7D32" }}
             >
-              All transactions are protected with SSL encryption and PCI DSS compliance
+              {language === "EN"
+                ? "All transactions are protected with SSL encryption and PCI DSS compliance"
+                : "அனைத்து பரிவர்த்தனைகளும் SSL குறியாக்கம் மற்றும் PCI DSS பாதுகாப்புடன் மேற்கொள்ளப்படுகின்றன"}
+
             </Typography>
           </Box>
         </Box>
@@ -425,10 +433,13 @@ export default function PaymentComponent({
           {loading ? (
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <CircularProgress size={20} sx={{ color: "#fff" }} />
-              Processing...
+              {language === "EN" ? "Processing..." : "செயலாக்கப்படுகிறது..."}
             </Box>
           ) : (
-            `Pay ₹${grandTotal ? grandTotal.toFixed(2) : "0.00"}`
+            language === "EN"
+              ? `Pay ₹${grandTotal?.toFixed(2)}`
+              : `₹${grandTotal?.toFixed(2)} செலுத்து`
+
           )}
         </Button>
 
@@ -437,7 +448,9 @@ export default function PaymentComponent({
           color="text.secondary"
           sx={{ textAlign: "center", px: 1 }}
         >
-          By clicking Pay, you agree to complete this purchase. Your payment details are secure and encrypted.
+          {language === "EN"
+            ? "By clicking Pay, you agree to complete this purchase. Your payment details are secure and encrypted."
+            : "செலுத்து என்பதை அழுத்துவதன் மூலம், இந்த வாங்குதலை நிறைவு செய்வதை ஒப்புக்கொள்கிறீர்கள். உங்கள் கட்டண விவரங்கள் பாதுகாப்பானவை மற்றும் குறியாக்கம் செய்யப்பட்டவை."}
         </Typography>
       </Box>
     </Box>

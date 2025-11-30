@@ -4,30 +4,44 @@ import LocalDiningIcon from "@mui/icons-material/LocalDining";
 import Inventory2Icon from "@mui/icons-material/Inventory2";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
+import { useLanguage } from "./LanguageContext"; 
+
+const tamilFont = "'Latha', 'Noto Sans Tamil', 'Tiro Tamil', sans-serif";
+const englishFont = "'Poppins', 'Lato', sans-serif";
 
 const WhyChooseUs = () => {
+  const { language } = useLanguage();
+
+  const isTamil = language === "TA";
+
   const features = [
     {
       icon: <LocalDiningIcon sx={{ fontSize: 50, color: "#7d221d" }} />,
-      title: "Daily Fresh Stock",
-      description: "Only the freshest products are selected for you every day.",
+      title: isTamil ? "தினசரி புதிய பொருட்கள்" : "Daily Fresh Stock",
+      description: isTamil
+        ? "ஒவ்வொரு நாளும் உங்களுக்காக மிகப் புதிய பொருட்களையே நாங்கள் தேர்ந்தெடுக்கிறோம்"
+        : "Only the freshest products are selected for you every day.",
     },
     {
       icon: <Inventory2Icon sx={{ fontSize: 50, color: "#7d221d" }} />,
-      title: "Hygienically Cleaned & Packed",
-      description:
-        "Every item is carefully cleaned and neatly packed to maintain hygiene.",
+      title: isTamil ? "சுத்தமாக சுத்திகரித்து பொதி" : "Hygienically Cleaned & Packed",
+      description: isTamil
+        ? "ஒவ்வொரு பொருளும் சுத்தமாக சுத்திகரித்து நன்கு பொதி செய்யப்படுகிறது."
+        : "Every item is carefully cleaned and neatly packed to maintain hygiene.",
     },
     {
       icon: <LocalShippingIcon sx={{ fontSize: 50, color: "#7d221d" }} />,
-      title: "Prompt Home Delivery",
-      description:
-        "Delivered fresh to your doorstep with temperature-safe packaging.",
+      title: isTamil ? "வீடு வரை விரைவான டெலிவரி" : "Prompt Home Delivery",
+      description: isTamil
+        ?  "வெப்பம் மாறாத பாதுகாப்பில், பசுமை உங்கள் கதவுக்கு"
+        : "Delivered fresh to your doorstep with temperature-safe packaging.",
     },
     {
       icon: <MonetizationOnIcon sx={{ fontSize: 50, color: "#7d221d" }} />,
-      title: "Transparent Pricing",
-      description: "Clear pricing with no hidden charges or surprises.",
+      title: isTamil ? "வெளிப்படையான விலை" : "Transparent Pricing",
+      description: isTamil
+        ? "எந்த மறைமுக கட்டணமும் இல்லாமல் தெளிவான விலை."
+        : "Clear pricing with no hidden charges or surprises.",
     },
   ];
 
@@ -35,10 +49,9 @@ const WhyChooseUs = () => {
     <Box
       sx={{
         width: "100%",
-        mt:{ xs: 4, md: 9 },
-        //backgroundColor: "#fff",
+        mt: { xs: 4, md: 9 },
         py: { xs: 4, md: 6 },
-        fontFamily: `"Lato", "Helvetica Neue", Helvetica, Arial, sans-serif`,
+        fontFamily: isTamil ? tamilFont : englishFont,
       }}
     >
       <Typography
@@ -47,28 +60,25 @@ const WhyChooseUs = () => {
           textAlign: "center",
           fontWeight: "bold",
           mb: { xs: 3, md: 5 },
-            fontSize: { xs: "1.5rem", md: "2.5rem" },
+          fontSize: { xs: "1.5rem", md: "2.5rem" },
           color: "#7d221d",
-          textTransform: "camelcase",
         }}
       >
-        Why Choose Us
+        {isTamil ? "ஏன் நம்மை தேர்வு செய்ய வேண்டும்?" : "Why Choose Us"}
       </Typography>
 
-      {/* 🔹 Responsive Container */}
       <Box
         sx={{
           display: "flex",
           justifyContent: { xs: "flex-start", md: "center" },
-          alignItems: "stretch",
           flexWrap: { md: "nowrap" },
           gap: { xs: 2, md: 3 },
           overflowX: { xs: "auto", md: "visible" },
           scrollSnapType: { xs: "x mandatory", md: "none" },
           px: { xs: 2, md: 0 },
-           py: 1,
+          py: 1,
           "::-webkit-scrollbar": { display: "none" },
-          scrollbarWidth: "none", // hides scrollbar in Firefox
+          scrollbarWidth: "none",
         }}
       >
         {features.map((feature, index) => (
@@ -81,13 +91,14 @@ const WhyChooseUs = () => {
               borderRadius: 3,
               textAlign: "center",
               p: { xs: 3, md: 2 },
-              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
               scrollSnapAlign: "center",
               transition: "transform 0.3s ease, box-shadow 0.3s ease",
               "&:hover": {
                 transform: "translateY(-5px)",
                 boxShadow: "0 6px 18px rgba(0,0,0,0.15)",
               },
+              fontFamily: isTamil ? tamilFont : englishFont,
             }}
           >
             {feature.icon}
