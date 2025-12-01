@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import DataTable from "../components/DataTable";
 import axios from "axios";
-import { Box, Typography } from "@mui/material"; // ✅ Added Typography import
+import { Box, Typography } from "@mui/material";
+import { useNavigate } from "react-router-dom"; // ✅ ADDED THIS
 
 const ViewAdmins = () => {
+  const navigate = useNavigate(); // ✅ ADDED THIS
   const [admins, setAdmins] = useState([]);
 
   const columns = [
@@ -14,7 +16,6 @@ const ViewAdmins = () => {
     { field: "address", headerName: "Address", width: 250 },
     { field: "phone", headerName: "Phone", width: 150 },
     { field: "whatsappNumber", headerName: "WhatsApp", width: 150 },
-    
     {
       field: "createdAt",
       headerName: "Created At",
@@ -29,15 +30,14 @@ const ViewAdmins = () => {
       .get("http://localhost:5000/api/admins")
       .then((res) => {
         const formatted = res.data.map((admin, index) => ({
-          id: index + 1, // Sequential ID for display
-          _id: admin._id, // Real ID for actions
+          id: index + 1,
+          _id: admin._id,
           username: admin.username,
-          password: "********", // Masked for safety
+          password: "********",
           shopName: admin.shopName,
           address: admin.address,
           phone: admin.phone,
           whatsappNumber: admin.whatsappNumber,
-         
           createdAt: admin.createdAt,
         }));
         setAdmins(formatted);
@@ -46,20 +46,19 @@ const ViewAdmins = () => {
   }, []);
 
   const handleEdit = (_id) => {
-    console.log("Edit admin ID:", _id);
-    // Future: Open inline edit or modal for save/cancel
+    navigate(`/admin/dashboard/edit-admin/${_id}`); // ✅ FIXED ROUTE PATH
   };
 
   const handleDelete = async (_id) => {
-  try {
-    await axios.delete(`http://localhost:5000/api/admins/${_id}`);
-    setAdmins((prev) => prev.filter((admin) => admin._id !== _id));
-  } catch (err) {
-    console.error("Delete error:", err);
-    alert("Failed to delete admin");
-  }
-};
-
+    try {
+      await axios.delete(`http://localhost:5000/api/admins/${_id}`);
+      setAdmins((prev) => prev.filter((admin) => admin._id !== _id));
+      alert("Admin deleted successfully!");
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert("Failed to delete admin");
+    }
+  };
 
   return (
     <Box sx={{ p: 3 }}>

@@ -13,9 +13,11 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
+import RefreshIcon from "@mui/icons-material/Refresh";
 
 const Navbar = ({ onLogout, onMenuClick }) => {
   const [openConfirm, setOpenConfirm] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -25,6 +27,24 @@ const Navbar = ({ onLogout, onMenuClick }) => {
     if (onLogout) onLogout();
   };
   const handleCancelLogout = () => setOpenConfirm(false);
+
+  // 🔥 NEW: Refresh button handler that preserves session
+  const handleRefresh = () => {
+    setRefreshing(true);
+    
+    // Save the current session state
+    const isLoggedIn = sessionStorage.getItem("isAdminLoggedIn");
+    
+    // Store it temporarily in a special key that won't be cleared
+    if (isLoggedIn) {
+      sessionStorage.setItem("adminRefreshInProgress", "true");
+    }
+    
+    // Small delay for visual feedback, then reload
+    setTimeout(() => {
+      window.location.reload();
+    }, 300);
+  };
 
   return (
     <>
@@ -70,8 +90,27 @@ const Navbar = ({ onLogout, onMenuClick }) => {
             </Typography>
           </Box>
 
-          {/* Right section: Logout button */}
-          <Box>
+          {/* Right section: Refresh + Logout buttons */}
+          <Box sx={{ display: "flex", gap: 1 }}>
+            {/* 🔥 NEW: Refresh Button */}
+            <IconButton
+              onClick={handleRefresh}
+              disabled={refreshing}
+              sx={{
+                color: "#1976d2",
+                border: "1px solid #1976d2",
+                borderRadius: 1,
+                transition: "transform 0.3s",
+                transform: refreshing ? "rotate(360deg)" : "rotate(0deg)",
+                "&:hover": { 
+                  backgroundColor: "#e3f2fd"
+                },
+              }}
+              title="Refresh Page"
+            >
+              <RefreshIcon />
+            </IconButton>
+
             <Button
               variant="contained"
               onClick={handleLogoutClick}

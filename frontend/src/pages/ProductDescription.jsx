@@ -27,9 +27,26 @@ import ProductCard from "../components/ProductCard";
 import { useCart } from "../context/CartContext";
 import { useLanguage } from "../components/LanguageContext";
 
-
 const tamilFont = "'Latha', 'Noto Sans Tamil', 'Tiro Tamil', sans-serif";
 const englishFont = "'Poppins', 'Lato', sans-serif";
+
+// 🔥 HELPER FUNCTION: Check if product is in stock
+const checkIfInStock = (product) => {
+  if (!product) return false;
+  
+  const { stockQty, weightValue, weightUnit } = product;
+  
+  if (weightUnit === 'piece') {
+    return stockQty >= weightValue;
+  } else if (weightUnit === 'kg') {
+    return stockQty >= weightValue;
+  } else if (weightUnit === 'g') {
+    const weightInKg = weightValue / 1000;
+    return stockQty >= weightInKg;
+  }
+  
+  return false;
+};
 
 const ProductDescription = () => {
   const { productId } = useParams();
@@ -41,16 +58,114 @@ const ProductDescription = () => {
     removeSpecificWeight,
     incrementWeight,
     decrementWeight,
-    calculateItemPrice ,
+    calculateItemPrice,
     isInCart,
     getCartItemId,
     cartItems,
   } = useCart();
-  
+
+  const fallbackDescription =
+    language === "EN"
+      ? "This is a high-quality product selected for freshness and great value. Perfect for everyday use and ideal for your household needs."
+      : "இது உயர்தரமான, تازا தன்மையும் சிறந்த மதிப்புமுடைய தயாரிப்பு. உங்கள் தினசரி பயன்பாட்டிற்கும் குடும்ப தேவைகளுக்குமான சிறந்த தேர்வு.";
+
+  const [product, setProduct] = useState(null);
+  const [offer, setOffer] = useState(null);
+  const [similarProducts, setSimilarProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [stockWarning, setStockWarning] = useState(false);
+  const [warningMessage, setWarningMessage] = useState("");
+  const [addedToCart, setAddedToCart] = useState(false);
+  const [isOutOfStock, setIsOutOfStock] = useState(false); // 🔥 NEW STATE
+
+  const inCart = product ? isInCart(product._id) : false;
+  const cartItemId = product ? getCartItemId(product._id) : null;
+  const cartItem = cartItems.find((item) => item._id === cartItemId);
+  const totalWeight = cartItem ? cartItem.totalWeight : 0;
+  const unit = cartItem ? cartItem.unit : "";
+
+  useEffect(() => {
+    fetchProductDetails();
+  }, [productId]);
+
+  // 🔥 CHECK STOCK WHEN PRODUCT LOADS
+  useEffect(() => {
+    if (product) {
+      const inStock = checkIfInStock(product);
+      setIsOutOfStock(!inStock);
+    }
+  }, [product]);
+
+  const fetchProductDetails = async () => {
+    try {
+      setLoading(true);
+
+      const [productRes, offerRes] = await Promise.all([
+        axios.get(`http://localhost:5000/api/products/${productId}`),
+        axios.get(`http://localhost:5000/api/offers/by-product/${productId}`),
+      ]);
+
+      const prod = productRes.data;
+      console.log("🔥 Product data:", prod);
+      console.log("🔥 Category ID:", prod.categoryId);
+      setProduct(prod);
+
+      if (offerRes.data && offerRes.data._id && offerRes.data.isActive) {
+        setOffer(offerRes.data);
+      }
+
+      try {
+        if (prod.categoryId?._id) {
+          console.log("🔍 Fetching similar products for category:", prod.categoryId._id);
+          const similarRes = await axios.get(
+            `http://localhost:5000/api/products/by-category/${prod.categoryId._id}`
+          );
+
+          console.log("📦 Similar products raw response:", similarRes.data);
+
+          const formatted = similarRes.data
+            .filter((p) => p._id !== productId)
+            .slice(0, 4)
+            .map((p) => ({
+              _id: p._id,
+              name_en: p.name_en,
+              name_ta: p.name_ta,
+              price: p.price,
+              weight: `${p.weightValue} ${p.weightUnit}`,
+              weightValue: p.weightValue,
+              weightUnit: p.weightUnit,
+              baseUnit: p.baseUnit,
+              stockQty: p.stockQty,
+              categoryId: p.categoryId,
+              image: p.image
+                ? { data: p.image.data, contentType: p.image.contentType }
+                : null,
+            }));
+
+          console.log("✅ Formatted similar products:", formatted);
+          setSimilarProducts(formatted);
+        } else {
+          console.log("⚠️ No categoryId found");
+          setSimilarProducts([]);
+        }
+      } catch (err) {
+        console.error("❌ Error fetching similar products:", err);
+        setSimilarProducts([]);
+      }
+
+      setLoading(false);
+    } catch (err) {
+      console.error("Error fetching product details:", err);
+      setError("Failed to load product details");
+      setLoading(false);
+    }
+  };
+
   const handleIncrementSingle = async () => {
     try {
       const result = await incrementWeight(cartItemId);
-      
+
       if (result && result.capped) {
         setWarningMessage(`Maximum stock reached! Capped at ${result.cartItem.totalWeight} ${result.cartItem.unit}`);
         setStockWarning(true);
@@ -73,103 +188,14 @@ const ProductDescription = () => {
     }
   };
 
-
-const fallbackDescription =
-  language === "EN"
-    ? "This is a high-quality product selected for freshness and great value. Perfect for everyday use and ideal for your household needs."
-    : "இது உயர்தரமான, تازا தன்மையும் சிறந்த மதிப்புமுடைய தயாரிப்பு. உங்கள் தினசரி பயன்பாட்டிற்கும் குடும்ப தேவைகளுக்குமான சிறந்த தேர்வு.";
-
-  const [product, setProduct] = useState(null);
-  const [offer, setOffer] = useState(null);
-  const [similarProducts, setSimilarProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [stockWarning, setStockWarning] = useState(false);
-  const [warningMessage, setWarningMessage] = useState("");
-  const [addedToCart, setAddedToCart] = useState(false);
-
-  const inCart = product ? isInCart(product._id) : false;
-  const cartItemId = product ? getCartItemId(product._id) : null;
-  const cartItem = cartItems.find((item) => item._id === cartItemId);
-  const totalWeight = cartItem ? cartItem.totalWeight : 0;
-  const unit = cartItem ? cartItem.unit : "";
-
- useEffect(() => {
-  fetchProductDetails();
-}, [productId]);
-
-const fetchProductDetails = async () => {
-  try {
-    setLoading(true);
-
-    // Fetch product details and offer simultaneously
-    const [productRes, offerRes] = await Promise.all([
-      axios.get(`http://localhost:5000/api/products/${productId}`),
-      axios.get(`http://localhost:5000/api/offers/by-product/${productId}`),
-    ]);
-
-    const prod = productRes.data;
-    console.log("🔥 Product data:", prod);
-    console.log("🔥 Category ID:", prod.categoryId);
-    setProduct(prod);
-
-    // Set offer if available
-    if (offerRes.data && offerRes.data._id && offerRes.data.isActive) {
-      setOffer(offerRes.data);
-    }
-
-    // ---------------------------
-    // 🔥 Fetch similar products from CATEGORY
-    // ---------------------------
-    try {
-      if (prod.categoryId?._id) {
-        console.log("🔍 Fetching similar products for category:", prod.categoryId._id);
-        const similarRes = await axios.get(
-          `http://localhost:5000/api/products/by-category/${prod.categoryId._id}`
-        );
-
-        console.log("📦 Similar products raw response:", similarRes.data);
-
-        // ✅ FORMAT THE DATA - Same as CategoryProducts page!
-        const formatted = similarRes.data
-          .filter((p) => p._id !== productId)
-          .slice(0, 4)
-          .map((p) => ({
-            _id: p._id,
-            name_en: p.name_en,
-            name_ta: p.name_ta,
-            price: p.price,
-            weight: `${p.weightValue} ${p.weightUnit}`, // 🔥 COMBINED WEIGHT
-            weightValue: p.weightValue,
-            weightUnit: p.weightUnit,
-            baseUnit: p.baseUnit,
-            stockQty: p.stockQty,
-            categoryId: p.categoryId,
-            image: p.image
-              ? { data: p.image.data, contentType: p.image.contentType }
-              : null,
-          }));
-
-        console.log("✅ Formatted similar products:", formatted);
-        setSimilarProducts(formatted);
-      } else {
-        console.log("⚠️ No categoryId found");
-        setSimilarProducts([]);
-      }
-    } catch (err) {
-      console.error("❌ Error fetching similar products:", err);
-      setSimilarProducts([]);
-    }
-
-    setLoading(false);
-  } catch (err) {
-    console.error("Error fetching product details:", err);
-    setError("Failed to load product details");
-    setLoading(false);
-  }
-};
-
   const handleAddToCart = async () => {
+    // 🔥 PREVENT ADD IF OUT OF STOCK
+    if (isOutOfStock) {
+      setWarningMessage(language === "EN" ? "Product is out of stock!" : "தயாரிப்பு கையிருப்பில் இல்லை!");
+      setStockWarning(true);
+      return;
+    }
+
     try {
       const result = await addToCart(product._id);
       if (result.error === "OUT_OF_STOCK") {
@@ -297,7 +323,7 @@ const fetchProductDetails = async () => {
   const productName = language === "EN" ? product.name_en : product.name_ta;
   const productDescription =
     language === "EN" ? product.description_en : product.description_ta;
-     const categoryName =
+  const categoryName =
     language === "EN"
       ? product.categoryId?.name_en || "Category"
       : product.categoryId?.name_ta || "வகை";
@@ -322,8 +348,8 @@ const fetchProductDetails = async () => {
         <MainNavbar fixed />
       </Box>
 
-      <Box sx={{ mt: { xs: "92px", sm: "108px", md: "110px" }, }}>
-        <CategoryBar fixed={false}  />
+      <Box sx={{ mt: { xs: "92px", sm: "108px", md: "110px" } }}>
+        <CategoryBar fixed={false} />
 
         {/* Breadcrumbs */}
         <Box
@@ -354,7 +380,7 @@ const fetchProductDetails = async () => {
                     cursor: "pointer",
                     color: "#333",
                     fontSize: "0.9rem",
-                    "&:hover": { color: "#be3838" }
+                    "&:hover": { color: "#be3838" },
                   }}
                   onClick={() => navigate("/")}
                 >
@@ -367,7 +393,7 @@ const fetchProductDetails = async () => {
                     cursor: "pointer",
                     color: "#333",
                     fontSize: "0.9rem",
-                    "&:hover": { color: "#be3838" }
+                    "&:hover": { color: "#be3838" },
                   }}
                   onClick={() => navigate("/products")}
                 >
@@ -378,13 +404,12 @@ const fetchProductDetails = async () => {
                   sx={{
                     color: "#be3838",
                     fontSize: "0.9rem",
-                    textTransform: "capitalize"
+                    textTransform: "capitalize",
                   }}
                 >
                   {productName}
                 </Typography>
               </Breadcrumbs>
-
             </Box>
           </Box>
         </Box>
@@ -404,18 +429,18 @@ const fetchProductDetails = async () => {
           >
             {/* IMAGE */}
             <Box>
-             <Box
-              sx={{
-                width: "100%",
-                paddingTop: "100%",
-                position: "relative",
-                borderRadius: 2,
-                overflow: "hidden",
-                backgroundColor: "#f5f5f5",
-                transition: "transform 0.4s ease",
-                "&:hover img": { transform: "scale(1.05)" },
-              }}
-            >
+              <Box
+                sx={{
+                  width: "100%",
+                  paddingTop: "100%",
+                  position: "relative",
+                  borderRadius: 2,
+                  overflow: "hidden",
+                  backgroundColor: "#f5f5f5",
+                  transition: "transform 0.4s ease",
+                  "&:hover img": { transform: "scale(1.05)" },
+                }}
+              >
                 {showDiscountBadge && (
                   <Box
                     sx={{
@@ -436,6 +461,27 @@ const fetchProductDetails = async () => {
                   </Box>
                 )}
 
+                {/* 🔥 OUT OF STOCK BADGE */}
+                {isOutOfStock && (
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: 8,
+                      right: 8,
+                      backgroundColor: "#d32f2f",
+                      color: "white",
+                      fontWeight: "bold",
+                      fontSize: "0.75rem",
+                      px: 1.5,
+                      py: 0.5,
+                      borderRadius: "4px",
+                      zIndex: 1,
+                    }}
+                  >
+                    {language === "EN" ? "OUT OF STOCK" : "கையிருப்பு இல்லை"}
+                  </Box>
+                )}
+
                 <Box
                   component="img"
                   src={productImage}
@@ -449,6 +495,7 @@ const fetchProductDetails = async () => {
                     height: "100%",
                     objectFit: "cover",
                     transition: "transform 0.4s ease",
+                    opacity: isOutOfStock ? 0.5 : 1, // 🔥 DIM IMAGE IF OUT OF STOCK
                   }}
                 />
               </Box>
@@ -456,17 +503,25 @@ const fetchProductDetails = async () => {
 
             {/* DETAILS */}
             <Box>
-              <Box sx={{display: "flex", flexDirection: "row", gap:2, alignItems: "center"}}>
-              <Typography variant="h4" sx={{ fontWeight: 700, mb: 0 , textTransform: "capitalize", 
-                 color: "#be3838", }}>
-                {productName}
-              </Typography>
+              <Box sx={{ display: "flex", flexDirection: "row", gap: 2, alignItems: "center" }}>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    fontWeight: 700,
+                    mb: 0,
+                    textTransform: "capitalize",
+                    color: "#be3838",
+                  }}
+                >
+                  {productName}
+                </Typography>
 
-              <Typography variant="body1" sx={{ color: "#535252ff", mb: 2, textTransform: "capitalize" }}>
-                ({categoryName})
-              </Typography>
-                </Box>
-            <Typography color="text.secondary" sx={{ mb: 2 }}>
+                <Typography variant="body1" sx={{ color: "#535252ff", mb: 2, textTransform: "capitalize" }}>
+                  ({categoryName})
+                </Typography>
+              </Box>
+
+              <Typography color="text.secondary" sx={{ mb: 2 }}>
                 {productDescription && productDescription.trim() !== ""
                   ? productDescription
                   : fallbackDescription}
@@ -493,9 +548,7 @@ const fetchProductDetails = async () => {
                         ₹{originalPrice}
                       </Typography>
 
-                      <Typography
-                        sx={{ fontSize: "1.5rem", fontWeight: 700, color: "#ff5722" }}
-                      >
+                      <Typography sx={{ fontSize: "1.5rem", fontWeight: 700, color: "#ff5722" }}>
                         ₹{displayPrice}
                       </Typography>
                     </Box>
@@ -507,18 +560,84 @@ const fetchProductDetails = async () => {
                   </>
                 ) : (
                   <>
-
                     <Typography sx={{ fontSize: "1rem", fontWeight: 550 }}>
-                    ₹{displayPrice} / {product.weightValue} {product.weightUnit} 
+                      ₹{displayPrice} / {product.weightValue} {product.weightUnit}
                     </Typography>
                   </>
                 )}
               </Box>
 
+              {/* 🔥 STOCK AVAILABILITY INDICATOR */}
+              <Box sx={{ mb: 2 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Typography variant="body2" fontWeight={600}>
+                    {language === "EN" ? "Availability:" : "கிடைக்கும் தன்மை:"}
+                  </Typography>
+                  {isOutOfStock ? (
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "#d32f2f",
+                        fontWeight: 700,
+                        backgroundColor: "#ffebee",
+                        px: 1.5,
+                        py: 0.5,
+                        borderRadius: 1,
+                      }}
+                    >
+                      {language === "EN" ? "Out of Stock" : "கையிருப்பு இல்லை"}
+                    </Typography>
+                  ) : (
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "#2e7d32",
+                        fontWeight: 700,
+                        backgroundColor: "#e8f5e9",
+                        px: 1.5,
+                        py: 0.5,
+                        borderRadius: 1,
+                      }}
+                    >
+                      {language === "EN" ? "In Stock" : "கையிருப்பில் உள்ளது"}
+                    </Typography>
+                  )}
+                </Box>
+
+               
+              </Box>
+
               <Divider sx={{ my: 2 }} />
 
-              {/* ADD TO CART */}
-              {!inCart ? (
+              {/* ADD TO CART SECTION - 🔥 WITH OUT OF STOCK CHECK */}
+              {isOutOfStock ? (
+                <Box
+                  sx={{
+                    p: 2,
+                    borderRadius: 2,
+                    backgroundColor: "#ffebee",
+                    border: "2px solid #f44336",
+                    textAlign: "center",
+                    mb: 2,
+                  }}
+                >
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      color: "#d32f2f",
+                      fontWeight: 700,
+                      mb: 1,
+                    }}
+                  >
+                    {language === "EN" ? "OUT OF STOCK" : "கையிருப்பு இல்லை"}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {language === "EN"
+                      ? "This product is currently unavailable"
+                      : "இந்த தயாரிப்பு தற்போது கிடைக்கவில்லை"}
+                  </Typography>
+                </Box>
+              ) : !inCart ? (
                 <Button
                   variant="contained"
                   fullWidth
@@ -532,74 +651,60 @@ const fetchProductDetails = async () => {
                 <Box>
                   {/* Current Quantity */}
                   <Box
-                        sx={{
-                          p: 2,
-                          mb: 2,
-                          borderRadius: 2,
-                          backgroundColor: "#f8f8f8",
-                          border: "1px solid #c6392fff",
-                          borderColor: "#c6392fff",
-                            boxShadow: "0 0 2px #f44336",
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          transition: "0.5s",
-                        }}
-                      >
-                        <Typography fontWeight={600}>
-                          {language === "EN" ? "Current Quantity:" : "தற்போதைய அளவு:"}
-                        </Typography>
+                    sx={{
+                      p: 2,
+                      mb: 2,
+                      borderRadius: 2,
+                      backgroundColor: "#f8f8f8",
+                      border: "1px solid #c6392fff",
+                      borderColor: "#c6392fff",
+                      boxShadow: "0 0 2px #f44336",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      transition: "0.5s",
+                    }}
+                  >
+                    <Typography fontWeight={600}>
+                      {language === "EN" ? "Current Quantity:" : "தற்போதைய அளவு:"}
+                    </Typography>
 
-                        {/* + / - quantity box */}
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                            backgroundColor: "white",
-                            borderRadius: "12px",
-                            border: "1px solid #ccc",
-                            px: 1.5,
-                            py: 0.5,
-                          }}
-                        >
-                          <IconButton
-                            size="small"
-                            sx={{ color: "#e23a3a" }}
-                            onClick={handleDecrementSingle}
-                          >
-                            <RemoveIcon fontSize="small" />
-                          </IconButton>
+                    {/* + / - quantity box */}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        backgroundColor: "white",
+                        borderRadius: "12px",
+                        border: "1px solid #ccc",
+                        px: 1.5,
+                        py: 0.5,
+                      }}
+                    >
+                      <IconButton size="small" sx={{ color: "#e23a3a" }} onClick={handleDecrementSingle}>
+                        <RemoveIcon fontSize="small" />
+                      </IconButton>
 
-                          <Typography fontWeight={700}>
-                            {formatWeight(totalWeight, unit)}
-                          </Typography>
+                      <Typography fontWeight={700}>{formatWeight(totalWeight, unit)}</Typography>
 
-                          <IconButton
-                            size="small"
-                            sx={{ color: "#2e7d32" }}
-                            onClick={handleIncrementSingle}
-                          >
-                            <AddIcon fontSize="small" />
-                          </IconButton>
-                        </Box>
+                      <IconButton size="small" sx={{ color: "#2e7d32" }} onClick={handleIncrementSingle}>
+                        <AddIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
 
-                        {/* Total Price */}
-                        <Typography fontWeight={700} sx={{ color: "#be3838" }}>
-                        Total price: ₹{cartItem ? calculateItemPrice(cartItem).toFixed(2) : displayPrice}
-                        </Typography>
-                      </Box>
-
+                    {/* Total Price */}
+                    <Typography fontWeight={700} sx={{ color: "#be3838" }}>
+                      Total price: ₹{cartItem ? calculateItemPrice(cartItem).toFixed(2) : displayPrice}
+                    </Typography>
+                  </Box>
 
                   {/* Increase */}
                   <Box sx={{ mb: 2 }}>
-
                     <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                        <Typography fontWeight={600} mb={1}>
-                      {language === "EN"
-                        ? "Increase quantity →"
-                        : "அளவு அதிகரிக்க →"}
-                    </Typography>
+                      <Typography fontWeight={600} mb={1}>
+                        {language === "EN" ? "Increase quantity →" : "அளவு அதிகரிக்க →"}
+                      </Typography>
                       {buttons.map((btn, index) => (
                         <Button
                           key={index}
@@ -617,11 +722,9 @@ const fetchProductDetails = async () => {
                   {/* Decrease */}
                   <Box sx={{ mb: 2 }}>
                     <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                       <Typography fontWeight={600} mb={1}>
-                      {language === "EN"
-                        ? "Decrease quantity →"
-                        : "அளவு குறைக்க →"}
-                    </Typography>
+                      <Typography fontWeight={600} mb={1}>
+                        {language === "EN" ? "Decrease quantity →" : "அளவு குறைக்க →"}
+                      </Typography>
                       {buttons.map((btn, index) => (
                         <Button
                           key={index}
@@ -641,9 +744,7 @@ const fetchProductDetails = async () => {
                     variant="contained"
                     fullWidth
                     startIcon={<ShoppingCartIcon />}
-                    onClick={() =>
-                      window.dispatchEvent(new CustomEvent("openCart"))
-                    }
+                    onClick={() => window.dispatchEvent(new CustomEvent("openCart"))}
                     sx={{ py: 1.5, backgroundColor: "#1a1a1a" }}
                   >
                     {language === "EN" ? "View Cart" : "கூடையைப் பார்க்கவும்"}
@@ -655,15 +756,11 @@ const fetchProductDetails = async () => {
               {hasOffer && (
                 <Alert severity="success" sx={{ mt: 2 }}>
                   <Typography fontWeight={600}>
-                    {language === "EN"
-                      ? offer.title_en
-                      : offer.title_ta || "சிறப்பு சலுகை"}
+                    {language === "EN" ? offer.title_en : offer.title_ta || "சிறப்பு சலுகை"}
                   </Typography>
                   {(offer.description_en || offer.description_ta) && (
                     <Typography>
-                      {language === "EN"
-                        ? offer.description_en
-                        : offer.description_ta}
+                      {language === "EN" ? offer.description_en : offer.description_ta}
                     </Typography>
                   )}
                 </Alert>
@@ -672,60 +769,40 @@ const fetchProductDetails = async () => {
           </Box>
 
           {/* SIMILAR PRODUCTS */}
+          {similarProducts && similarProducts.length > 0 && (
+            <Box sx={{ mt: 6, maxWidth: "1400px", mx: "auto", px: 2 }}>
+              <Typography variant="h5" fontWeight={700} mb={3} sx={{ textTransform: "capitalize" }}>
+                {language === "EN" ? "Similar Products" : "ஒத்த தயாரிப்புகள்"}
+              </Typography>
 
-                      {similarProducts && similarProducts.length > 0 && (
-                        <Box sx={{ mt: 6, maxWidth: "1400px", mx: "auto", px: 2 }}>
-                          <Typography
-                            variant="h5"
-                            fontWeight={700}
-                            mb={3}
-                            sx={{ textTransform: "capitalize" }}
-                          >
-                            {language === "EN" ? "Similar Products" : "ஒத்த தயாரிப்புகள்"}
-                          </Typography>
+              <Grid container spacing={3}>
+                {similarProducts.map((item) => (
+                  <Grid item xs={12} sm={6} md={3} key={item._id}>
+                    <ProductCard product={item} />
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          )}
 
-                          <Grid container spacing={3}>
-                            {similarProducts.map((item) => (
-                              <Grid item xs={12} sm={6} md={3} key={item._id}>
-                                <ProductCard product={item} />
-                              </Grid>
-                            ))}
-                          </Grid>
-                        </Box>
-                      )}
-
-                      {/* Optional fallback if no similar products */}
-                      {similarProducts && similarProducts.length === 0 && (
-                        <Box sx={{ mt: 4, textAlign: "center" }}>
-                          <Typography color="text.secondary">
-                            {language === "EN"
-                              ? "No similar products found."
-                              : "ஒத்த தயாரிப்புகள் இல்லை."}
-                          </Typography>
-                        </Box>
-                      )}
-
+          {similarProducts && similarProducts.length === 0 && (
+            <Box sx={{ mt: 4, textAlign: "center" }}>
+              <Typography color="text.secondary">
+                {language === "EN" ? "No similar products found." : "ஒத்த தயாரிப்புகள் இல்லை."}
+              </Typography>
+            </Box>
+          )}
         </Box>
       </Box>
 
       {/* Snackbars */}
-      <Snackbar
-        open={stockWarning}
-        autoHideDuration={3000}
-        onClose={() => setStockWarning(false)}
-      >
+      <Snackbar open={stockWarning} autoHideDuration={3000} onClose={() => setStockWarning(false)}>
         <Alert severity="warning">{warningMessage}</Alert>
       </Snackbar>
 
-      <Snackbar
-        open={addedToCart}
-        autoHideDuration={2000}
-        onClose={() => setAddedToCart(false)}
-      >
+      <Snackbar open={addedToCart} autoHideDuration={2000} onClose={() => setAddedToCart(false)}>
         <Alert severity="success">
-          {language === "EN"
-            ? "Added to cart successfully!"
-            : "கூடையில் வெற்றிகரமாக சேர்க்கப்பட்டது!"}
+          {language === "EN" ? "Added to cart successfully!" : "கூடையில் வெற்றிகரமாக சேர்க்கப்பட்டது!"}
         </Alert>
       </Snackbar>
     </Box>

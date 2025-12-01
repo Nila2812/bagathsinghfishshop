@@ -1,8 +1,9 @@
-// server/routes/cart.js - COMPLETE FILE WITH CAPPING FIX
+// server/routes/cart.js - WITH OFFER PRICE SUPPORT (NO BREAKING CHANGES)
 
 import express from "express";
 import Cart from "../models/Cart.js";
 import Product from "../models/Product.js";
+import Offer from "../models/Offer.js"; // 🔥 ADD THIS IMPORT
 
 const router = express.Router();
 
@@ -43,7 +44,28 @@ const checkStock = (totalWeight, unit, product) => {
   return requestedInKg <= stockQty;
 };
 
-// ADD PRODUCT TO CART
+// 🔥 NEW HELPER: Get effective price (offer or product price)
+const getEffectivePrice = async (productId, productPrice) => {
+  try {
+    const currentDate = new Date();
+    const offer = await Offer.findOne({
+      productIds: productId,
+      isActive: true,
+      $or: [
+        { endDate: { $exists: false } },
+        { endDate: null },
+        { endDate: { $gte: currentDate } }
+      ]
+    });
+
+    return offer ? offer.sellingPrice : productPrice;
+  } catch (err) {
+    console.error("Error fetching offer:", err);
+    return productPrice; // Fallback to product price
+  }
+};
+
+// ADD PRODUCT TO CART - 🔥 WITH OFFER PRICE
 router.post("/add", async (req, res) => {
   try {
     const { userId, clientId, productId } = req.body;
@@ -61,6 +83,9 @@ router.post("/add", async (req, res) => {
       return res.status(404).json({ error: "Product not found" });
     }
 
+    // 🔥 GET EFFECTIVE PRICE (OFFER OR ORIGINAL)
+    const effectivePrice = await getEffectivePrice(productId, product.price);
+
     let query;
     if (userId) {
       query = { userId: userId, productId: productId };
@@ -71,6 +96,9 @@ router.post("/add", async (req, res) => {
     let cartItem = await Cart.findOne(query);
 
     if (cartItem) {
+      // 🔥 UPDATE PRICE IN EXISTING CART ITEM
+      cartItem.productSnapshot.price = effectivePrice;
+      
       const baseUnitParsed = parseBaseUnit(cartItem.productSnapshot.baseUnit);
       
       let newWeight = cartItem.totalWeight;
@@ -108,7 +136,7 @@ router.post("/add", async (req, res) => {
       productSnapshot: {
         name_en: product.name_en,
         name_ta: product.name_ta,
-        price: product.price,
+        price: effectivePrice, // 🔥 USE OFFER PRICE
         weightValue: product.weightValue,
         weightUnit: product.weightUnit,
         baseUnit: product.baseUnit,
@@ -139,7 +167,7 @@ router.post("/add", async (req, res) => {
   }
 });
 
-// GET CART ITEMS
+// GET CART ITEMS - 🔥 UPDATE PRICES WITH CURRENT OFFERS
 router.get("/:identifier", async (req, res) => {
   try {
     const { identifier } = req.params;
@@ -156,6 +184,23 @@ router.get("/:identifier", async (req, res) => {
     }
 
     const cartItems = await Cart.find(query).populate("productId");
+    
+    // 🔥 UPDATE PRICES WITH CURRENT OFFERS
+    for (let item of cartItems) {
+      if (item.productId) {
+        const effectivePrice = await getEffectivePrice(
+          item.productId._id,
+          item.productId.price
+        );
+        
+        // Update snapshot price if it changed
+        if (item.productSnapshot.price !== effectivePrice) {
+          item.productSnapshot.price = effectivePrice;
+          await item.save();
+        }
+      }
+    }
+    
     res.json(cartItems);
   } catch (err) {
     console.error("Error fetching cart:", err);
@@ -163,7 +208,7 @@ router.get("/:identifier", async (req, res) => {
   }
 });
 
-// 🔥 UPDATE CART ITEM - WITH STOCK CAPPING
+// 🔥 UPDATE CART ITEM - WITH STOCK CAPPING & OFFER PRICE
 router.put("/update/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -178,6 +223,10 @@ router.put("/update/:id", async (req, res) => {
     if (!product) {
       return res.status(404).json({ error: "Product not found" });
     }
+
+    // 🔥 UPDATE PRICE IN SNAPSHOT
+    const effectivePrice = await getEffectivePrice(product._id, product.price);
+    cartItem.productSnapshot.price = effectivePrice;
 
     let finalWeight = cartItem.totalWeight;
     let finalUnit = cartItem.unit;
@@ -281,7 +330,7 @@ router.put("/update/:id", async (req, res) => {
   }
 });
 
-// REMOVE FROM CART
+// REMOVE FROM CART (NO CHANGES)
 router.delete("/remove/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -293,7 +342,7 @@ router.delete("/remove/:id", async (req, res) => {
   }
 });
 
-// CLEAR ENTIRE CART
+// CLEAR ENTIRE CART (NO CHANGES)
 router.delete("/clear/:identifier", async (req, res) => {
   try {
     const { identifier } = req.params;
@@ -317,7 +366,7 @@ router.delete("/clear/:identifier", async (req, res) => {
   }
 });
 
-// GET CART COUNT
+// GET CART COUNT (NO CHANGES)
 router.get("/count/:identifier", async (req, res) => {
   try {
     const { identifier } = req.params;
@@ -341,7 +390,7 @@ router.get("/count/:identifier", async (req, res) => {
   }
 });
 
-// MIGRATE GUEST CART TO USER CART
+// MIGRATE GUEST CART TO USER CART (NO CHANGES)
 router.post("/migrate", async (req, res) => {
   try {
     const { userId, clientId } = req.body;

@@ -1,3 +1,5 @@
+// src/components/CartDrawer.jsx - WITH PRE-CHECKOUT STOCK VALIDATION
+
 import React, { useState, useEffect } from "react";
 import Backdrop from "@mui/material/Backdrop";
 import LoginDrawer from "./LoginDrawer";
@@ -15,10 +17,12 @@ import {
   DialogContent,
   DialogActions,
   Alert,
+  CircularProgress,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import { useCart } from "../context/CartContext";
 import { useNavigate } from "react-router-dom";   
 const tamilFont = "'Latha', 'Noto Sans Tamil', 'Tiro Tamil', sans-serif";
@@ -29,23 +33,13 @@ const CartDrawer = ({ open, onClose }) => {
 
   // Drawer open for login
   const [loginOpen, setLoginOpen] = useState(false);
-
-  // Checkout button logic
-  const handleCheckout = () => {
-    const user = localStorage.getItem("user");
-
-    if (user) {
-      navigate("/checkout");
-    } else {
-      setLoginOpen(true); // open login drawer
-    }
-  };
-
-  // After login success → close drawer + navigate to checkout
-  const handleLoginSuccess = () => {
-    setLoginOpen(false);
-    navigate("/checkout");
-  };
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
+  const [stockWarning, setStockWarning] = useState(false);
+  const [warningMessage, setWarningMessage] = useState("Maximum stock limit reached!");
+  
+  // 🔥 NEW: Stock validation states
+  const [validatingStock, setValidatingStock] = useState(false);
+  const [stockErrors, setStockErrors] = useState([]);
 
   const {
     cartItems,
@@ -57,10 +51,6 @@ const CartDrawer = ({ open, onClose }) => {
     clearCart,
   } = useCart();
 
-  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
-  const [stockWarning, setStockWarning] = useState(false);
-  const [warningMessage, setWarningMessage] = useState("Maximum stock limit reached!");
-
   // 🔥 AUTO-HIDE WARNING AFTER 3 SECONDS
   useEffect(() => {
     if (stockWarning) {
@@ -71,6 +61,70 @@ const CartDrawer = ({ open, onClose }) => {
     }
   }, [stockWarning]);
 
+  // 🔥 VALIDATE CART STOCK BEFORE CHECKOUT
+  const validateCartStock = async () => {
+    setValidatingStock(true);
+    setStockErrors([]);
+
+    try {
+      const response = await fetch('/api/orders/validate-cart-stock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cartItems })
+      });
+
+      const data = await response.json();
+
+      if (!data.valid) {
+        setStockErrors(data.stockErrors || []);
+        return false;
+      }
+
+      return true;
+    } catch (err) {
+      console.error('Stock validation error:', err);
+      setWarningMessage('Failed to validate stock. Please try again.');
+      setStockWarning(true);
+      return false;
+    } finally {
+      setValidatingStock(false);
+    }
+  };
+
+  // 🔥 UPDATED: Checkout with validation
+  const handleCheckout = async () => {
+    const user = localStorage.getItem("user");
+
+    if (!user) {
+      setLoginOpen(true);
+      return;
+    }
+
+    // Validate stock before proceeding
+    const isValid = await validateCartStock();
+    
+    if (!isValid) {
+      return; // Don't proceed if stock validation fails
+    }
+
+    // Stock is valid, proceed to checkout
+    // Set a flag in sessionStorage to allow checkout navigation
+    sessionStorage.setItem('checkoutAllowed', 'true');
+    navigate("/checkout");
+  };
+
+  const handleLoginSuccess = async () => {
+    setLoginOpen(false);
+    
+    // Validate stock after login
+    const isValid = await validateCartStock();
+    
+    if (isValid) {
+      sessionStorage.setItem('checkoutAllowed', 'true');
+      navigate("/checkout");
+    }
+  };
+
   const handleAddWeight = async (cartItemId, value, unit, stockQty) => {
     try {
       const result = await addSpecificWeight(cartItemId, value, unit, stockQty);
@@ -78,6 +132,8 @@ const CartDrawer = ({ open, onClose }) => {
         setWarningMessage(`Maximum stock reached! Capped at max quantity`);
         setStockWarning(true);
       }
+      // Clear stock errors when cart is modified
+      setStockErrors([]);
     } catch (err) {
       if (err.response?.data?.error === 'OUT_OF_STOCK' || err.response?.data?.capped) {
         setWarningMessage("Maximum stock limit reached!");
@@ -89,6 +145,8 @@ const CartDrawer = ({ open, onClose }) => {
   const handleRemoveWeight = async (cartItemId, value, unit) => {
     try {
       await removeSpecificWeight(cartItemId, value, unit);
+      // Clear stock errors when cart is modified
+      setStockErrors([]);
     } catch (err) {
       console.error("Failed to remove weight:", err);
     }
@@ -97,6 +155,8 @@ const CartDrawer = ({ open, onClose }) => {
   const handleRemove = async (cartItemId) => {
     try {
       await removeFromCart(cartItemId);
+      // Clear stock errors when item is removed
+      setStockErrors((prev) => prev.filter(error => error.cartItemId !== cartItemId));
     } catch (err) {
       console.error("Failed to remove item:", err);
     }
@@ -106,6 +166,7 @@ const CartDrawer = ({ open, onClose }) => {
     try {
       await clearCart();
       setConfirmClearOpen(false);
+      setStockErrors([]);
     } catch (err) {
       console.error("Failed to clear cart:", err);
     }
@@ -154,11 +215,15 @@ const CartDrawer = ({ open, onClose }) => {
     return [];
   };
 
+  // 🔥 NEW: Get stock error for specific cart item
+  const getStockErrorForItem = (cartItemId) => {
+    return stockErrors.find(error => error.cartItemId === cartItemId);
+  };
+
   const totalAmount = Number(getTotalPrice());
 
   return (
     <>
-      {/* Blurred background overlay */}
       <Backdrop
         open={open}
         sx={{
@@ -211,7 +276,7 @@ const CartDrawer = ({ open, onClose }) => {
           </Box>
 
           <Box sx={{ flex: 1, overflowY: "auto", p: 2, position: "relative" }}>
-            {/* 🔥 Stock Warning with auto-hide */}
+            {/* Stock Warning with auto-hide */}
             {stockWarning && (
               <Alert
                 severity="warning"
@@ -237,12 +302,13 @@ const CartDrawer = ({ open, onClose }) => {
               </Box>
             ) : (
               cartItems.map((item) => {
-                const { productSnapshot, totalWeight, unit, _id, productId } =
-                  item;
+                const { productSnapshot, totalWeight, unit, _id, productId } = item;
                 const itemTotal = calculateItemPrice(item);
                 const buttons = getButtons(productSnapshot.baseUnit);
-                const stockQty =
-                  productId?.stockQty || productSnapshot.stockQty || 0;
+                const stockQty = productId?.stockQty || productSnapshot.stockQty || 0;
+                
+                // 🔥 Get stock error for this item
+                const stockError = getStockErrorForItem(_id);
 
                 return (
                   <Box
@@ -303,12 +369,7 @@ const CartDrawer = ({ open, onClose }) => {
                             gap: 0.3,
                           }}
                         >
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                            }}
-                          >
+                          <Box sx={{ display: "flex", alignItems: "center" }}>
                             <Typography
                               variant="caption"
                               color="text.secondary"
@@ -328,12 +389,7 @@ const CartDrawer = ({ open, onClose }) => {
                             </Typography>
                           </Box>
 
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                            }}
-                          >
+                          <Box sx={{ display: "flex", alignItems: "center" }}>
                             <Typography
                               variant="caption"
                               color="text.secondary"
@@ -363,6 +419,27 @@ const CartDrawer = ({ open, onClose }) => {
                         <DeleteIcon />
                       </IconButton>
                     </Box>
+
+                    {/* 🔥 STOCK ERROR MESSAGE */}
+                    {stockError && (
+                      <Alert 
+                        severity="error" 
+                        icon={<ErrorOutlineIcon />}
+                        sx={{ mt: 1.5, mb: 1 }}
+                      >
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          {stockError.error === 'OUT_OF_STOCK' 
+                            ? stockError.message 
+                            : `${stockError.message} (${stockError.availableStock})`
+                          }
+                        </Typography>
+                        {stockError.error === 'OUT_OF_STOCK' && (
+                          <Typography variant="caption">
+                            Remove from cart to proceed
+                          </Typography>
+                        )}
+                      </Alert>
+                    )}
 
                     {/* ADD & REMOVE BUTTONS */}
                     <Box
@@ -510,6 +587,7 @@ const CartDrawer = ({ open, onClose }) => {
               <Button
                 variant="contained"
                 fullWidth
+                disabled={validatingStock}
                 sx={{
                   backgroundColor: "#e23a3a",
                   py: 1.5,
@@ -519,7 +597,14 @@ const CartDrawer = ({ open, onClose }) => {
                 }}
                 onClick={handleCheckout}
               >
-                {language === "EN" ? "Proceed to Checkout" : "செக்அவுட் தொடரவும்"}
+                {validatingStock ? (
+                  <>
+                    <CircularProgress size={20} sx={{ color: "white", mr: 1 }} />
+                    Validating Stock...
+                  </>
+                ) : (
+                   language === "EN" ? "Proceed to Checkout" : "செக்அவுட் தொடரவும்"
+                )}
               </Button>
             </Box>
           )}
@@ -550,11 +635,10 @@ const CartDrawer = ({ open, onClose }) => {
         </DialogActions>
       </Dialog>
 
-      {/* LOGIN DRAWER BELOW */}
       <LoginDrawer
         open={loginOpen}
         onClose={() => setLoginOpen(false)}
-        onLoginSuccess={handleLoginSuccess} // ✅ Correct callback name
+        onLoginSuccess={handleLoginSuccess}
       />
     </>
   );
