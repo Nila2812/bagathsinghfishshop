@@ -11,13 +11,16 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
+import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
 import { useCart } from "../context/CartContext";
 import { useLanguage } from "./LanguageContext";
+import { useNavigate } from "react-router-dom";
 
 const BRAND_COLOR = "#D31032";
 
 export default function OrderSummary({ onNext, onGrandTotalChange }) {
   const { cartItems, calculateItemPrice, getTotalPrice } = useCart();
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { language } = useLanguage();
@@ -362,27 +365,53 @@ export default function OrderSummary({ onNext, onGrandTotalChange }) {
         </Typography>
       </Paper>
 
-      {/* CONTINUE BUTTON */}
-      <Button
-        variant="contained"
-        fullWidth
-        sx={{
-          backgroundColor: BRAND_COLOR,
-          py: 1.5,
-          fontSize: { xs: "15px", sm: "16px" },
-          fontWeight: 700,
-          borderRadius: 2,
-          textTransform: 'none',
-          boxShadow: `0 4px 12px ${BRAND_COLOR}40`,
-          "&:hover": { 
-            backgroundColor: "#b40d2c",
-            boxShadow: `0 6px 16px ${BRAND_COLOR}50`,
-          },
-        }}
-        onClick={onNext}
-      >
-       {language === "TA" ? "கட்டணத்திற்கு தொடரவும்" : "Continue to Payment"}
-      </Button>
+      {/* 🔥 ACTION BUTTONS */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {/* 🔥 NEW: Shop More Button */}
+        <Button
+          variant="outlined"
+          fullWidth
+          startIcon={<ShoppingBagIcon />}
+          sx={{
+            color: BRAND_COLOR,
+            borderColor: BRAND_COLOR,
+            py: 1.5,
+            fontSize: { xs: "15px", sm: "16px" },
+            fontWeight: 600,
+            borderRadius: 2,
+            textTransform: 'none',
+            "&:hover": { 
+              borderColor: BRAND_COLOR,
+              backgroundColor: `${BRAND_COLOR}10`,
+            },
+          }}
+          onClick={() => navigate("/products")}
+        >
+          Shop More Products
+        </Button>
+        
+        {/* Continue to Payment Button */}
+        <Button
+          variant="contained"
+          fullWidth
+          sx={{
+            backgroundColor: BRAND_COLOR,
+            py: 1.5,
+            fontSize: { xs: "15px", sm: "16px" },
+            fontWeight: 700,
+            borderRadius: 2,
+            textTransform: 'none',
+            boxShadow: `0 4px 12px ${BRAND_COLOR}40`,
+            "&:hover": { 
+              backgroundColor: "#b40d2c",
+              boxShadow: `0 6px 16px ${BRAND_COLOR}50`,
+            },
+          }}
+          onClick={onNext}
+        >
+          {language === "TA" ? "கட்டணத்திற்கு தொடரவும்" : "Continue to Payment"}
+        </Button>
+      </Box>
 
       {/* Security Badge */}
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1, mt: 1.5 }}>

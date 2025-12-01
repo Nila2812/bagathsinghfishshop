@@ -1,3 +1,5 @@
+// src/components/PaymentComponent.jsx - WITH WORKING COD + COMING SOON FOR ONLINE
+
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -13,6 +15,7 @@ import {
 import CreditCardIcon from "@mui/icons-material/CreditCard";
 import PhoneAndroidIcon from "@mui/icons-material/PhoneAndroid";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
+import MoneyIcon from "@mui/icons-material/Money";
 import LockIcon from "@mui/icons-material/Lock";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
@@ -26,176 +29,65 @@ export default function PaymentComponent({
   selectedAddress,
   grandTotal
 }) {
-  const [paymentMethod, setPaymentMethod] = useState("card");
-  const [loading, setLoading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("cod"); // 🔥 DEFAULT TO COD
+  const [placingOrder, setPlacingOrder] = useState(false);
   const [error, setError] = useState(null);
-  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
-  const { cartItems } = useCart();
-  const { user } = useAuth();
+  const { cartItems, clearCart } = useCart();
+  const authContext = useAuth();
   const { language } = useLanguage();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  // Load Razorpay script
+  // 🔥 GET USER DATA - SAME AS OLD CODE
+  const [authData, setAuthData] = useState({
+    isLoggedIn: false,
+    userId: null,
+    user: null,
+  });
+
   useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-    script.onload = () => setRazorpayLoaded(true);
-    script.onerror = () => {
-      setError("Failed to load payment gateway. Please refresh and try again.");
+    let isLoggedIn = authContext?.isLoggedIn;
+    let user = authContext?.user;
+    let userId = user?._id || user?.id;
+
+    // Fallback to localStorage if context is not ready
+    if (isLoggedIn === undefined || !userId) {
+      const storedUser = localStorage.getItem("user");
+      const storedUserId = localStorage.getItem("userId");
+
+      if (storedUser && storedUserId) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          isLoggedIn = true;
+          userId = storedUserId;
+          user = parsedUser;
+        } catch (err) {
+          console.error("Error parsing stored user:", err);
+        }
+      }
+    }
+
+    setAuthData({ isLoggedIn, userId, user });
+  }, [authContext]);
+
+  // 🔥 CALCULATE ITEM PRICE - SAME AS OLD CODE
+  const calculateItemPrice = (item) => {
+    const { productSnapshot, totalWeight, unit } = item;
+    const toGrams = (value, unitType) => {
+      if (unitType === "kg") return value * 1000;
+      if (unitType === "g") return value;
+      return value;
     };
-    document.body.appendChild(script);
-    
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-    };
-  }, []);
-
-  // Debug: Log grandTotal whenever it changes
-  useEffect(() => {
-    console.log("Payment Component - Grand Total:", grandTotal);
-  }, [grandTotal]);
-
-  const handlePayment = async () => {
-    // Validation
-    if (!selectedAddress) {
-      setError("Please select a delivery address");
-      return;
-    }
-
-    if (!user?._id) {
-      setError("User information not found. Please login again.");
-      return;
-    }
-
-    if (!razorpayLoaded) {
-      setError("Payment gateway is loading. Please wait...");
-      return;
-    }
-
-    if (grandTotal <= 0) {
-      setError("Invalid amount. Please check your cart.");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Calculate delivery fee based on total amount
-const deliveryFee = getDeliveryFee(grandTotal);
-const subtotal = grandTotal - deliveryFee;
-
-
-      // Step 1: Create order on backend
-      const orderResponse = await fetch("/api/orders/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: user._id,
-          amount: Math.round(grandTotal * 100), // Convert to paise
-          currency: "INR",
-          cartItems: cartItems,
-          selectedAddress: selectedAddress,
-          paymentMethod: paymentMethod,
-          totalAmount: Number((grandTotal - deliveryFee).toFixed(2)),
-          deliveryCharge: deliveryFee,
-          grandTotal: grandTotal,
-        }),
-      });
-
-      if (!orderResponse.ok) {
-        const errorData = await orderResponse.json();
-        throw new Error(errorData.error || "Failed to create order");
-      }
-
-      const orderData = await orderResponse.json();
-      console.log("Order created:", orderData);
-
-      if (!orderData.razorpayOrderId) {
-        throw new Error("Failed to get Razorpay order ID");
-      }
-
-      // Step 2: Initialize Razorpay payment
-      const options = {
-        key: process.env.REACT_APP_RAZORPAY_KEY_ID,
-        amount: Math.round(grandTotal * 100), // Amount in paise
-        currency: "INR",
-        name: "Your Store Name",
-        description: `Order of ${cartItems.length} items`,
-        order_id: orderData.razorpayOrderId,
-        handler: (response) => {
-          verifyPayment(response, orderData._id);
-        },
-        prefill: {
-          name: selectedAddress.name || "",
-          email: selectedAddress.email || "",
-          contact: selectedAddress.phone || "",
-        },
-        notes: {
-          address: `${selectedAddress.doorNo || ""} ${selectedAddress.street || ""}, ${selectedAddress.locality || ""}`,
-          userId: user._id,
-        },
-        theme: {
-          color: BRAND_COLOR,
-        },
-        modal: {
-          ondismiss: () => {
-            setLoading(false);
-            setError("Payment cancelled. Please try again.");
-          },
-        },
-      };
-
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
-    } catch (err) {
-      console.error("Payment error:", err);
-      setError(err.message || "Payment initialization failed");
-      setLoading(false);
-      onPaymentError?.(err);
-    }
+    const addedInGrams = toGrams(totalWeight, unit);
+    const priceForInGrams = toGrams(
+      productSnapshot.weightValue,
+      productSnapshot.weightUnit
+    );
+    const ratio = addedInGrams / priceForInGrams;
+    return ratio * productSnapshot.price;
   };
 
-  const verifyPayment = async (response, orderId) => {
-    try {
-      // Step 3: Verify payment on backend
-      const verifyResponse = await fetch("/api/orders/verify", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          razorpay_order_id: response.razorpay_order_id,
-          razorpay_payment_id: response.razorpay_payment_id,
-          razorpay_signature: response.razorpay_signature,
-          orderId: orderId,
-        }),
-      });
-
-      const verifyData = await verifyResponse.json();
-      console.log("Verification response:", verifyData);
-
-      if (verifyData.success) {
-        setLoading(false);
-        onPaymentSuccess?.(verifyData);
-      } else {
-        throw new Error(verifyData.message || "Payment verification failed");
-      }
-    } catch (err) {
-      console.error("Verification error:", err);
-      setError(err.message || "Payment verification failed");
-      setLoading(false);
-      onPaymentError?.(err);
-    }
-  };
-
-  // Helper function to calculate delivery fee
+  // 🔥 DELIVERY FEE - SAME AS OLD CODE
   const getDeliveryFee = (amount) => {
     if (amount < 200) return 40;
     if (amount >= 200 && amount < 500) return 30;
@@ -203,24 +95,129 @@ const subtotal = grandTotal - deliveryFee;
     return 0;
   };
 
+  // 🔥 HANDLE PAYMENT - COD WORKS AS OLD, ONLINE SHOWS ALERT
+  const handlePayment = async () => {
+    // 🔥 ONLINE PAYMENT METHODS - COMING SOON
+    if (paymentMethod !== "cod") {
+      alert("🚧 Online payment coming soon! Please use Cash on Delivery (COD) for now.");
+      return;
+    }
+
+    // 🔥 COD PAYMENT - EXACT SAME AS OLD CODE
+    if (!selectedAddress) {
+      setError("Please select a delivery address");
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      setError("Your cart is empty");
+      return;
+    }
+
+    if (!authData.userId) {
+      setError("User information not found. Please login again.");
+      return;
+    }
+
+    setPlacingOrder(true);
+    setError(null);
+
+    try {
+      const totalAmount = cartItems.reduce(
+        (sum, item) => sum + calculateItemPrice(item),
+        0
+      );
+      const deliveryCharge = getDeliveryFee(totalAmount);
+      const finalGrandTotal = totalAmount + deliveryCharge;
+
+      const orderData = {
+        userId: authData.userId,
+        amount: finalGrandTotal * 100,
+        currency: "INR",
+        cartItems: cartItems.map((item) => ({
+          productId: item.productId?._id || item.productId,
+          totalWeight: item.totalWeight,
+          unit: item.unit,
+          productSnapshot: item.productSnapshot,
+        })),
+        selectedAddress: selectedAddress,
+        paymentMethod: "COD",
+        totalAmount: totalAmount,
+        deliveryCharge: deliveryCharge,
+        grandTotal: finalGrandTotal,
+      };
+
+      const response = await fetch("/api/orders/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderData),
+      });
+
+      const data = await response.json();
+
+      // 🔥 HANDLE STOCK VALIDATION ERRORS
+      if (!response.ok) {
+        if (data.error === 'STOCK_VALIDATION_FAILED' && data.stockErrors) {
+          setError(data.message || 'Stock validation failed');
+          setPlacingOrder(false);
+          
+          // Pass stock errors to parent if needed
+          if (onPaymentError) {
+            onPaymentError({ stockErrors: data.stockErrors, message: data.message });
+          }
+          return;
+        }
+        
+        throw new Error(data.error || "Failed to create order");
+      }
+
+      console.log("✅ Order created:", data.orderId);
+
+      await clearCart();
+      
+      // Call success callback
+      if (onPaymentSuccess) {
+        onPaymentSuccess({ orderId: data.orderId });
+      }
+    } catch (err) {
+      console.error("Order placement error:", err);
+      setError(err.message || "Failed to place order. Please try again.");
+      setPlacingOrder(false);
+      
+      if (onPaymentError) {
+        onPaymentError(err);
+      }
+    }
+  };
+
   const paymentMethods = [
     {
+      id: "cod",
+      label: language === "EN" ? "Cash on Delivery (COD)" : "பணம் வழங்கல் (COD)",
+      icon: MoneyIcon,
+      description: language === "EN" ? "Pay when order is delivered" : "ஆர்டர் வந்ததும் பணம் செலுத்தவும்",
+      available: true, // 🔥 COD IS AVAILABLE
+    },
+    {
       id: "card",
-      label: "Credit/Debit Card",
+      label: language === "EN" ? "Credit/Debit Card" : "கார்டு கட்டணம்",
       icon: CreditCardIcon,
-      description: "Visa, MasterCard, RuPay",
+      description: language === "EN" ? "Coming Soon" : "விரைவில்",
+      available: false, // 🔥 NOT AVAILABLE YET
     },
     {
       id: "upi",
-      label: "UPI",
+      label: language === "EN" ? "UPI" : "UPI கட்டணம்",
       icon: PhoneAndroidIcon,
-      description: "Google Pay, PhonePe, Paytm",
+      description: language === "EN" ? "Coming Soon" : "விரைவில்",
+      available: false, // 🔥 NOT AVAILABLE YET
     },
     {
       id: "netbanking",
-      label: "Net Banking",
+      label: language === "EN" ? "Net Banking" : "நெட் பேங்கிங்",
       icon: AccountBalanceIcon,
-      description: "All major banks",
+      description: language === "EN" ? "Coming Soon" : "விரைவில்",
+      available: false, // 🔥 NOT AVAILABLE YET
     },
   ];
 
@@ -229,19 +226,18 @@ const subtotal = grandTotal - deliveryFee;
       {/* Header */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
-        {language === "EN" ? "Payment Method" : "கட்டண முறைகள்"}
+          {language === "EN" ? "Payment Method" : "கட்டண முறைகள்"}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-         {language === "EN"
-          ? "Choose your preferred payment option to complete the order"
-          : "ஆர்டரை முடிக்க விரும்பும் கட்டண முறையைத் தேர்ந்தெடுக்கவும்"}
-
+          {language === "EN"
+            ? "Choose your preferred payment option to complete the order"
+            : "ஆர்டரை முடிக்க விரும்பும் கட்டண முறையைத் தேர்ந்தெடுக்கவும்"}
         </Typography>
       </Box>
 
       {/* Error Alert */}
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
@@ -260,7 +256,7 @@ const subtotal = grandTotal - deliveryFee;
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
           <Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-             {language === "EN" ? "Total Amount to Pay" : "மொத்த தொகை"}
+              {language === "EN" ? "Total Amount to Pay" : "மொத்த தொகை"}
             </Typography>
             <Typography
               variant="h5"
@@ -301,6 +297,7 @@ const subtotal = grandTotal - deliveryFee;
           {paymentMethods.map((method) => {
             const Icon = method.icon;
             const isSelected = paymentMethod === method.id;
+            const isAvailable = method.available;
 
             return (
               <Card
@@ -308,18 +305,29 @@ const subtotal = grandTotal - deliveryFee;
                 variant="outlined"
                 sx={{
                   p: 2,
-                  cursor: "pointer",
+                  cursor: isAvailable ? "pointer" : "not-allowed",
                   border: isSelected
                     ? `2px solid ${BRAND_COLOR}`
                     : `1px solid ${theme.palette.divider}`,
-                  bgcolor: isSelected ? `${BRAND_COLOR}05` : "transparent",
+                  bgcolor: isSelected 
+                    ? `${BRAND_COLOR}05` 
+                    : !isAvailable 
+                    ? theme.palette.grey[50]
+                    : "transparent",
+                  opacity: !isAvailable ? 0.6 : 1,
                   transition: "all 0.3s",
-                  "&:hover": {
+                  "&:hover": isAvailable ? {
                     boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
                     borderColor: BRAND_COLOR,
-                  },
+                  } : {},
                 }}
-                onClick={() => setPaymentMethod(method.id)}
+                onClick={() => {
+                  if (isAvailable) {
+                    setPaymentMethod(method.id);
+                  } else {
+                    alert("🚧 This payment method is coming soon! Please use COD for now.");
+                  }
+                }}
               >
                 <Box
                   sx={{
@@ -358,13 +366,31 @@ const subtotal = grandTotal - deliveryFee;
                       </Typography>
                       <Typography
                         variant="caption"
-                        color="text.secondary"
-                        sx={{ display: "block" }}
+                        color={!isAvailable ? "error" : "text.secondary"}
+                        sx={{ 
+                          display: "block",
+                          fontWeight: !isAvailable ? 600 : 400
+                        }}
                       >
                         {method.description}
                       </Typography>
                     </Box>
                   </Box>
+                  {!isAvailable && (
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        bgcolor: theme.palette.warning.light,
+                        color: theme.palette.warning.dark,
+                        px: 1.5,
+                        py: 0.5,
+                        borderRadius: 1,
+                        fontWeight: 600,
+                      }}
+                    >
+                      {language === "EN" ? "Soon" : "விரைவில்"}
+                    </Typography>
+                  )}
                 </Box>
               </Card>
             );
@@ -390,28 +416,56 @@ const subtotal = grandTotal - deliveryFee;
               variant="body2"
               sx={{ fontWeight: 600, color: "#1B5E20", mb: 0.25 }}
             >
-             {language === "EN" ? "Your payment is secure" : "உங்கள் கட்டணம் பாதுகாப்பாகும்"}
+              {language === "EN" ? "Your payment is secure" : "உங்கள் கட்டணம் பாதுகாப்பாகும்"}
             </Typography>
             <Typography
               variant="caption"
               sx={{ color: "#2E7D32" }}
             >
               {language === "EN"
-                ? "All transactions are protected with SSL encryption and PCI DSS compliance"
-                : "அனைத்து பரிவர்த்தனைகளும் SSL குறியாக்கம் மற்றும் PCI DSS பாதுகாப்புடன் மேற்கொள்ளப்படுகின்றன"}
-
+                ? "All transactions are protected with SSL encryption"
+                : "அனைத்து பரிவர்த்தனைகளும் SSL குறியாக்கத்துடன் பாதுகாக்கப்படுகின்றன"}
             </Typography>
           </Box>
         </Box>
       </Paper>
 
-      {/* Action Buttons */}
+      {/* 🔥 COD INFO BOX */}
+      {paymentMethod === "cod" && (
+        <Paper
+          elevation={0}
+          sx={{
+            p: 2,
+            borderRadius: 2,
+            bgcolor: "#FFF9E6",
+            border: "1px solid #FFE082",
+            mb: 3,
+          }}
+        >
+          <Typography
+            variant="body2"
+            sx={{ fontWeight: 600, color: "#F57C00", mb: 0.5 }}
+          >
+            💵 {language === "EN" ? "Cash on Delivery Selected" : "பணம் வழங்கல் தேர்வு செய்யப்பட்டது"}
+          </Typography>
+          <Typography
+            variant="caption"
+            sx={{ color: "#E65100" }}
+          >
+            {language === "EN"
+              ? "Pay with cash when your order is delivered to your doorstep"
+              : "உங்கள் வீட்டு வாசலில் ஆர்டர் வந்ததும் பணம் செலுத்தவும்"}
+          </Typography>
+        </Paper>
+      )}
+
+      {/* Action Button */}
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         <Button
           fullWidth
           variant="contained"
           size="large"
-          disabled={loading || !razorpayLoaded || !grandTotal || grandTotal <= 0}
+          disabled={placingOrder || !grandTotal || grandTotal <= 0}
           onClick={handlePayment}
           sx={{
             bgcolor: BRAND_COLOR,
@@ -427,19 +481,21 @@ const subtotal = grandTotal - deliveryFee;
             "&:disabled": {
               bgcolor: theme.palette.grey[300],
             },
-            position: "relative",
           }}
         >
-          {loading ? (
+          {placingOrder ? (
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <CircularProgress size={20} sx={{ color: "#fff" }} />
-              {language === "EN" ? "Processing..." : "செயலாக்கப்படுகிறது..."}
+              {language === "EN" ? "Placing Order..." : "ஆர்டர் செய்கிறது..."}
             </Box>
+          ) : paymentMethod === "cod" ? (
+            language === "EN"
+              ? `Place Order (₹${grandTotal?.toFixed(2)})`
+              : `ஆர்டர் செய் (₹${grandTotal?.toFixed(2)})`
           ) : (
             language === "EN"
               ? `Pay ₹${grandTotal?.toFixed(2)}`
               : `₹${grandTotal?.toFixed(2)} செலுத்து`
-
           )}
         </Button>
 
@@ -449,8 +505,8 @@ const subtotal = grandTotal - deliveryFee;
           sx={{ textAlign: "center", px: 1 }}
         >
           {language === "EN"
-            ? "By clicking Pay, you agree to complete this purchase. Your payment details are secure and encrypted."
-            : "செலுத்து என்பதை அழுத்துவதன் மூலம், இந்த வாங்குதலை நிறைவு செய்வதை ஒப்புக்கொள்கிறீர்கள். உங்கள் கட்டண விவரங்கள் பாதுகாப்பானவை மற்றும் குறியாக்கம் செய்யப்பட்டவை."}
+            ? "By placing order, you agree to complete this purchase. Your details are secure."
+            : "ஆர்டர் செய்வதன் மூலம், இந்த வாங்குதலை நிறைவு செய்வதை ஒப்புக்கொள்கிறீர்கள்."}
         </Typography>
       </Box>
     </Box>

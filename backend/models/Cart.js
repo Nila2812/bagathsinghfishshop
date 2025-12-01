@@ -1,4 +1,4 @@
-// server/models/Cart.js - AMAZON/FLIPKART STYLE
+// server/models/Cart.js -
 
 import mongoose from 'mongoose';
 

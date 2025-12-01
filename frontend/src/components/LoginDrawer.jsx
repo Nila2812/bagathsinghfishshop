@@ -1,4 +1,4 @@
-// src/components/LoginDrawer.jsx - FINAL VERSION WITH FIXED TIMING
+// src/components/LoginDrawer.jsx - FINAL FIX: NO BUTTON CHANGE ON VERIFICATION FAIL
 
 import React, { useState, useEffect } from "react";
 import {
@@ -32,7 +32,7 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
   const [otpAttempts, setOtpAttempts] = useState(0);
   const [isBlocked, setIsBlocked] = useState(false);
   const [blockUntil, setBlockUntil] = useState(null);
-  const [verificationLimitReached, setVerificationLimitReached] = useState(false);
+  const [verificationFailed, setVerificationFailed] = useState(false);
 
   // Check if device is blocked on mount
   useEffect(() => {
@@ -43,7 +43,7 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
 
   // Timer countdown
   useEffect(() => {
-    if (timer > 0 && !verificationLimitReached) {
+    if (timer > 0) {
       const interval = setInterval(() => {
         setTimer(prev => {
           if (prev <= 1) {
@@ -55,35 +55,43 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [timer, verificationLimitReached]);
+  }, [timer]);
 
-  const checkDeviceBlock = () => {
-    const blockData = localStorage.getItem("otpBlock");
-    if (blockData) {
-      const { until } = JSON.parse(blockData);
-      const now = Date.now();
-      
-      if (now < until) {
+  const checkDeviceBlock = async () => {
+    try {
+      const response = await fetch("/api/auth/check-device-block", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      });
+
+      const data = await response.json();
+
+      if (data.isBlocked) {
         setIsBlocked(true);
-        setBlockUntil(until);
-        const resetTime = new Date(until).toLocaleTimeString();
-        setError(`Device blocked due to too many attempts. Try again after ${resetTime}`);
+        setBlockUntil(data.blockUntil);
+        
+        // 🔥 Format exact unlock time
+        const unlockDate = new Date(data.blockUntil);
+        const unlockTime = unlockDate.toLocaleTimeString('en-US', { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          hour12: true 
+        });
+        const unlockDateStr = unlockDate.toLocaleDateString('en-US', { 
+          weekday: 'long',
+          month: 'short', 
+          day: 'numeric',
+          year: 'numeric'
+        });
+        
+        setError(`This device is blocked due to too many attempts. Try again after ${unlockTime} on ${unlockDateStr}`);
       } else {
-        localStorage.removeItem("otpBlock");
         setIsBlocked(false);
-        setResendCount(0);
+        setResendCount(data.resendCount || 0);
       }
+    } catch (err) {
+      console.error("Error checking device block:", err);
     }
-  };
-
-  const blockDevice = () => {
-    const blockDuration = 3.5 * 60 * 60 * 1000; // 3.5 hours
-    const until = Date.now() + blockDuration;
-    localStorage.setItem("otpBlock", JSON.stringify({ until }));
-    setIsBlocked(true);
-    setBlockUntil(until);
-    const resetTime = new Date(until).toLocaleTimeString();
-    setError(`Device blocked due to too many attempts. Try again after ${resetTime}`);
   };
 
   const migrateGuestDataToUser = async (userId, sessionToken) => {
@@ -120,12 +128,7 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
     setError("");
     
     if (isBlocked) {
-      checkDeviceBlock();
-      return;
-    }
-
-    if (resendCount >= 3) {
-      blockDevice();
+      await checkDeviceBlock();
       return;
     }
     
@@ -157,9 +160,28 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
         // Start 60-second timer
         setTimer(60);
         setCanResend(false);
-        setResendCount(prev => prev + 1);
+        setResendCount(data.resendCount || 0);
         setOtpAttempts(0);
-        setVerificationLimitReached(false);
+        setVerificationFailed(false);
+      } else if (data.blocked) {
+        setIsBlocked(true);
+        setBlockUntil(data.blockUntil);
+        
+        // 🔥 Format exact unlock time
+        const unlockDate = new Date(data.blockUntil);
+        const unlockTime = unlockDate.toLocaleTimeString('en-US', { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          hour12: true 
+        });
+        const unlockDateStr = unlockDate.toLocaleDateString('en-US', { 
+          weekday: 'long',
+          month: 'short', 
+          day: 'numeric',
+          year: 'numeric'
+        });
+        
+        setError(`Device blocked due to too many attempts. Try again after ${unlockTime} on ${unlockDateStr}`);
       } else {
         setError(data.message || "Failed to send OTP");
       }
@@ -172,11 +194,11 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
   };
 
   const handleResendOtp = async () => {
-    if (!canResend || isBlocked || verificationLimitReached) return;
+    if (!canResend || isBlocked) return;
     
     setOtp("");
     setOtpAttempts(0);
-    setVerificationLimitReached(false);
+    setVerificationFailed(false);
     await handleSendOtp();
   };
 
@@ -206,11 +228,6 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
         localStorage.setItem("userId", newUserId);
         localStorage.setItem("sessionToken", sessionToken);
         
-        // Clear block and resend count on successful login
-        localStorage.removeItem("otpBlock");
-        setResendCount(0);
-        setIsBlocked(false);
-        
         console.log(`🔐 Login successful for ${mobile}`);
         
         await migrateGuestDataToUser(newUserId, sessionToken);
@@ -221,7 +238,6 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
         } else {
           setStep(4);
           onLoginSuccess && onLoginSuccess();
-
         }
         setError("");
       } else {
@@ -230,20 +246,35 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
         setOtpAttempts(newAttempts);
 
         if (newAttempts >= 4) {
-          // 🔥 FIXED: Stop timer when verification limit reached
-          setTimer(0);
-          setCanResend(false);
-          setVerificationLimitReached(true);
-          
-          // Check if this is the 3rd resend (final attempt)
-          if (resendCount >= 3) {
-            blockDevice();
-          } else {
-            setError("OTP verification limit exceeded. Please request a new OTP.");
-          }
+          // 🔥 CRITICAL FIX: Only disable input and show warning
+          // DO NOT change button visibility or stop timer
+          setVerificationFailed(true);
+          setError(`Too many incorrect attempts. Please wait for the timer to finish or request a new OTP.`);
           setOtp("");
         } else {
           setError(`Invalid OTP. ${4 - newAttempts} attempt${4 - newAttempts > 1 ? 's' : ''} remaining.`);
+        }
+
+        // Check if device should be blocked
+        if (data.blocked) {
+          setIsBlocked(true);
+          setBlockUntil(data.blockUntil);
+          
+          // 🔥 Format exact unlock time
+          const unlockDate = new Date(data.blockUntil);
+          const unlockTime = unlockDate.toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: true 
+          });
+          const unlockDateStr = unlockDate.toLocaleDateString('en-US', { 
+            weekday: 'long',
+            month: 'short', 
+            day: 'numeric',
+            year: 'numeric'
+          });
+          
+          setError(`Device blocked. Try again after ${unlockTime} on ${unlockDateStr}`);
         }
       }
     } catch (err) {
@@ -312,7 +343,7 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
     setTimer(0);
     setCanResend(false);
     setOtpAttempts(0);
-    setVerificationLimitReached(false);
+    setVerificationFailed(false);
     onClose();
   };
 
@@ -432,11 +463,11 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
                 inputProps={{ maxLength: 4 }}
                 sx={{ mb: 2 }}
                 helperText="Check your terminal/console for OTP"
-                disabled={verificationLimitReached}
+                disabled={verificationFailed || isBlocked}
               />
 
-              {/* 🔥 FIXED: Timer only shows when NOT at verification limit */}
-              {!verificationLimitReached && timer > 0 && (
+              {/* 🔥 Timer Display - ALWAYS shows during countdown */}
+              {timer > 0 && (
                 <Typography variant="body2" sx={{ mb: 2, color: "text.secondary", textAlign: "center" }}>
                  {language === "EN"
                   ? <>Resend OTP available in <strong>{timer}s</strong></>
@@ -444,13 +475,25 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
                 </Typography>
               )}
 
-              {/* 🔥 FIXED: Resend button logic */}
-              {canResend && !verificationLimitReached && resendCount < 3 && (
+              {/* 🔥 CRITICAL: Resend button ONLY shows when timer reaches 0 */}
+              {/* It does NOT appear when verification fails - timer keeps running */}
+              {timer === 0 && canResend && !isBlocked && resendCount < 3 && (
                 <Button
-                  variant="text"
+                  variant="outlined"
                   fullWidth
                   onClick={handleResendOtp}
-                  sx={{ mb: 2, textTransform: "none" }}
+                  sx={{ 
+                    mb: 2, 
+                    textTransform: "none",
+                    borderColor: "#FF9800",
+                    color: "#FF9800",
+                    fontWeight: 600,
+                    "&:hover": {
+                      borderColor: "#F57C00",
+                      backgroundColor: "rgba(255, 152, 0, 0.04)",
+                      borderWidth: 2
+                    }
+                  }}
                 >
                 {language === "EN" 
               ? `Resend OTP (${3 - resendCount} remaining)` 
@@ -459,25 +502,7 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
                 </Button>
               )}
 
-              {/* 🔥 NEW: Show resend button when verification limit reached (but not device blocked) */}
-              {verificationLimitReached && !isBlocked && resendCount < 3 && (
-                <Button
-                  variant="contained"
-                  fullWidth
-                  onClick={handleResendOtp}
-                  sx={{
-                    mb: 2,
-                    backgroundColor: "#FF9800",
-                    "&:hover": { backgroundColor: "#F57C00" },
-                    textTransform: "none"
-                  }}
-                >
-                   {language === "EN" 
-                ? `Request New OTP (${3 - resendCount} remaining)` 
-                : `புதிய OTP கோருக (${3 - resendCount} மீதம்)`}
-                </Button>
-              )}
-
+              {/* Verify Button */}
               <Button
                 variant="contained"
                 fullWidth
@@ -490,7 +515,7 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
                   "&:hover": { backgroundColor: "#B71C1C" },
                 }}
                 onClick={handleVerifyOtp}
-                disabled={loading || otp.length !== 4 || verificationLimitReached}
+                disabled={loading || otp.length !== 4 || verificationFailed || isBlocked}
               >
                {loading 
               ? <CircularProgress size={24} sx={{ color: "#fff" }} /> 
@@ -508,7 +533,7 @@ const LoginDrawer = ({ open, onClose, onLoginSuccess }) => {
                   setError("");
                   setTimer(0);
                   setOtpAttempts(0);
-                  setVerificationLimitReached(false);
+                  setVerificationFailed(false);
                 }}
                 sx={{ mt: 1, textTransform: "none" }}
               >

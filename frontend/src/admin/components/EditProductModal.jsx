@@ -12,11 +12,23 @@ import {
   Select,
   FormControl,
   OutlinedInput,
+  Typography,
 } from "@mui/material";
 import axios from "axios";
 
 const EditProductModal = ({ product, onClose, onSave }) => {
-  const [form, setForm] = useState({ ...product });
+  // 🔥 FIX: Extract categoryId as string ID for Select component
+  const initialCategoryId = typeof product.categoryId === 'object' 
+    ? product.categoryId?._id 
+    : product.categoryId;
+  
+  const [form, setForm] = useState({
+    ...product,
+    categoryId: initialCategoryId || "",
+  });
+  
+  console.log("🔍 Initial product.categoryId:", product.categoryId);
+  console.log("🔍 Extracted categoryId for form:", initialCategoryId);
   const [imageFile, setImageFile] = useState(null);
   const [categories, setCategories] = useState([]);
 
@@ -65,19 +77,36 @@ const EditProductModal = ({ product, onClose, onSave }) => {
 
   const handleSubmit = async () => {
     const formData = new FormData();
-    Object.entries(form).forEach(([key, value]) => {
-      formData.append(key, value);
-    });
-    formData.set("isAvailable", form.isAvailable ? "true" : "false");
+    
+    // 🔥 FIX: Only send the fields that backend expects
+    formData.append("categoryId", form.categoryId);
+    formData.append("name_en", form.name_en);
+    formData.append("name_ta", form.name_ta);
+    formData.append("price", form.price);
+    formData.append("weightValue", form.weightValue);
+    formData.append("weightUnit", form.weightUnit);
+    formData.append("baseUnit", form.baseUnit);
+    formData.append("stockQty", form.stockQty);
+    formData.append("isAvailable", form.isAvailable ? "true" : "false");
+    
     if (imageFile) {
       formData.append("image", imageFile);
     }
 
     try {
-      const res = await axios.put(`http://localhost:5000/api/products/${product._id}`, formData);
+      const res = await axios.put(
+        `http://localhost:5000/api/products/${product._id}`, 
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
       onSave(res.data.product);
     } catch (err) {
       console.error("Update failed:", err);
+      alert("Failed to update product: " + (err.response?.data?.error || err.message));
     }
   };
 
@@ -98,28 +127,61 @@ const EditProductModal = ({ product, onClose, onSave }) => {
       <DialogTitle>Edit Product</DialogTitle>
       <DialogContent>
         <Grid container spacing={2} sx={{ mt: 1 }}>
-          <Grid size={6}>
-            <TextField label="Name (EN)" name="name_en" value={form.name_en} onChange={handleChange} fullWidth />
+          <Grid item xs={6}>
+            <TextField 
+              label="Name (EN)" 
+              name="name_en" 
+              value={form.name_en || ""} 
+              onChange={handleChange} 
+              fullWidth 
+            />
           </Grid>
-          <Grid size={6}>
-            <TextField label="Name (TA)" name="name_ta" value={form.name_ta} onChange={handleChange} fullWidth />
+          <Grid item xs={6}>
+            <TextField 
+              label="Name (TA)" 
+              name="name_ta" 
+              value={form.name_ta || ""} 
+              onChange={handleChange} 
+              fullWidth 
+            />
           </Grid>
-          <Grid size={6}>
-            <TextField label="Price" name="price" type="number" value={form.price} onChange={handleChange} fullWidth />
+          <Grid item xs={6}>
+            <TextField 
+              label="Price" 
+              name="price" 
+              type="number" 
+              value={form.price || ""} 
+              onChange={handleChange} 
+              fullWidth 
+            />
           </Grid>
-          <Grid size={6}>
-            <TextField label="Stock Qty" name="stockQty" type="number" value={form.stockQty} onChange={handleChange} fullWidth />
+          <Grid item xs={6}>
+            <TextField 
+              label="Stock Qty" 
+              name="stockQty" 
+              type="number" 
+              value={form.stockQty || ""} 
+              onChange={handleChange} 
+              fullWidth 
+            />
           </Grid>
-          <Grid size={6}>
-            <TextField label="Weight Value" name="weightValue" type="number" value={form.weightValue} onChange={handleChange} fullWidth />
+          <Grid item xs={6}>
+            <TextField 
+              label="Weight Value" 
+              name="weightValue" 
+              type="number" 
+              value={form.weightValue || ""} 
+              onChange={handleChange} 
+              fullWidth 
+            />
           </Grid>
-          <Grid size={6}>
+          <Grid item xs={6}>
             <FormControl fullWidth>
               <InputLabel id="weight-unit-label">Weight Unit</InputLabel>
               <Select
                 labelId="weight-unit-label"
                 name="weightUnit"
-                value={form.weightUnit}
+                value={form.weightUnit || ""}
                 onChange={handleChange}
                 input={<OutlinedInput label="Weight Unit" />}
                 sx={{ minWidth: 170, fontSize: 16 }}
@@ -131,13 +193,13 @@ const EditProductModal = ({ product, onClose, onSave }) => {
             </FormControl>
           </Grid>
 
-          <Grid size={6}>
+          <Grid item xs={6}>
             <FormControl fullWidth>
               <InputLabel id="base-unit-label">Base Unit</InputLabel>
               <Select
                 labelId="base-unit-label"
                 name="baseUnit"
-                value={form.baseUnit}
+                value={form.baseUnit || ""}
                 onChange={handleChange}
                 input={<OutlinedInput label="Base Unit" />}
                 sx={{ minWidth: 170, fontSize: 16 }}
@@ -151,13 +213,13 @@ const EditProductModal = ({ product, onClose, onSave }) => {
             </FormControl>
           </Grid>
 
-          <Grid size={6}>
+          <Grid item xs={6}>
             <FormControl fullWidth>
               <InputLabel id="category-label">Category</InputLabel>
               <Select
                 labelId="category-label"
                 name="categoryId"
-                value={form.categoryId}
+                value={form.categoryId || ""}
                 onChange={handleChange}
                 input={<OutlinedInput label="Category" />}
                 sx={{ minWidth: 170, fontSize: 16 }}
@@ -169,10 +231,16 @@ const EditProductModal = ({ product, onClose, onSave }) => {
                 ))}
               </Select>
             </FormControl>
+            {/* 🔥 Show current category name */}
+            {product.categoryId?.name_en && (
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                Current: {product.categoryId.name_en}
+              </Typography>
+            )}
           </Grid>
 
           {form.image?.data && (
-            <Grid size={12}>
+            <Grid item xs={12}>
               <InputLabel>Current Image</InputLabel>
               <img
                 src={`data:${form.image.contentType};base64,${form.image.data}`}
@@ -182,7 +250,7 @@ const EditProductModal = ({ product, onClose, onSave }) => {
             </Grid>
           )}
 
-          <Grid size={12}>
+          <Grid item xs={12}>
             <InputLabel>Upload New Image</InputLabel>
             <input type="file" accept="image/*" onChange={handleImageChange} />
           </Grid>

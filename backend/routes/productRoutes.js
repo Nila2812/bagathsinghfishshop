@@ -10,6 +10,7 @@ import {
   updateProduct,
   deleteProduct,
   viewAllProducts,
+  getSingleProduct,
 } from "../controllers/productController.js";
 
 const router = express.Router();
@@ -19,20 +20,23 @@ const upload = multer({ storage });
 
 // ⚠️ CRITICAL: Order matters! Specific routes BEFORE dynamic routes
 
-// 1. Search and view routes (most specific)
+// 1. GET routes with specific paths (most specific first)
 router.get("/search", searchProducts);
 router.get("/view-products", viewAllProducts);
 router.get("/by-category/:id", getProductsByCategory);
-
-// 2. Root route (before /:id to avoid conflict)
+router.get("/single/:id", getSingleProduct);
 router.get("/", getAllProducts);
 
-// 3. POST route
+// 2. POST route
 router.post("/add", upload.single("image"), addProduct);
-router.put("/:id", upload.single("image"), updateProduct);
-// 4. Dynamic :id routes (MUST come after all specific routes)
-router.get("/:id", getProductById);
 
+// 3. PUT route (MUST come before GET /:id)
+router.put("/:id", upload.single("image"), updateProduct);
+
+// 4. DELETE route (MUST come before GET /:id)
 router.delete("/:id", deleteProduct);
+
+// 5. Dynamic GET /:id route (MUST be LAST)
+router.get("/:id", getProductById);
 
 export default router;

@@ -1,3 +1,5 @@
+// server/models/Order.js - FIXED
+
 import mongoose from 'mongoose';
 
 const orderSchema = new mongoose.Schema({
@@ -6,11 +8,10 @@ const orderSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  // Store order reference from Razorpay
+  // 🔥 FIX: Remove unique constraint, allow sparse index
   razorpayOrderId: {
     type: String,
-    unique: true,
-    sparse: true
+    sparse: true  // Allows multiple null values
   },
   razorpayPaymentId: String,
   razorpaySignature: String,
@@ -49,11 +50,12 @@ const orderSchema = new mongoose.Schema({
   },
   mapLink: String,
   
+  // 🔥 FIX: Remove totalWeight (not needed, just sum products)
+  
   // Price Breakdown
-  totalWeight: Number,
   totalAmount: Number,        // Subtotal
   deliveryCharge: Number,     // Delivery Fee
-  grandTotal: Number,         // Total Amount to Pay (totalAmount + deliveryCharge)
+  grandTotal: Number,         // Total Amount to Pay
   
   // Payment Information
   paymentMode: {
@@ -63,15 +65,15 @@ const orderSchema = new mongoose.Schema({
   },
   paymentStatus: {
     type: String,
-    enum: ['Pending', 'Paid', 'Failed'],
+    enum: ['Pending', 'Paid', 'Refunded'],  // 🔥 CHANGED: Only 3 statuses
     default: 'Pending'
   },
   
   // Order Status
   orderStatus: {
     type: String,
-    enum: ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled'],
-    default: 'Pending'
+    enum: ['Placed', 'Packed', 'Shipped', 'Delivered', 'Cancelled'],  // 🔥 CHANGED: Simplified
+    default: 'Placed'
   },
   
   // Admin Notification
@@ -90,5 +92,8 @@ const orderSchema = new mongoose.Schema({
     default: Date.now
   }
 }, { timestamps: true });
+
+// 🔥 Create sparse index to allow multiple null values
+orderSchema.index({ razorpayOrderId: 1 }, { sparse: true });
 
 export default mongoose.model('Order', orderSchema);
