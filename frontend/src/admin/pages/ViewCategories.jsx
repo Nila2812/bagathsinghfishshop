@@ -98,7 +98,7 @@ const ViewCategories = () => {
   return (
     <Box
       sx={{
-        p: 3,
+        p: {xs:0, md:3},
       }}
     >
       <Box
@@ -106,7 +106,7 @@ const ViewCategories = () => {
           bgcolor: "white",
           borderRadius: 2,
           boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          p: 3,
+          p: {xs:2, md:3},
         }}
       >
         <Typography

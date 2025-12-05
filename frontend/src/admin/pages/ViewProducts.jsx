@@ -110,7 +110,7 @@ const ViewProducts = () => {
   }, {});
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p:{xs:0, md:3}  }}>
       {Object.entries(grouped).map(([category, rows]) => {
         const sortedRows = [...rows].sort((a, b) => {
           const subA = a.subcategory?.toLowerCase() || "";
@@ -128,7 +128,7 @@ const ViewProducts = () => {
             key={category}
             sx={{
               mb: 5,
-              p: 3,
+              p: {xs: 2, md: 3},
               bgcolor: "white",
               borderRadius: 2,
               boxShadow: "0 2px 8px rgba(0,0,0,0.1)",

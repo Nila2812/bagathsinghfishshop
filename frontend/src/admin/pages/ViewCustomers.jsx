@@ -185,11 +185,11 @@ const ViewCustomers = () => {
           📊 Total Customers: {customers.length}
         </Alert>
       </Box>
-
+     
       {/* Customers Table */}
       <TableContainer component={Paper}>
         <Table>
-          <TableHead sx={{ bgcolor: "#f5f5f5" }}>
+          <TableHead sx={{ bgcolor: "#f5f5f5", p:{xs:2, md:3} }}>
             <TableRow>
               <TableCell sx={{ fontWeight: 600 }}>Expand</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>Customer ID</TableCell>
@@ -382,7 +382,6 @@ const ViewCustomers = () => {
           </TableBody>
         </Table>
       </TableContainer>
-
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Delete Customer</DialogTitle>
