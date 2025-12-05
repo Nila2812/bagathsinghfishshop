@@ -11,6 +11,7 @@ import cartRoutes from "./routes/cartRoutes.js";
 import addressRoutes from "./routes/address.js";
 import authRoutes from "./routes/authRoutes.js";
 import orderRoutes from './routes/orderRoutes.js';
+import whatsappRoutes from './routes/whatsappRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -37,7 +38,7 @@ app.use("/api/admins", adminRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/address", addressRoutes);
 app.use("/api/auth", authRoutes);
-
+app.use('/api/whatsapp', whatsappRoutes);
 // Basic test route
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to Bagath Singh Fish Shop API' });

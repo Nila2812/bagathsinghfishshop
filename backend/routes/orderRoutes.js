@@ -1,4 +1,4 @@
-// server/routes/orderRoutes.js - COMPLETE WITH BULK UPDATE FEATURE
+// server/routes/orderRoutes.js - FIXED TELEGRAM NOTIFICATION DEBUGGING
 
 import express from 'express';
 import Razorpay from 'razorpay';
@@ -6,11 +6,12 @@ import crypto from 'crypto';
 import Order from '../models/Order.js';
 import Cart from '../models/Cart.js';
 import Product from '../models/Product.js';
+import { sendOrderNotification } from '../utils/telegramNotification.js';
 
 const router = express.Router();
 
 // ==========================================
-// CREATE ORDER WITH DETAILED STOCK VALIDATION
+// CREATE ORDER WITH TELEGRAM NOTIFICATION
 // ==========================================
 router.post('/create', async (req, res) => {
   try {
@@ -26,6 +27,7 @@ router.post('/create', async (req, res) => {
       grandTotal,
     } = req.body;
 
+    // 🔥 VALIDATION
     if (!userId) {
       return res.status(400).json({ error: 'User ID is required' });
     }
@@ -39,7 +41,7 @@ router.post('/create', async (req, res) => {
       return res.status(400).json({ error: 'Cart is empty' });
     }
 
-    // 🔥 DETAILED STOCK VALIDATION WITH PRODUCT NAMES
+    // 🔥 STOCK VALIDATION
     const stockErrors = [];
     const productsToUpdate = [];
 
@@ -98,26 +100,67 @@ router.post('/create', async (req, res) => {
       });
     }
 
-    const products = cartItems.map((item) => ({
-      productId: item.productId || item.productSnapshot?._id,
-      name_en: item.productSnapshot?.name_en || 'Product',
-      name_ta: item.productSnapshot?.name_ta || 'பொருள்',
-      quantity: item.totalWeight || 1,
-      weightValue: item.productSnapshot?.weightValue || item.totalWeight,
-      weightUnit: item.productSnapshot?.weightUnit || item.unit,
-      price: item.productSnapshot?.price || 0,
-      subtotal: Number((item.productSnapshot?.price * (item.totalWeight / item.productSnapshot?.weightValue || 1)).toFixed(2)),
-    }));
+  // 🔥 PREPARE PRODUCTS WITH CORRECT WEIGHT CONVERSION
+const products = cartItems.map((item) => {
+  const { productSnapshot, totalWeight, unit } = item;
+  
+  // Convert totalWeight to same unit as productSnapshot for accurate calculation
+  const toGrams = (value, unitType) => {
+    if (unitType === 'kg') return value * 1000;
+    if (unitType === 'g') return value;
+    return value; // piece
+  };
+  
+  const totalWeightInGrams = toGrams(totalWeight, unit);
+  const productWeightInGrams = toGrams(productSnapshot.weightValue, productSnapshot.weightUnit);
+  
+  // Calculate ratio and price
+  const ratio = totalWeightInGrams / productWeightInGrams;
+  const itemSubtotal = Number((productSnapshot.price * ratio).toFixed(2));
+  
+  // Format the quantity display properly
+  let displayQuantity, displayUnit;
+  if (unit === 'piece') {
+    displayQuantity = totalWeight;
+    displayUnit = 'piece';
+  } else if (unit === 'kg') {
+    displayQuantity = totalWeight;
+    displayUnit = 'kg';
+  } else if (unit === 'g') {
+    // Convert to kg if >= 1000g
+    if (totalWeight >= 1000) {
+      displayQuantity = totalWeight / 1000;
+      displayUnit = 'kg';
+    } else {
+      displayQuantity = totalWeight;
+      displayUnit = 'g';
+    }
+  }
+  
+  return {
+    productId: item.productId || productSnapshot._id,
+    name_en: productSnapshot.name_en || 'Product',
+    name_ta: productSnapshot.name_ta || 'பொருள்',
+    quantity: displayQuantity,
+    weightValue: productSnapshot.weightValue,
+    weightUnit: displayUnit,
+    price: productSnapshot.price,
+    subtotal: itemSubtotal,
+  };
+});
 
+    // 🔥 MAP LINK
     const mapLink = selectedAddress.lat && selectedAddress.lon 
       ? `https://maps.google.com/?q=${selectedAddress.lat},${selectedAddress.lon}`
       : '';
 
+    // 🔥 RAZORPAY ORDER ID (MOCK FOR COD)
     let razorpayOrderId = null;
     if (paymentMethod !== 'COD') {
       razorpayOrderId = `mock_order_${Date.now()}`;
     }
 
+    // 🔥 CREATE ORDER
     const newOrder = new Order({
       userId: userId,
       razorpayOrderId: razorpayOrderId,
@@ -151,6 +194,27 @@ router.post('/create', async (req, res) => {
     await newOrder.save();
     console.log('✅ Order created:', newOrder._id);
 
+    // 🔥 SEND TELEGRAM NOTIFICATION - IMPROVED ERROR HANDLING
+    console.log('📱 Attempting to send Telegram notification...');
+    console.log('Order ID:', newOrder._id);
+    console.log('User ID:', newOrder.userId);
+    
+    try {
+      const notificationSent = await sendOrderNotification(newOrder);
+      
+      if (notificationSent) {
+        console.log('✅ Telegram notification sent successfully!');
+        newOrder.adminNotified = true;
+        await newOrder.save();
+      } else {
+        console.error('❌ Telegram notification failed - function returned false');
+      }
+    } catch (notificationError) {
+      console.error('❌ Telegram notification error:', notificationError.message);
+      console.error('Full error:', notificationError);
+      // Don't fail the order, but log the error clearly
+    }
+
     // 🔥 REDUCE STOCK & AUTO-CHECK AVAILABILITY
     for (const update of productsToUpdate) {
       const product = await Product.findById(update.productId);
@@ -183,9 +247,11 @@ router.post('/create', async (req, res) => {
       }
     }
 
+    // 🔥 CLEAR USER CART
     await Cart.deleteMany({ userId: userId });
     console.log('🗑️ User cart cleared');
 
+    // 🔥 SEND SUCCESS RESPONSE
     res.json({
       success: true,
       razorpayOrderId: razorpayOrderId,
@@ -193,7 +259,7 @@ router.post('/create', async (req, res) => {
       message: 'Order created successfully',
     });
   } catch (error) {
-    console.error('Order creation error:', error);
+    console.error('❌ Order creation error:', error);
     res.status(500).json({
       error: 'Failed to create order',
       message: error.message,
@@ -202,7 +268,7 @@ router.post('/create', async (req, res) => {
 });
 
 // ==========================================
-// 🔥 NEW: VALIDATE CART STOCK BEFORE CHECKOUT
+// VALIDATE CART STOCK BEFORE CHECKOUT
 // ==========================================
 router.post('/validate-cart-stock', async (req, res) => {
   try {
@@ -254,7 +320,7 @@ router.post('/validate-cart-stock', async (req, res) => {
           cartItemId: item._id,
           productName: product.name_en,
           error: 'INSUFFICIENT_STOCK',
-          message: ` "refresh your site and try again" Only ${product.stockQty}${product.weightUnit === 'piece' ? 'pc' : product.weightUnit} available in stock`,
+          message: `Only ${product.stockQty}${product.weightUnit === 'piece' ? 'pc' : product.weightUnit} available in stock`,
           orderedQty: `${item.totalWeight}${item.unit}`,
           availableStock: `${product.stockQty}${product.weightUnit === 'piece' ? 'pc' : product.weightUnit}`
         });
@@ -461,7 +527,7 @@ router.put('/:orderId/status', async (req, res) => {
 });
 
 // ==========================================
-// 🔥 NEW: BULK UPDATE ORDERS
+// BULK UPDATE ORDERS
 // ==========================================
 router.post('/admin/bulk-update', async (req, res) => {
   try {
@@ -478,7 +544,6 @@ router.post('/admin/bulk-update', async (req, res) => {
     let updateResult;
 
     if (action === 'deliver') {
-      // Mark all as Delivered + auto-set Paid for COD orders
       const orders = await Order.find({ _id: { $in: orderIds } });
       
       for (const order of orders) {
@@ -487,7 +552,6 @@ router.post('/admin/bulk-update', async (req, res) => {
           updatedAt: new Date()
         };
         
-        // Auto-set payment to Paid for COD orders
         if (order.paymentMode === 'COD' && order.paymentStatus === 'Pending') {
           updateData.paymentStatus = 'Paid';
         }
@@ -499,7 +563,6 @@ router.post('/admin/bulk-update', async (req, res) => {
       console.log(`✅ Bulk delivered ${orders.length} orders`);
       
     } else if (action === 'refund') {
-      // Mark all as Refunded
       updateResult = await Order.updateMany(
         { _id: { $in: orderIds } },
         { 
